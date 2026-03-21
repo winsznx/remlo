@@ -819,7 +819,14 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 ### T61 — WalletConnect Empty Error Fix ✅
 **Files modified:** `lib/privy.ts`, `AGENT_PROGRESS.md`
 **Summary:** Resolved the annoying empty `{}` console errors thrown by `@walletconnect/core` in the development environment. This occurred because Privy was attempting to initialize a WalletConnect session without an explicit Project ID. Added a highly-available generic fallback `walletConnectCloudProjectId` to the Privy configuration, suppressing the relayer crash loop entirely.
-**Next task:** Await further UI/UX requests.oper.
+**Next task:** Await further UI/UX requests.
+
+---
+
+### T62 — QA Bug Triage & REMLO_MASTER Alignment ✅
+**Files modified:** Reverting dir paths inside `app/(employer)/dashboard/*`, `EmployerSidebar.tsx`, `EmployeeTable.tsx`, `dashboard/page.tsx`, `task.md`, and completely deleting `package-lock.json` and `lucide-react.d.ts`.
+**Summary:** Resolved a critical bug report regarding architectural drift. Reverted my previous folder flattenings sequentially back into `dashboard/` to perfectly synchronize with the source-of-truth `REMLO_MASTER.md`. Scaffolded missing pages (`/payroll`, `/payroll/[runId]`, `/team/add`) with elegant placeholders to prevent hard `404` errors across the dashboard headers. Restored the accidental removal of the `EmployeeTable`'s search filter, and permanently purged Vercel-breaking duplicative dependency lockfiles.
+**Next task:** Wait for Vercel deployment confirmation.oper.
 
 ---
 
