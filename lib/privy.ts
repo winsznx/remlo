@@ -16,10 +16,12 @@ export const tempoChain = {
 export const privyConfig: PrivyClientConfig = {
   defaultChain: tempoChain,
   supportedChains: [tempoChain],
-  loginMethods: ['email', 'sms', 'google', 'github', 'twitter', 'discord', 'wallet', 'farcaster'],
+  loginMethods: ['email', 'sms', 'wallet'],
   appearance: {
     theme: 'dark',
     accentColor: '#059669',
+    landingHeader: 'Choose how to continue',
+    loginMessage: 'Use email, SMS, or a wallet connection to access Remlo.',
   },
   embeddedWallets: {
     createOnLogin: 'users-without-wallets',
