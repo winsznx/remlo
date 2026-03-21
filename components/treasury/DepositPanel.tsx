@@ -22,7 +22,7 @@ function CopyField({ label, value }: { label: string; value: string }) {
   }
 
   return (
-    <div className="flex items-center justify-between py-3 border-b border-[var(--border-default)] last:border-0">
+    <div className="flex items-center justify-between py-3 px-4 border-b border-[var(--border-default)] last:border-0">
       <div className="space-y-0.5">
         <p className="text-xs text-[var(--text-muted)]">{label}</p>
         <p className="font-mono text-sm text-[var(--text-primary)]">{value}</p>
