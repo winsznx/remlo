@@ -757,3 +757,17 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 **Files modified:** `.gitignore`, `vercel.json`, `README.md`, `AGENT_PROGRESS.md`
 **Summary:** Added Next.js/Node/Foundry ignore rules, a Vercel deployment config with public env mappings and API max duration overrides, and a production-grade README covering architecture, MPP endpoints, contracts, local setup, deployment, and environment variables.
 **Next task:** Add `.env.local.example` and resolve the existing `/portal/payments` and `/portal/settings` build issues before running a full deployment smoke test.
+
+---
+
+### T51 — Privy PNG Brand Asset ✅
+**Files modified:** `public/remlo-logo.png`, `public/privy-logo.png`, `AGENT_PROGRESS.md`
+**Summary:** Generated a 512×512 PNG version of the Remlo mark for consumers that require raster assets and exposed it through Next.js static hosting under stable public paths.
+**Next task:** Redeploy Vercel so the new PNG asset is live, then paste the production URL into Privy branding settings.
+
+---
+
+### T52 — Privy Login Method Cleanup ✅
+**Files modified:** `lib/privy.ts`, `app/(auth)/login/page.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Restricted the Privy modal to `email`, `sms`, and wallet login methods, added clearer modal copy for web2/web3 users, and changed the login screen CTA text to match the available auth paths while wiring the passkey button to Privy’s dedicated passkey flow.
+**Next task:** Redeploy and verify the Privy modal now shows only email, SMS, and wallet options with the updated login copy.
