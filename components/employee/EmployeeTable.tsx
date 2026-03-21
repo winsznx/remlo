@@ -224,7 +224,9 @@ export function EmployeeTable({ data, onEdit, onRemove, onSendInvite }: Employee
       <DataTable
         columns={columns}
         data={data}
-        onRowClick={(row) => router.push(`/teams/${row.id}`)}
+        searchKey="name"
+        searchPlaceholder="Search employees..."
+        onRowClick={(row) => router.push(`/dashboard/team/${row.id}`)}
       />
     </div>
   )

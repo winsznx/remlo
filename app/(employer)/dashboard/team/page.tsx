@@ -131,7 +131,7 @@ export default function TeamPage() {
               Upload CSV
             </Button>
             <Button
-              onClick={() => router.push('/teams/add')}
+              onClick={() => router.push('/dashboard/team/add')}
               className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2 w-full min-[400px]:w-auto"
             >
               <UserPlus className="h-4 w-4" />
@@ -157,7 +157,7 @@ export default function TeamPage() {
                   Upload CSV
                 </Button>
                 <Button
-                  onClick={() => router.push('/teams/add')}
+                  onClick={() => router.push('/dashboard/team/add')}
                   className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2 w-full min-[400px]:w-auto"
                 >
                   <UserPlus className="h-4 w-4" />
@@ -170,7 +170,7 @@ export default function TeamPage() {
           <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-[var(--bg-subtle)]" />}>
             <EmployeeTable
               data={employees}
-              onEdit={(id) => router.push(`/teams/${id}`)}
+              onEdit={(id) => router.push(`/dashboard/team/${id}`)}
               onSendInvite={(id) => console.info('resend invite', id)}
               onRemove={(id) => console.info('remove', id)}
             />
