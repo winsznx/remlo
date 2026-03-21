@@ -114,25 +114,25 @@ export default function TeamPage() {
     <>
       <div className="space-y-6">
         {/* Header */}
-        <div className="flex items-center justify-between">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
             <h1 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight">Team</h1>
             <p className="text-sm text-[var(--text-muted)] mt-0.5">
               {employees.length} {employees.length === 1 ? 'employee' : 'employees'} · manage your team
             </p>
           </div>
-          <div className="flex items-center gap-2">
+          <div className="flex flex-col min-[400px]:flex-row sm:items-center gap-2">
             <Button
               variant="outline"
               onClick={() => setCsvOpen(true)}
-              className="gap-2"
+              className="gap-2 w-full min-[400px]:w-auto"
             >
               <Upload className="h-4 w-4" />
               Upload CSV
             </Button>
             <Button
-              onClick={() => router.push('/dashboard/team/add')}
-              className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2"
+              onClick={() => router.push('/teams/add')}
+              className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2 w-full min-[400px]:w-auto"
             >
               <UserPlus className="h-4 w-4" />
               Add Employee
@@ -147,18 +147,18 @@ export default function TeamPage() {
             title="Add your first team member"
             description="Invite employees to onboard onto Remlo for gasless, instant cross-border payroll."
             action={
-              <div className="flex items-center gap-2">
+              <div className="flex flex-col min-[400px]:flex-row items-center gap-2 w-full min-[400px]:w-auto">
                 <Button
                   variant="outline"
                   onClick={() => setCsvOpen(true)}
-                  className="gap-2"
+                  className="gap-2 w-full min-[400px]:w-auto"
                 >
                   <Upload className="h-4 w-4" />
                   Upload CSV
                 </Button>
                 <Button
-                  onClick={() => router.push('/dashboard/team/add')}
-                  className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2"
+                  onClick={() => router.push('/teams/add')}
+                  className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 gap-2 w-full min-[400px]:w-auto"
                 >
                   <UserPlus className="h-4 w-4" />
                   Add Employee
@@ -170,7 +170,7 @@ export default function TeamPage() {
           <React.Suspense fallback={<div className="h-64 animate-pulse rounded-xl bg-[var(--bg-subtle)]" />}>
             <EmployeeTable
               data={employees}
-              onEdit={(id) => router.push(`/dashboard/team/${id}`)}
+              onEdit={(id) => router.push(`/teams/${id}`)}
               onSendInvite={(id) => console.info('resend invite', id)}
               onRemove={(id) => console.info('remove', id)}
             />

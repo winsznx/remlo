@@ -31,7 +31,7 @@ export default function RootLayout({
       className={GeistSans.variable}
       suppressHydrationWarning
     >
-      <body className={`${ibmPlexMono.variable} font-sans antialiased`}>
+      <body className={`${ibmPlexMono.variable} font-sans antialiased`} suppressHydrationWarning>
         <QueryClientProvider>
         <PrivyClientProvider>
           <ThemeProvider>

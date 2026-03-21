@@ -85,15 +85,15 @@ function MetricTile({ label, value, sub, icon, iconBg, animate: doAnimate, rawVa
           {icon}
         </div>
       </div>
-      <div>
-        <p className="number-xl text-[var(--text-primary)]">
+      <div className="min-w-0">
+        <p className="number-xl text-[var(--text-primary)] truncate">
           {doAnimate && rawValue !== undefined ? (
             <AnimatedNumber value={rawValue} prefix="$" />
           ) : (
             value
           )}
         </p>
-        {sub && <p className="text-xs text-[var(--text-muted)] mt-1">{sub}</p>}
+        {sub && <p className="text-xs text-[var(--text-muted)] mt-1 truncate">{sub}</p>}
       </div>
     </div>
   )
@@ -216,7 +216,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button
-          onClick={() => router.push('/dashboard/payroll/new')}
+          onClick={() => router.push('/payroll/new')}
           className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 font-semibold"
           size="lg"
         >
@@ -267,7 +267,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-default)]">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Recent Payroll Runs</h2>
             <Link
-              href="/dashboard/payroll"
+              href="/payroll"
               className="text-xs text-[var(--accent)] hover:underline flex items-center gap-0.5"
             >
               View all <ChevronRight className="h-3 w-3" />
@@ -284,7 +284,7 @@ export default function DashboardPage() {
           </div>
           <div className="px-5 py-3 border-t border-[var(--border-default)]">
             <Link
-              href="/dashboard/payroll"
+              href="/payroll"
               className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
             >
               View all payroll runs <ArrowRight className="h-3 w-3" />
@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
           {/* Run Payroll CTA */}
           <Button
-            onClick={() => router.push('/dashboard/payroll/new')}
+            onClick={() => router.push('/payroll/new')}
             className="w-full bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 font-semibold"
             size="lg"
           >
