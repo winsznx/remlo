@@ -42,7 +42,7 @@ export function PayrollRunCard({
 }: PayrollRunCardProps) {
   return (
     <Link
-      href={`/payroll/${id}`}
+      href={`/dashboard/payroll/${id}`}
       className={cn(
         'group flex items-center justify-between px-4 py-3.5 rounded-lg transition-colors',
         'border border-[var(--border-default)] hover:border-[var(--border-strong)]',

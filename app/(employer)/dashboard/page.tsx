@@ -216,7 +216,7 @@ export default function DashboardPage() {
           </p>
         </div>
         <Button
-          onClick={() => router.push('/payroll/new')}
+          onClick={() => router.push('/dashboard/payroll/new')}
           className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 font-semibold"
           size="lg"
         >
@@ -267,7 +267,7 @@ export default function DashboardPage() {
           <div className="flex items-center justify-between px-5 py-4 border-b border-[var(--border-default)]">
             <h2 className="text-sm font-semibold text-[var(--text-primary)]">Recent Payroll Runs</h2>
             <Link
-              href="/payroll"
+              href="/dashboard/payroll"
               className="text-xs text-[var(--accent)] hover:underline flex items-center gap-0.5"
             >
               View all <ChevronRight className="h-3 w-3" />
@@ -284,7 +284,7 @@ export default function DashboardPage() {
           </div>
           <div className="px-5 py-3 border-t border-[var(--border-default)]">
             <Link
-              href="/payroll"
+              href="/dashboard/payroll"
               className="flex items-center gap-1.5 text-xs font-medium text-[var(--text-muted)] hover:text-[var(--text-secondary)] transition-colors"
             >
               View all payroll runs <ArrowRight className="h-3 w-3" />
@@ -334,7 +334,7 @@ export default function DashboardPage() {
 
           {/* Run Payroll CTA */}
           <Button
-            onClick={() => router.push('/payroll/new')}
+            onClick={() => router.push('/dashboard/payroll/new')}
             className="w-full bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90 font-semibold"
             size="lg"
           >
