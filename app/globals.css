@@ -1,0 +1,85 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --bg-base: #FFFFFF;
+  --bg-surface: #F8FAFC;
+  --bg-subtle: #F1F5F9;
+  --bg-overlay: #FFFFFF;
+  --border-default: #E2E8F0;
+  --border-strong: #CBD5E1;
+  --text-primary: #0F172A;
+  --text-secondary: #475569;
+  --text-muted: #94A3B8;
+  --accent: #059669;
+  --accent-subtle: #D1FAE5;
+  --accent-foreground: #FFFFFF;
+  --status-success: #059669;
+  --status-pending: #D97706;
+  --status-error: #DC2626;
+  --status-neutral: #64748B;
+  --mono: #1D4ED8;
+  --radius-sm: 4px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-2xl: 24px;
+  --radius-full: 9999px;
+  /* RGB channel equivalents for Tailwind opacity modifier support */
+  --accent-rgb: 5 150 105;
+  --bg-base-rgb: 255 255 255;
+  --status-error-rgb: 220 38 38;
+}
+
+.dark {
+  --bg-base: #0A0F1E;
+  --bg-surface: #0F172A;
+  --bg-subtle: #1E293B;
+  --bg-overlay: #1A2744;
+  --border-default: #1E293B;
+  --border-strong: #334155;
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #475569;
+  --accent: #34D399;
+  --accent-subtle: #064E3B;
+  --accent-foreground: #0A0F1E;
+  --status-success: #34D399;
+  --status-pending: #FBBF24;
+  --status-error: #F87171;
+  --status-neutral: #94A3B8;
+  --mono: #60A5FA;
+  /* RGB channel equivalents for Tailwind opacity modifier support */
+  --accent-rgb: 52 211 153;
+  --bg-base-rgb: 10 15 30;
+  --status-error-rgb: 248 113 113;
+}
+
+* {
+  border-color: var(--border-default);
+}
+
+body {
+  background-color: var(--bg-base);
+  color: var(--text-primary);
+}
+
+/* Monetary amounts — Geist, 700 weight, tabular numbers */
+.number-xl {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 2rem;
+  line-height: 1.2;
+  letter-spacing: -0.02em;
+}
+
+.number-lg {
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  font-size: 1.5rem;
+  line-height: 1.3;
+  letter-spacing: -0.02em;
+}
