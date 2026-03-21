@@ -39,3 +39,4 @@ scripts/*.js
 
 # macOS
 .DS_Store
+desktop.ini 
