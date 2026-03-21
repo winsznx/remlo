@@ -21,26 +21,26 @@ const NAV_ITEMS: NavItem[] = [
     icon: <LayoutDashboard className="w-5 h-5" />,
   },
   {
-    href: '/teams',
-    activeMatch: '/teams',
+    href: '/dashboard/team',
+    activeMatch: '/dashboard/team',
     label: 'Employees',
     icon: <Users className="w-5 h-5" />,
   },
   {
-    href: '/payroll/new',
-    activeMatch: '/payroll',
+    href: '/dashboard/payroll/new',
+    activeMatch: '/dashboard/payroll',
     label: 'Payroll',
     icon: <Banknote className="w-5 h-5" />,
   },
   {
-    href: '/treasury',
-    activeMatch: '/treasury',
+    href: '/dashboard/treasury',
+    activeMatch: '/dashboard/treasury',
     label: 'Payments',
     icon: <Wallet className="w-5 h-5" />,
   },
   {
-    href: '/compliance',
-    activeMatch: '/compliance',
+    href: '/dashboard/compliance',
+    activeMatch: '/dashboard/compliance',
     label: 'Compliance',
     icon: <ShieldCheck className="w-5 h-5" />,
   },
@@ -48,8 +48,8 @@ const NAV_ITEMS: NavItem[] = [
 
 const BOTTOM_ITEMS: NavItem[] = [
   {
-    href: '/api-access',
-    activeMatch: '/api-access',
+    href: '/dashboard/api-access',
+    activeMatch: '/dashboard/api-access',
     label: 'API & Demo',
     icon: <Terminal className="w-5 h-5" />,
   },
