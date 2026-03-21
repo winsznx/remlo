@@ -833,7 +833,14 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 ### T63 — QA Phase 2 Triage (Streaming, Multi-rail & Spec Docs) ✅
 **Files modified:** `components/treasury/StreamingBalanceTicker.tsx`, `api/mpp/payroll/execute/route.ts`, `api/mpp/bridge/offramp/route.ts`, `lib/mpp-multirail.ts`, `app/(employer)/api-access/page.tsx`, and 9x API docblocks inside `app/api/mpp/*`.
 **Summary:** Resolved the second wave of QA report bugs. Fixed the parameter contract mismatch between the `StreamingBalanceTicker` UI and the `balance/stream` Server-Sent Events endpoint by converting `employeeId` to `address` and matching the `accrued_usd` payload property. Wired the Stripe dual-rail middleware (`mppxMultiRail`) into the payroll execution and bridge offramp endpoints (fixing a typing constraint on the wrapper). Audited and completely corrected all 12 MPP endpoints' identification headers from `MPP-7a..` placeholders to their final, canonical numbers matching `REMLO_MASTER.md`.
-**Next task:** Await further structural or UX guidance.oper.
+**Next task:** Await further structural or UX guidance.
+
+---
+
+### T64 — Auth Login 500 SSR Crash Fix ✅
+**Files modified:** `app/(auth)/login/page.tsx`
+**Summary:** Investigated a fatal `500 Internal Server Error` that completely blocked the `/login` page during development and deployments. Traced the crash to the experimental `useLoginWithPasskey()` hook from `@privy-io/react-auth`, which was triggering unhandled Promise rejections and Web API reference errors deep inside the Next.js Server-Side Render (SSR) lifecycle. Wrapped the entire view in a `mounted` client-side execution block, gracefully bypassing the server-side compilation path and resolving the crash.
+**Next task:** Confirm deployment stability.oper.
 
 ---
 
