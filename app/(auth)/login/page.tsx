@@ -19,7 +19,7 @@ const FEATURES = [
   'TIP-403 policy enforcement on every payment',
 ]
 
-export default function LoginPage() {
+function ClientLoginContent() {
   const { login, ready, authenticated } = usePrivy()
   const { loginWithPasskey, state: passkeyState } = useLoginWithPasskey()
   const router = useRouter()
@@ -46,10 +46,10 @@ export default function LoginPage() {
     }
   }
 
-  const passkeyBusy = !ready || !['initial', 'done', 'error'].includes(passkeyState.status)
+  const passkeyBusy = !ready || !passkeyState || !['initial', 'done', 'error'].includes(passkeyState.status)
 
   const passkeyLabel = (() => {
-    switch (passkeyState.status) {
+    switch (passkeyState?.status) {
       case 'generating-challenge':
         return 'Preparing passkey…'
       case 'awaiting-passkey':
@@ -68,16 +68,16 @@ export default function LoginPage() {
   const primaryBusy = !ready
 
   const passkeyError =
-    passkeyState.status === 'error'
+    passkeyState?.status === 'error'
       ? passkeyState.error?.message ?? 'Passkey sign-in failed'
       : null
 
   const visibleError = authError ?? passkeyError
 
   React.useEffect(() => {
-    if (passkeyState.status !== 'error') return
+    if (passkeyState?.status !== 'error') return
     setAuthError(null)
-  }, [passkeyState.status])
+  }, [passkeyState?.status])
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] flex">
@@ -279,4 +279,24 @@ export default function LoginPage() {
       </div>
     </div>
   )
+}
+
+export default function LoginPage() {
+  const [mounted, setMounted] = React.useState(false)
+
+  React.useEffect(() => {
+    setMounted(true)
+  }, [])
+
+  // Completely abort the server-side render tree here to prevent @privy-io hooks
+  // from crashing Node's Edge runtime when they inevitably scan for window/navigator objects
+  if (!mounted) {
+    return (
+      <div className="min-h-screen bg-[var(--bg-base)] flex items-center justify-center">
+        <span className="w-6 h-6 rounded-full border-2 border-[var(--text-muted)] border-t-[var(--accent)] animate-spin" />
+      </div>
+    )
+  }
+
+  return <ClientLoginContent />
 }
