@@ -1,0 +1,18 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
+  "installCommand": "pnpm install",
+  "buildCommand": "pnpm build",
+  "regions": ["fra1"],
+  "functions": {
+    "app/api/**/*.ts": {
+      "maxDuration": 30
+    },
+    "app/api/mpp/employee/balance/stream/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/demo/run-agent/route.ts": {
+      "maxDuration": 60
+    }
+  }
+}
