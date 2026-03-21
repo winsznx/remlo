@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { usePrivy } from '@privy-io/react-auth'
+import { useLoginWithPasskey, usePrivy } from '@privy-io/react-auth'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { RemloLogo } from '@/components/brand/RemloLogo'
@@ -21,7 +21,9 @@ const FEATURES = [
 
 export default function LoginPage() {
   const { login, ready, authenticated } = usePrivy()
+  const { loginWithPasskey, state: passkeyState } = useLoginWithPasskey()
   const router = useRouter()
+  const [authError, setAuthError] = React.useState<string | null>(null)
 
   React.useEffect(() => {
     if (ready && authenticated) {
@@ -30,8 +32,52 @@ export default function LoginPage() {
   }, [ready, authenticated, router])
 
   const handleLogin = () => {
-    login()
+    setAuthError(null)
+    login({ loginMethods: ['email', 'sms', 'wallet'] })
   }
+
+  const handlePasskeyLogin = async () => {
+    setAuthError(null)
+
+    try {
+      await loginWithPasskey()
+    } catch (error) {
+      setAuthError(error instanceof Error ? error.message : 'Passkey sign-in failed')
+    }
+  }
+
+  const passkeyBusy = !ready || !['initial', 'done', 'error'].includes(passkeyState.status)
+
+  const passkeyLabel = (() => {
+    switch (passkeyState.status) {
+      case 'generating-challenge':
+        return 'Preparing passkey…'
+      case 'awaiting-passkey':
+        return 'Waiting for passkey…'
+      case 'submitting-response':
+        return 'Signing in…'
+      default:
+        return 'Sign in with Passkey'
+    }
+  })()
+
+  const primaryLabel = ready ? 'Continue with Email, SMS, or Wallet' : 'Loading…'
+
+  const helperCopy = 'Use email, SMS, wallet, or passkey to access Remlo.'
+
+  const primaryBusy = !ready
+
+  const passkeyError =
+    passkeyState.status === 'error'
+      ? passkeyState.error?.message ?? 'Passkey sign-in failed'
+      : null
+
+  const visibleError = authError ?? passkeyError
+
+  React.useEffect(() => {
+    if (passkeyState.status !== 'error') return
+    setAuthError(null)
+  }, [passkeyState.status])
 
   return (
     <div className="min-h-screen bg-[var(--bg-base)] flex">
@@ -160,13 +206,13 @@ export default function LoginPage() {
               Welcome back
             </h2>
             <p className="mt-1.5 text-sm text-[var(--text-secondary)]">
-              Sign in to your account or create one below
+              {helperCopy}
             </p>
           </div>
 
           <button
             onClick={handleLogin}
-            disabled={!ready}
+            disabled={primaryBusy}
             className="w-full h-11 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-sm font-semibold tracking-tight
               hover:opacity-90 active:opacity-80 transition-opacity
               disabled:opacity-40 disabled:cursor-not-allowed
@@ -178,7 +224,7 @@ export default function LoginPage() {
                 Loading…
               </>
             ) : (
-              'Continue with Email or SMS'
+              primaryLabel
             )}
           </button>
 
@@ -189,8 +235,8 @@ export default function LoginPage() {
           </div>
 
           <button
-            onClick={handleLogin}
-            disabled={!ready}
+            onClick={() => void handlePasskeyLogin()}
+            disabled={passkeyBusy}
             className="mt-6 w-full h-11 rounded-lg border border-[var(--border-strong)] bg-transparent
               text-[var(--text-primary)] text-sm font-medium
               hover:bg-[var(--bg-subtle)] active:opacity-80 transition-colors
@@ -201,8 +247,14 @@ export default function LoginPage() {
               <rect x="3" y="11" width="18" height="11" rx="2" ry="2" />
               <path d="M7 11V7a5 5 0 0110 0v4" />
             </svg>
-            Sign in with Passkey
+            {passkeyLabel}
           </button>
+
+          {visibleError ? (
+            <p className="mt-4 text-center text-xs text-[var(--status-error)] leading-relaxed">
+              {visibleError}
+            </p>
+          ) : null}
 
           <p className="mt-8 text-center text-xs text-[var(--text-muted)] leading-relaxed">
             By continuing, you agree to Remlo&apos;s{' '}
