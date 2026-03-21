@@ -220,12 +220,12 @@ export function EmployeeTable({ data, onEdit, onRemove, onSendInvite }: Employee
   )
 
   return (
-    <DataTable
-      columns={columns}
-      data={data}
-      searchKey="name"
-      searchPlaceholder="Search employees..."
-      onRowClick={(row) => router.push(`/dashboard/team/${row.id}`)}
-    />
+    <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-hidden">
+      <DataTable
+        columns={columns}
+        data={data}
+        onRowClick={(row) => router.push(`/teams/${row.id}`)}
+      />
+    </div>
   )
 }

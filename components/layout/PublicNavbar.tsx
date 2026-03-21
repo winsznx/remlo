@@ -12,6 +12,8 @@ const NAV_LINKS = [
   { label: 'How it works', href: '#how-it-works' },
   { label: 'Pricing', href: '#pricing' },
   { label: 'Developers', href: '#api' },
+  { label: 'GitHub', href: 'https://github.com/winsznx/remlo', external: true },
+  { label: 'X (Twitter)', href: 'https://x.com/remlo_xyz/', external: true },
 ]
 
 export function PublicNavbar() {
@@ -62,6 +64,8 @@ export function PublicNavbar() {
               <a
                 key={link.label}
                 href={link.href}
+                target={link.external ? '_blank' : undefined}
+                rel={link.external ? 'noopener noreferrer' : undefined}
                 className="px-3 py-1.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
               >
                 {link.label}
@@ -127,6 +131,8 @@ export function PublicNavbar() {
                 <motion.a
                   key={link.label}
                   href={link.href}
+                  target={link.external ? '_blank' : undefined}
+                  rel={link.external ? 'noopener noreferrer' : undefined}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
