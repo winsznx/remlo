@@ -5,7 +5,7 @@ import { decodeMemo } from '@/lib/memo'
 
 /**
  * GET /api/mpp/employee/[id]/history
- * MPP-7c — $0.05 single charge
+ * MPP-8 — $0.05 single charge
  * Returns paginated payment history for an employee with decoded memos.
  *
  * Query params: ?limit=50

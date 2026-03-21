@@ -32,7 +32,7 @@ const PRICING_TIERS = [
       { name: 'Treasury Optimize', route: '/api/mpp/treasury/optimize', price: '$0.10' },
       { name: 'Bridge Off-Ramp', route: '/api/mpp/bridge/offramp', price: '$0.25' },
       { name: 'Employee Advance', route: '/api/mpp/employee/advance', price: '$0.50' },
-      { name: 'Compliance List', route: '/api/mpp/marketplace/compliance-list', price: '$0.50' },
+      { name: 'Compliance List', route: '/api/mpp/marketplace/compliance-list/[employerId]', price: '$0.50' },
       { name: 'Balance Stream (SSE)', route: '/api/mpp/employee/balance/stream', price: '$0.001/tick' },
     ],
   },
