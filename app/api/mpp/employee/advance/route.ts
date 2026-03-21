@@ -5,7 +5,7 @@ const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY as `0x${string}`
 
 /**
  * POST /api/mpp/employee/advance
- * MPP-4 — $0.50 single charge
+ * MPP-3 — $0.50 single charge
  * Claims all accrued vesting for an employee via StreamVesting.claimAccrued.
  *
  * Body: { employeeAddress: string }

@@ -4,7 +4,7 @@ import { insertComplianceEvent } from '@/lib/queries/compliance'
 
 /**
  * POST /api/mpp/compliance/check
- * MPP-2 — $0.05 single charge
+ * MPP-4 — $0.05 single charge
  * Checks a wallet address against the TIP-403 compliance registry.
  * Inserts result into compliance_events table.
  *
