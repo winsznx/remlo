@@ -5,10 +5,11 @@ import { useRouter } from 'next/navigation'
 import { ChevronLeft } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 
-export default function PayrollRunDetailsPage({ params }: { params: { runId: string } }) {
+export default function PayrollRunDetailsPage({ params }: { params: Promise<{ runId: string }> }) {
   const router = useRouter()
-  // React.use() wrapper to silence next.js 15 params warning if it were async, but we will keep it simple
-  const runId = params.runId
+  // Next.js 15 requires params to be a Promise, unwrapped with React.use()
+  const resolvedParams = React.use(params)
+  const runId = resolvedParams.runId
 
   return (
     <div className="space-y-6">
