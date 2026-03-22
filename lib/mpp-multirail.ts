@@ -1,4 +1,5 @@
-import { Mppx, tempo, stripe } from 'mppx/nextjs'
+import { Mppx, tempo } from 'mppx/server'
+import { stripe } from 'mppx/stripe/server'
 
 /**
  * lib/mpp-multirail.ts — dual-rail mppx (Tempo + Stripe SPT).
@@ -12,7 +13,7 @@ export const mppxMultiRail = Mppx.create({
       currency: '0x20C0000000000000000000000000000000000000', // pathUSD
       recipient: process.env.REMLO_TREASURY_ADDRESS as `0x${string}`,
     }),
-    stripe.charge({
+    stripe({
       networkId: 'internal',
       paymentMethodTypes: ['card', 'link'],
       secretKey: process.env.STRIPE_SECRET_KEY!,
