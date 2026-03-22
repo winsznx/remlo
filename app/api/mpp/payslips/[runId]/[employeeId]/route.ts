@@ -5,7 +5,7 @@ import { decodeMemo } from '@/lib/memo'
 
 /**
  * GET /api/mpp/payslips/[runId]/[employeeId]
- * MPP-7a — $0.02 single charge
+ * MPP-6 — $0.02 single charge
  * Returns a single payslip for an employee within a payroll run.
  * Includes decoded ISO 20022 memo fields.
  */

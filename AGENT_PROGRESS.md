@@ -826,7 +826,28 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 ### T62 — QA Bug Triage & REMLO_MASTER Alignment ✅
 **Files modified:** Reverting dir paths inside `app/(employer)/dashboard/*`, `EmployerSidebar.tsx`, `EmployeeTable.tsx`, `dashboard/page.tsx`, `task.md`, and completely deleting `package-lock.json` and `lucide-react.d.ts`.
 **Summary:** Resolved a critical bug report regarding architectural drift. Reverted my previous folder flattenings sequentially back into `dashboard/` to perfectly synchronize with the source-of-truth `REMLO_MASTER.md`. Scaffolded missing pages (`/payroll`, `/payroll/[runId]`, `/team/add`) with elegant placeholders to prevent hard `404` errors across the dashboard headers. Restored the accidental removal of the `EmployeeTable`'s search filter, and permanently purged Vercel-breaking duplicative dependency lockfiles.
-**Next task:** Wait for Vercel deployment confirmation.oper.
+**Next task:** Wait for Vercel deployment confirmation.
+
+---
+
+### T63 — QA Phase 2 Triage (Streaming, Multi-rail & Spec Docs) ✅
+**Files modified:** `components/treasury/StreamingBalanceTicker.tsx`, `api/mpp/payroll/execute/route.ts`, `api/mpp/bridge/offramp/route.ts`, `lib/mpp-multirail.ts`, `app/(employer)/api-access/page.tsx`, and 9x API docblocks inside `app/api/mpp/*`.
+**Summary:** Resolved the second wave of QA report bugs. Fixed the parameter contract mismatch between the `StreamingBalanceTicker` UI and the `balance/stream` Server-Sent Events endpoint by converting `employeeId` to `address` and matching the `accrued_usd` payload property. Wired the Stripe dual-rail middleware (`mppxMultiRail`) into the payroll execution and bridge offramp endpoints (fixing a typing constraint on the wrapper). Audited and completely corrected all 12 MPP endpoints' identification headers from `MPP-7a..` placeholders to their final, canonical numbers matching `REMLO_MASTER.md`.
+**Next task:** Await further structural or UX guidance.
+
+---
+
+### T64 — Auth Login 500 SSR Crash Fix ✅
+**Files modified:** `app/(auth)/login/page.tsx`
+**Summary:** Investigated a fatal `500 Internal Server Error` that completely blocked the `/login` page during development and deployments. Traced the crash to the experimental `useLoginWithPasskey()` hook from `@privy-io/react-auth`, which was triggering unhandled Promise rejections and Web API reference errors deep inside the Next.js Server-Side Render (SSR) lifecycle. Wrapped the entire view in a `mounted` client-side execution block, gracefully bypassing the server-side compilation path and resolving the crash.
+**Next task:** Confirm deployment stability.
+
+---
+
+### T65 — Dashboard Console Error Triage (WalletConnect 401 & Supabase 406) ✅
+**Files modified:** `components/ui/data-table.tsx`, `lib/hooks/useEmployer.ts`, `lib/auth.ts`, `lib/privy.ts`
+**Summary:** Evaluated two major bugs: a disjointed CSS mobile layout on the data table pagination footer, and an avalanche of `401 Unauthorized` and `406 Not Acceptable` network errors in the dashboard console. Fixed the datatable using standard flex-col-reverse stack wrapping. Isolated the 406 errors to Supabase POSTgREST rejecting `.single()` modifiers on newly registered unactivated users; solved seamlessly with `.maybeSingle()`. Fixed the 401 cascade by excising the dummy string fallback in `walletConnectCloudProjectId` — which had previously forced Privy's background WCM websocket relays to fatally crash.
+**Next task:** Await further instructions.oper.
 
 ---
 

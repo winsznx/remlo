@@ -4,7 +4,7 @@ import { getComplianceEventsByEmployerId } from '@/lib/queries/compliance'
 
 /**
  * GET /api/mpp/marketplace/compliance-list/[employerId]
- * MPP-7f — $0.50 single charge
+ * MPP-11 — $0.50 single charge
  * Returns full compliance event history for an employer.
  * Useful for auditors, marketplace buyers, and compliance officers.
  *

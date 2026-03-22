@@ -8,7 +8,7 @@ type Action = 'balance' | 'yield' | 'rebalance' | 'headcount'
 
 /**
  * POST /api/mpp/agent/session/treasury
- * MPP-6 — $0.02 per session action
+ * MPP-12 — $0.02 per session action
  * AI agent treasury management endpoint.
  * Handles 4 actions: balance, yield, rebalance, headcount.
  *
