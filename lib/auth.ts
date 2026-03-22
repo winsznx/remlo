@@ -46,7 +46,7 @@ export async function getCallerEmployer(req: NextRequest): Promise<Employer | nu
     .select('*')
     .eq('owner_user_id', claims.sub)
     .eq('active', true)
-    .single()
+    .maybeSingle()
 
   return data ?? null
 }
@@ -66,7 +66,7 @@ export async function getAuthorizedEmployer(
     .eq('id', employerId)
     .eq('owner_user_id', claims.sub)
     .eq('active', true)
-    .single()
+    .maybeSingle()
 
   return data ?? null
 }

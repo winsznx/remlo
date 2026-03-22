@@ -20,7 +20,7 @@ export function useEmployer() {
         .select('*')
         .eq('owner_user_id', user.id)
         .eq('active', true)
-        .single()
+        .maybeSingle()
       return data ?? null
     },
     enabled: authenticated && Boolean(user?.id),
