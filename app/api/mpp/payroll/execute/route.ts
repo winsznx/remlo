@@ -9,7 +9,7 @@ const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
 /**
  * POST /api/mpp/payroll/execute
- * MPP-2 — $1.00 single charge (Tempo + Stripe SPT fallback via mppxMultiRail at session level)
+ * MPP-2 — $1.00 single charge
  * Executes a pending payroll batch on-chain via PayrollBatcher.
  * Fetches payment_items + employee wallets from Supabase, calls executeBatchPayroll,
  * and updates payroll_runs with tx_hash.
