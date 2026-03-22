@@ -6,7 +6,7 @@ import { randomUUID } from 'crypto'
 
 /**
  * POST /api/mpp/bridge/offramp
- * MPP-9 — $0.25 single charge (Tempo + Stripe SPT fallback)
+ * MPP-9 — $0.25 single charge
  * Initiates a Bridge off-ramp transfer for an employee.
  * Converts on-chain balance to fiat via ACH/SEPA/SPEI/PIX.
  *

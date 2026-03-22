@@ -851,6 +851,13 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 
 ---
 
+### T66 — Build Recovery for MPP Routes ✅
+**Files modified:** `app/api/mpp/payroll/execute/route.ts`, `app/api/mpp/bridge/offramp/route.ts`, `AGENT_PROGRESS.md`
+**Summary:** Restored a clean production build by reverting the two broken `mppxMultiRail.charge(...)` handlers back to the stable single-rail `mppx.charge(...)` wrapper. This fixes the Next.js typecheck failure without changing the underlying payroll or off-ramp business logic.
+**Next task:** Revisit dual-rail Stripe fallback using `mppx.compose(...)` when we want to finish the multirail implementation properly.
+
+---
+
 ### T58 — Navigation Bug Fixes ✅
 **Files modified:** `components/employer/EmployerSidebar.tsx`, `AGENT_PROGRESS.md`
 **Summary:** Fixed the double focus bug in the sidebar routing logic. The `/dashboard` base route now properly enforces an exact-match validation instead of a generic string-starts-with matcher, so that visiting sub-routes like `/dashboard/payroll` only highlights the specific sub-route tab.
