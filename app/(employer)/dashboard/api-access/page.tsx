@@ -41,7 +41,7 @@ const PRICING_TIERS = [
     color: 'border-purple-500/50',
     endpoints: [
       { name: 'Execute Payroll', route: '/api/mpp/payroll/execute', price: '$1.00' },
-      { name: 'Agent Treasury Session', route: '/api/mpp/agent/session/treasury', price: '$0.02/action' },
+      { name: 'Agent Treasury Session', route: '/api/mpp/agent/session/treasury', price: '$0.02/session' },
     ],
   },
 ]

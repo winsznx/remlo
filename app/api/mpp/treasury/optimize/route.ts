@@ -10,7 +10,7 @@ import { keccak256, toBytes } from 'viem'
  *
  * Body: { employerId: string }
  */
-export const POST = mppx.charge({ amount: '0.10' })(async (req: Request) => {
+export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async (req: Request) => {
   const { employerId } = await req.json() as { employerId: string }
 
   if (!employerId) {

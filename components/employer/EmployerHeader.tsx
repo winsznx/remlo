@@ -6,11 +6,12 @@ import { usePrivy } from '@privy-io/react-auth'
 
 const BREADCRUMB_MAP: Record<string, string> = {
   '/dashboard': 'Dashboard',
-  '/employees': 'Employees',
-  '/payroll': 'Payroll',
-  '/payments': 'Payments',
-  '/compliance': 'Compliance',
-  '/settings': 'Settings',
+  '/dashboard/employees': 'Employees',
+  '/dashboard/payroll': 'Payroll',
+  '/dashboard/payments': 'Payments',
+  '/dashboard/compliance': 'Compliance',
+  '/dashboard/settings': 'Settings',
+  '/dashboard/api-access': 'API Access',
 }
 
 interface EmployerHeaderProps {
