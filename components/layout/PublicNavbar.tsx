@@ -8,10 +8,10 @@ import { RemloLogo } from '@/components/brand/RemloLogo'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { label: 'Product', href: '#product' },
-  { label: 'How it works', href: '#how-it-works' },
-  { label: 'Pricing', href: '#pricing' },
-  { label: 'Developers', href: '#api' },
+  { label: 'Product', href: '/#product' },
+  { label: 'How it works', href: '/#how-it-works' },
+  { label: 'Pricing', href: '/pricing' },
+  { label: 'Developers', href: '/docs' },
   { label: 'GitHub', href: 'https://github.com/winsznx/remlo', external: true },
   { label: 'X (Twitter)', href: 'https://x.com/remlo_xyz/', external: true },
 ]
