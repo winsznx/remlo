@@ -840,7 +840,14 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 ### T64 — Auth Login 500 SSR Crash Fix ✅
 **Files modified:** `app/(auth)/login/page.tsx`
 **Summary:** Investigated a fatal `500 Internal Server Error` that completely blocked the `/login` page during development and deployments. Traced the crash to the experimental `useLoginWithPasskey()` hook from `@privy-io/react-auth`, which was triggering unhandled Promise rejections and Web API reference errors deep inside the Next.js Server-Side Render (SSR) lifecycle. Wrapped the entire view in a `mounted` client-side execution block, gracefully bypassing the server-side compilation path and resolving the crash.
-**Next task:** Confirm deployment stability.oper.
+**Next task:** Confirm deployment stability.
+
+---
+
+### T65 — Dashboard Console Error Triage (WalletConnect 401 & Supabase 406) ✅
+**Files modified:** `components/ui/data-table.tsx`, `lib/hooks/useEmployer.ts`, `lib/auth.ts`, `lib/privy.ts`
+**Summary:** Evaluated two major bugs: a disjointed CSS mobile layout on the data table pagination footer, and an avalanche of `401 Unauthorized` and `406 Not Acceptable` network errors in the dashboard console. Fixed the datatable using standard flex-col-reverse stack wrapping. Isolated the 406 errors to Supabase POSTgREST rejecting `.single()` modifiers on newly registered unactivated users; solved seamlessly with `.maybeSingle()`. Fixed the 401 cascade by excising the dummy string fallback in `walletConnectCloudProjectId` — which had previously forced Privy's background WCM websocket relays to fatally crash.
+**Next task:** Await further instructions.oper.
 
 ---
 
