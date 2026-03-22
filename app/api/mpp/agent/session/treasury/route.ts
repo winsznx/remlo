@@ -2,7 +2,7 @@ import { mppx } from '@/lib/mpp'
 import { treasury, yieldRouter, employeeRegistry, getServerWalletClient } from '@/lib/contracts'
 import { keccak256, toBytes } from 'viem'
 
-const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY as `0x${string}`
+const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
 type Action = 'balance' | 'yield' | 'rebalance' | 'headcount'
 
@@ -14,7 +14,7 @@ type Action = 'balance' | 'yield' | 'rebalance' | 'headcount'
  *
  * Body: { action: Action, employerId: string, allocation?: number[] }
  */
-export const POST = mppx.charge({ amount: '0.02' })(async (req: Request) => {
+export const POST = mppx.session({ amount: '0.02', unitType: 'action' })(async (req: Request) => {
   const body = await req.json() as {
     action: Action
     employerId: string

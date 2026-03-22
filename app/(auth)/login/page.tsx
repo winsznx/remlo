@@ -1,6 +1,7 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
 import { useLoginWithPasskey, usePrivy } from '@privy-io/react-auth'
 import { useRouter } from 'next/navigation'
 import { motion } from 'framer-motion'
@@ -258,13 +259,13 @@ function ClientLoginContent() {
 
           <p className="mt-8 text-center text-xs text-[var(--text-muted)] leading-relaxed">
             By continuing, you agree to Remlo&apos;s{' '}
-            <a href="#" className="text-[var(--accent)] hover:underline">
+            <Link href="/legal/terms" className="text-[var(--accent)] hover:underline">
               Terms of Service
-            </a>{' '}
+            </Link>{' '}
             and{' '}
-            <a href="#" className="text-[var(--accent)] hover:underline">
+            <Link href="/legal/privacy" className="text-[var(--accent)] hover:underline">
               Privacy Policy
-            </a>
+            </Link>
           </p>
 
           <div className="mt-8 pt-6 border-t border-[var(--border-default)]">

@@ -1,29 +1,21 @@
-import { Mppx } from 'mppx/server'
-import { mppxMultiRail } from '@/lib/mpp-multirail'
+﻿import { mppx } from '@/lib/mpp'
 import { payrollBatcher, getServerWalletClient } from '@/lib/contracts'
 import { getPayrollRunById, getPaymentItemsByRunId } from '@/lib/queries/payroll'
 import { createServerClient } from '@/lib/supabase-server'
 import { keccak256, toBytes } from 'viem'
 
-const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
+const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY as `0x${string}`
 
 /**
  * POST /api/mpp/payroll/execute
- * MPP-2 — $1.00 single charge (Tempo + Stripe SPT fallback via mppxMultiRail at session level)
+ * MPP-3 ÔÇö $1.00 single charge (Tempo + Stripe SPT fallback via mppxMultiRail at session level)
  * Executes a pending payroll batch on-chain via PayrollBatcher.
  * Fetches payment_items + employee wallets from Supabase, calls executeBatchPayroll,
  * and updates payroll_runs with tx_hash.
  *
  * Body: { payrollRunId: string }
  */
-export async function POST(req: Request) {
-  const mppxResult = await Mppx.compose(
-    mppxMultiRail.tempo.charge({ amount: '1.00' }),
-    mppxMultiRail.stripe.charge({ amount: '1.00', currency: 'usd' })
-  )(req)
-  
-  if (mppxResult.status === 402) return mppxResult.challenge
-
+export const POST = mppx.charge({ amount: '1.00' })(async (req: Request) => {
   const { payrollRunId } = await req.json() as { payrollRunId: string }
 
   if (!payrollRunId) {
@@ -85,10 +77,10 @@ export async function POST(req: Request) {
     .update({ status: 'submitted', tx_hash: txHash })
     .eq('id', payrollRunId)
 
-  return mppxResult.withReceipt(Response.json({
+  return Response.json({
     success: true,
     tx_hash: txHash,
     payroll_run_id: payrollRunId,
     recipient_count: recipients.length,
-  }))
-}
+  })
+})

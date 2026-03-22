@@ -17,7 +17,7 @@ export async function GET(req: NextRequest) {
   const url = new URL(req.url)
   const address = url.searchParams.get('address') as `0x${string}` | null
 
-  return mppx.charge({ amount: '0.001' })(async () => {
+  return mppx.session({ amount: '0.001', unitType: 'second' })(async () => {
     let baseBalance = BigInt(0)
     if (address?.startsWith('0x')) {
       baseBalance = await streamVesting.read.getAccruedBalance([address]) as bigint
