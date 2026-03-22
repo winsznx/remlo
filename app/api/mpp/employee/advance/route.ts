@@ -1,7 +1,7 @@
 import { mppx } from '@/lib/mpp'
 import { streamVesting, getServerWalletClient } from '@/lib/contracts'
 
-const DEPLOYER_KEY = process.env.DEPLOYER_PRIVATE_KEY as `0x${string}`
+const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
 /**
  * POST /api/mpp/employee/advance

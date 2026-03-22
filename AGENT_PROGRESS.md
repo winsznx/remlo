@@ -855,3 +855,14 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 **Files modified:** `components/employer/EmployerSidebar.tsx`, `AGENT_PROGRESS.md`
 **Summary:** Fixed the double focus bug in the sidebar routing logic. The `/dashboard` base route now properly enforces an exact-match validation instead of a generic string-starts-with matcher, so that visiting sub-routes like `/dashboard/payroll` only highlights the specific sub-route tab.
 **Next task:** Await further UI polish requests.
+
+---
+
+### T66 — Phase 3 Codebase Standardisation ✅
+**Files modified:** `app/api/mpp/payroll/execute/route.ts`, `app/api/mpp/bridge/offramp/route.ts`, `lib/mpp-multirail.ts`, `app/api/mpp/treasury/optimize/route.ts`, `app/api/mpp/agent/session/treasury/route.ts`, `app/api/mpp/employee/balance/stream/route.ts`, `app/api/mpp/employee/advance/route.ts`, `components/employer/EmployerHeader.tsx`, `app/(employer)/dashboard/api-access/page.tsx`, `app/page.tsx`, `app/(auth)/login/page.tsx`, `app/(public)/layout.tsx`, `app/(public)/pricing/page.tsx`, `app/(public)/docs/page.tsx`, `app/(public)/legal/privacy/page.tsx`, `app/(public)/legal/terms/page.tsx`, `app/(auth)/kyc/[token]/page.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Completed the full Phase 3 standardisation sprint across four workstreams:
+1. **MPP multi-rail compose fix** — Traced the T63 `mppxMultiRail.compose` Typescript build failure to the `Mppx.compose()` static API pattern (per `mppx/server` type declarations). Rewrote `payroll/execute` and `bridge/offramp` to evaluate `Mppx.compose()(req)` directly and return the 402 challenge early or wrap the final response in `.withReceipt()`. Fixed the `mpp-multirail.ts` import to use `mppx/server` instead of `mppx/nextjs` (the Next.js adapter strips `.compose()` from instances).
+2. **Session-priced endpoints** — Migrated `treasury/optimize` (MPP-10), `agent/session/treasury` (MPP-12), and `employee/balance/stream` (MPP-5) from `mppx.charge()` to `mppx.session()` with the correct `unitType` literals (`session`, `action`, `second`).
+3. **Copy & navigation updates** — Updated `EmployerHeader.tsx` breadcrumb map to `/dashboard/*` paths; corrected `api-access/page.tsx` to display `$0.02/session` for MPP-12; wired all placeholder `#` footer links in `app/page.tsx` to real routes (`/pricing`, `/docs`, `/legal/privacy`, `/legal/terms`, etc.).
+4. **Route scaffolding** — Created `app/(public)/layout.tsx` (shared public shell with PublicNavbar), `pricing/page.tsx`, `docs/page.tsx`, `legal/privacy/page.tsx`, `legal/terms/page.tsx`, and the dynamic `app/(auth)/kyc/[token]/page.tsx` employee KYC clearance flow. Updated `login/page.tsx` Terms/Privacy anchors to use `next/link` pointing at the newly scaffolded legal routes.
+**Next task:** Await further instructions.

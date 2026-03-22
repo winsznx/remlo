@@ -707,34 +707,34 @@ const FOOTER_COLS = [
     links: [
       { label: 'Overview', href: '#product' },
       { label: 'How it works', href: '#how-it-works' },
-      { label: 'Pricing', href: '#pricing' },
-      { label: 'Changelog', href: '#' },
+      { label: 'Pricing', href: '/pricing' },
+      { label: 'Changelog', href: '/changelog' },
     ],
   },
   {
     label: 'Developers',
     links: [
-      { label: 'API reference', href: '#api' },
-      { label: 'MPP endpoints', href: '#api' },
-      { label: 'Agent SDK', href: '#api' },
-      { label: 'GitHub', href: '#' },
+      { label: 'API reference', href: '/docs' },
+      { label: 'MPP endpoints', href: '/docs#mpp' },
+      { label: 'Agent SDK', href: '/docs#sdk' },
+      { label: 'GitHub', href: 'https://github.com/winsznx/remlo' },
     ],
   },
   {
     label: 'Company',
     links: [
-      { label: 'About', href: '#' },
+      { label: 'About', href: '/about' },
       { label: 'Blog', href: '/blog' },
-      { label: 'Careers', href: '#' },
-      { label: 'Contact', href: '#' },
+      { label: 'Careers', href: '/careers' },
+      { label: 'Contact', href: '/contact' },
     ],
   },
   {
     label: 'Legal',
     links: [
-      { label: 'Privacy Policy', href: '#' },
-      { label: 'Terms of Service', href: '#' },
-      { label: 'Cookie Policy', href: '#' },
+      { label: 'Privacy Policy', href: '/legal/privacy' },
+      { label: 'Terms of Service', href: '/legal/terms' },
+      { label: 'Cookie Policy', href: '/legal/cookies' },
     ],
   },
 ]
