@@ -3,7 +3,7 @@ import { decodeMemo } from '@/lib/memo'
 
 /**
  * POST /api/mpp/memo/decode
- * MPP-7b — $0.01 single charge
+ * MPP-7 — $0.01 single charge
  * Decodes a 32-byte ISO 20022 TIP-20 memo hex string.
  *
  * Body: { memo: string } — 0x-prefixed 32-byte hex

@@ -1,11 +1,11 @@
-import { mppx } from '@/lib/mpp'
+import { mppxMultiRail } from '@/lib/mpp-multirail'
 import { createOffRampTransfer } from '@/lib/bridge'
 import { createServerClient } from '@/lib/supabase-server'
 import { randomUUID } from 'crypto'
 
 /**
  * POST /api/mpp/bridge/offramp
- * MPP-7d — $0.25 single charge (Tempo + Stripe SPT fallback)
+ * MPP-9 — $0.25 single charge (Tempo + Stripe SPT fallback)
  * Initiates a Bridge off-ramp transfer for an employee.
  * Converts on-chain balance to fiat via ACH/SEPA/SPEI/PIX.
  *
@@ -16,7 +16,7 @@ import { randomUUID } from 'crypto'
  *   bankAccountId: string
  * }
  */
-export const POST = mppx.charge({ amount: '0.25' })(async (req: Request) => {
+export const POST = mppxMultiRail.charge({ amount: '0.25' })(async (req: Request) => {
   const body = await req.json() as {
     employeeId: string
     amount: string

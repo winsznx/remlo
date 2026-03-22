@@ -1,4 +1,4 @@
-import { Mppx, tempo, stripe } from 'mppx/server'
+import { Mppx, tempo, stripe } from 'mppx/nextjs'
 
 /**
  * lib/mpp-multirail.ts — dual-rail mppx (Tempo + Stripe SPT).

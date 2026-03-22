@@ -17,7 +17,9 @@ export const privyConfig: PrivyClientConfig = {
   defaultChain: tempoChain,
   supportedChains: [tempoChain],
   loginMethods: ['email', 'sms', 'wallet'],
-  walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID || '10f5159d81d2eb3d7fbab2dcbaf83e74',
+  ...(process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID
+    ? { walletConnectCloudProjectId: process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID }
+    : {}),
   appearance: {
     theme: 'dark',
     accentColor: '#059669',

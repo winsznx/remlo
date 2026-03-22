@@ -23,15 +23,15 @@ export function StreamingBalanceTicker({ employeeId, className }: StreamingBalan
     let es: EventSource | null = null
 
     try {
-      es = new EventSource(`/api/mpp/employee/balance/stream?employeeId=${encodeURIComponent(employeeId)}`)
+      es = new EventSource(`/api/mpp/employee/balance/stream?address=${encodeURIComponent(employeeId)}`)
 
       es.addEventListener('open', () => setConnected(true))
 
       es.addEventListener('message', (e: MessageEvent<string>) => {
         try {
-          const data = JSON.parse(e.data) as { balance_micro?: number }
-          if (typeof data.balance_micro === 'number') {
-            setBalance(data.balance_micro / 1_000_000)
+          const data = JSON.parse(e.data) as { accrued_usd?: string }
+          if (typeof data.accrued_usd === 'string') {
+            setBalance(parseFloat(data.accrued_usd))
           }
         } catch {
           // ignore malformed events
