@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { keccak256, toBytes } from 'viem'
 import { getAuthorizedEmployer } from '@/lib/auth'
 import { treasury } from '@/lib/contracts'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -17,11 +17,14 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const employerIdHash = keccak256(toBytes(employerId))
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return NextResponse.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
 
   const [available, locked] = await Promise.all([
-    treasury.read.getAvailableBalance([employerIdHash]) as Promise<bigint>,
-    treasury.read.getLockedBalance([employerIdHash]) as Promise<bigint>,
+    treasury.read.getAvailableBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
+    treasury.read.getLockedBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
   ])
 
   const availableUsd = Number(available) / 1e6
@@ -33,5 +36,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     total_usd: availableUsd + lockedUsd,
     available_raw: available.toString(),
     locked_raw: locked.toString(),
+    employer_admin_wallet: onchainIdentity.adminWallet,
+    employer_account_id: onchainIdentity.employerAccountId,
   })
 }

@@ -1,6 +1,7 @@
 import { mppx } from '@/lib/mpp'
 import { treasury, yieldRouter } from '@/lib/contracts'
-import { keccak256, toBytes } from 'viem'
+import { getEmployerById } from '@/lib/queries/employers'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 /**
  * POST /api/mpp/treasury/optimize
@@ -17,13 +18,21 @@ export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async 
     return Response.json({ error: 'employerId required' }, { status: 400 })
   }
 
-  const employerIdHash = keccak256(toBytes(employerId))
+  const employer = await getEmployerById(employerId)
+  if (!employer) {
+    return Response.json({ error: 'Employer not found' }, { status: 404 })
+  }
+
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return Response.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
 
   const [available, locked, apy, accrued, allocation] = await Promise.all([
-    treasury.read.getAvailableBalance([employerIdHash]) as Promise<bigint>,
-    treasury.read.getLockedBalance([employerIdHash]) as Promise<bigint>,
+    treasury.read.getAvailableBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
+    treasury.read.getLockedBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
     yieldRouter.read.getCurrentAPY() as Promise<bigint>,
-    yieldRouter.read.getAccruedYield([employerIdHash]) as Promise<bigint>,
+    yieldRouter.read.getAccruedYield([onchainIdentity.employerAccountId]) as Promise<bigint>,
     yieldRouter.read.getAllocation() as Promise<bigint[]>,
   ])
 
@@ -71,6 +80,8 @@ export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async 
 
   return Response.json({
     employerId,
+    employerAdminWallet: onchainIdentity.adminWallet,
+    employerAccountId: onchainIdentity.employerAccountId,
     question: question ?? null,
     summary: {
       available_usd: availableUsd.toFixed(6),
