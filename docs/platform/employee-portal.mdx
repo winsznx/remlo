@@ -13,8 +13,11 @@ The employee application lives under `/portal`. It is designed for a worker who 
 | --- | --- | --- |
 | `/portal` | Balance overview, last payment, quick actions, streaming-salary state | `employees`, `payment_items`, employer lookup |
 | `/portal/payments` | Full payment history with decoded memo details | `payment_items`, `payroll_runs`, Tempo explorer links |
-| `/portal/card` | Card display, freeze flow, transaction history, bank transfer entry point | Bridge-backed card state, `/api/mpp/bridge/offramp` |
-| `/portal/settings` | Profile, bank connection entry, notification toggles, account actions | Privy user, employee record, employer lookup |
+| `/portal/card` | Card display, live transaction history, and bank transfer entry point | Bridge-backed card state, `/api/employees/[id]/card`, `/api/employees/[id]/offramp` |
+| `/portal/card/activate` | Card issuance and activation handoff | `/api/employees/[id]/card` |
+| `/portal/wallet` | Wallet identity and linked account details | `employees`, Privy wallet state |
+| `/portal/settings` | Profile, bank connection entry, notification toggles, security controls | Privy user, employee record, employer lookup |
+| `/portal/settings/offramp` | Bank account and off-ramp preferences | employee off-ramp routes |
 
 ## Salary experience
 
@@ -43,13 +46,16 @@ The current card route combines two concerns:
 - Card visibility and controls
 - Off-ramp to bank through the Bridge-backed MPP endpoint
 
-The Transfer to Bank flow currently calls `POST /api/mpp/bridge/offramp`.
+The employee-facing portal now uses first-party employee routes for off-ramp and card actions:
 
-## Reserved employee routes from the master
+- `GET /api/employees/[id]/card`
+- `POST /api/employees/[id]/card`
+- `POST /api/employees/[id]/offramp`
 
-The master file reserves these employee routes, but the current repository does not ship them yet:
+The dedicated MPP Bridge endpoint remains available for machine-paid callers and external agents.
 
-- `/portal/card/activate`
-- `/portal/wallet`
-- `/portal/settings/offramp`
+## Security and profile
 
+- Profile fields persist through `PATCH /api/employees/[id]`.
+- Passkey linking uses Privy directly from the settings screen.
+- Notification preferences remain browser-local by design in the current build.

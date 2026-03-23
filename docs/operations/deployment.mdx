@@ -21,23 +21,25 @@ The app is designed for Vercel with `pnpm build` as the production build command
 
 | Surface | What to verify |
 | --- | --- |
-| Public site | `/`, `/pricing`, `/docs`, `/about`, `/contact`, `/legal/terms`, `/legal/privacy` |
+| Public site | `/`, `/pricing`, `/docs`, `/about`, `/contact`, `/press`, `/status`, `/legal/terms`, `/legal/privacy` |
 | Auth | `/login`, `/register`, `/invite/[token]`, `/kyc/[token]` |
-| Employer app | `/dashboard`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/api-access`, `/dashboard/demo` |
-| Employee app | `/portal`, `/portal/payments`, `/portal/card`, `/portal/settings` |
+| Employer app | `/dashboard`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/treasury/deposit`, `/dashboard/cards`, `/dashboard/settings`, `/dashboard/api-access`, `/dashboard/demo` |
+| Employee app | `/portal`, `/portal/payments`, `/portal/card`, `/portal/card/activate`, `/portal/wallet`, `/portal/settings`, `/portal/settings/offramp` |
+| Admin app | `/admin`, `/admin/employers`, `/admin/compliance`, `/admin/monitoring` |
 | MPP | Confirm 402 challenges and successful receipts on the twelve endpoints |
 | Webhooks | Confirm Bridge and Tempo webhook signatures verify correctly |
 
 ## Mintlify deployment
 
-Mintlify now uses `docs.json` as the site configuration file. This repository includes that file at the repo root, plus the MDX pages and SVG brand assets the docs site needs.
+Mintlify uses `docs.json` as the site configuration file. In this repository, `docs.json` stays at the repo root while the MDX pages and docs-only SVG assets live under the `docs/` directory.
 
 ### How Mintlify should be wired
 
 1. Connect the repository to Mintlify through the Mintlify GitHub app.
 2. Keep `docs.json` in the repository root. Mintlify reads it as the site blueprint.
-3. Push changes to the connected branch. Mintlify rebuilds the docs site from the committed MDX files.
-4. Use preview deployments for branch review when you need layout or copy approval before merge.
+3. Keep the docs pages, reference content, and docs brand assets under `docs/`.
+4. Push changes to the connected branch. Mintlify rebuilds the docs site from the committed MDX files.
+5. Use preview deployments for branch review when you need layout or copy approval before merge.
 
 ### What this docs bundle includes
 
@@ -62,4 +64,3 @@ Do not call the deployment complete until all of the following are true:
 4. The login screen links for Terms and Privacy resolve to the correct public pages.
 5. The MPP pricing page matches the backend charges.
 6. The Bridge and Tempo webhooks accept signed requests in the deployed environment.
-
