@@ -15,9 +15,33 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo-drab.vercel.app'),
   title: 'Remlo — Payroll for the onchain era',
   description:
     'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+  openGraph: {
+    title: 'Remlo — Payroll for the onchain era',
+    description:
+      'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+    url: '/',
+    siteName: 'Remlo',
+    type: 'website',
+    images: [
+      {
+        url: '/opengraph-image',
+        width: 1200,
+        height: 630,
+        alt: 'Remlo — Borderless enterprise payroll on Tempo L1',
+      },
+    ],
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title: 'Remlo — Payroll for the onchain era',
+    description:
+      'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+    images: ['/twitter-image'],
+  },
 }
 
 export default function RootLayout({
