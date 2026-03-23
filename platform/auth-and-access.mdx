@@ -1,0 +1,71 @@
+---
+title: Auth and Access
+description: Route protection, role routing, Privy login methods, and the current access model.
+---
+
+# Auth and Access
+
+Remlo uses Privy for identity and wallet access, then resolves product roles through Supabase. Middleware decides whether a request is public, auth-related, or protected, then routes the user into the correct area of the app.
+
+## Current login surface
+
+The current implementation supports:
+
+- Email through the Privy modal
+- SMS through the Privy modal
+- Wallet connection through the Privy modal
+- A dedicated passkey action on the login screen
+
+The Privy config in `lib/privy.ts` sets `email`, `sms`, and `wallet` as modal login methods. The login screen also calls `useLoginWithPasskey()` directly, so passkey remains available even though it is not listed in the modal method array.
+
+## Role routing
+
+| User state | Destination |
+| --- | --- |
+| Unauthenticated user hitting a protected route | Redirect to `/login` |
+| Employer | `/dashboard` |
+| Employee | `/portal` |
+| Platform admin allowlisted through `ADMIN_USER_IDS` | `/admin` |
+| Authenticated user with no resolved role | `/register` |
+
+## Public routes
+
+The following surfaces bypass authentication in middleware:
+
+- `/`
+- `/login`
+- `/register`
+- `/pricing`
+- `/docs`
+- `/blog`
+- `/about`
+- `/careers`
+- `/changelog`
+- `/contact`
+- `/invite/[token]`
+- `/kyc/[token]`
+- `/legal/*`
+- `/api/webhooks/bridge`
+- `/api/webhooks/tempo`
+
+## Protected route families
+
+| Prefix | Expected role |
+| --- | --- |
+| `/dashboard` | Employer |
+| `/portal` | Employee |
+| `/admin` | Platform admin |
+
+## Bearer-token model for internal APIs
+
+Internal REST routes use an `Authorization: Bearer <privy-jwt>` header. Server helpers in `lib/auth.ts` decode the Privy token, then look up the caller’s employer record in Supabase before returning data or performing writes.
+
+## Auth route inventory
+
+| Route | Purpose | Access |
+| --- | --- | --- |
+| `/login` | Mixed web2 and web3 sign-in screen | Public |
+| `/register` | Employer company bootstrap after sign-in | Authenticated user without employer record |
+| `/invite/[token]` | Employee invite acceptance and wallet claim flow | Public token route |
+| `/kyc/[token]` | KYC handoff page | Public token route |
+

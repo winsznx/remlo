@@ -1,0 +1,55 @@
+---
+title: Employee Portal
+description: The employee-side product surface for salary visibility, payment history, card usage, and settings.
+---
+
+# Employee Portal
+
+The employee application lives under `/portal`. It is designed for a worker who should be able to receive salary, understand where it came from, and spend or off-ramp funds without touching raw chain tooling.
+
+## Live routes
+
+| Route | Purpose | Primary data sources |
+| --- | --- | --- |
+| `/portal` | Balance overview, last payment, quick actions, streaming-salary state | `employees`, `payment_items`, employer lookup |
+| `/portal/payments` | Full payment history with decoded memo details | `payment_items`, `payroll_runs`, Tempo explorer links |
+| `/portal/card` | Card display, freeze flow, transaction history, bank transfer entry point | Bridge-backed card state, `/api/mpp/bridge/offramp` |
+| `/portal/settings` | Profile, bank connection entry, notification toggles, account actions | Privy user, employee record, employer lookup |
+
+## Salary experience
+
+The home portal route distinguishes between standard payroll and streaming payroll:
+
+- Standard payroll shows the most recent paid amount.
+- Streaming payroll shows a live ticker driven by `StreamVesting` state and the employee compensation record.
+
+## Payment history
+
+The payments route exposes:
+
+- Amount
+- Status
+- Decoded memo context
+- Transaction hash
+- Tempo explorer deep link
+- Settlement time when available
+
+This is the employee-facing mirror of the payroll record kept in `payment_items` and `payroll_runs`.
+
+## Card and bank off-ramp
+
+The current card route combines two concerns:
+
+- Card visibility and controls
+- Off-ramp to bank through the Bridge-backed MPP endpoint
+
+The Transfer to Bank flow currently calls `POST /api/mpp/bridge/offramp`.
+
+## Reserved employee routes from the master
+
+The master file reserves these employee routes, but the current repository does not ship them yet:
+
+- `/portal/card/activate`
+- `/portal/wallet`
+- `/portal/settings/offramp`
+
