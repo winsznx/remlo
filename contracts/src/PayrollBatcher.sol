@@ -3,12 +3,13 @@ pragma solidity ^0.8.24;
 
 import {ITIP20} from "./interfaces/ITIP20.sol";
 import {PayrollTreasury} from "./PayrollTreasury.sol";
+import {ReentrancyGuard} from "./utils/ReentrancyGuard.sol";
 
 /// @title PayrollBatcher
 /// @notice Executes batch payroll disbursements using TIP-20 transferWithMemo.
 ///         The employer (or an authorized agent) calls executeBatchPayroll; this contract
 ///         pulls locked funds from PayrollTreasury and distributes them atomically.
-contract PayrollBatcher {
+contract PayrollBatcher is ReentrancyGuard {
     ITIP20 public immutable payToken;
     PayrollTreasury public immutable treasury;
 
@@ -56,7 +57,7 @@ contract PayrollBatcher {
         uint256[] calldata amounts,
         bytes32[] calldata memos,
         bytes32 employerId
-    ) external onlyAuthorizedAgent {
+    ) external onlyAuthorizedAgent nonReentrant {
         require(
             recipients.length == amounts.length && amounts.length == memos.length,
             "length mismatch"
