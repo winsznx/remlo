@@ -14,10 +14,9 @@ const STATS = [
 ]
 
 const FEATURES = [
-  'Embedded wallets — employees never touch crypto',
-  'AI-native payroll with compliance screening',
-  'Real-time salary streaming via StreamVesting',
-  'TIP-403 policy enforcement on every payment',
+  'Pay globally',
+  'Settle in 0.5s',
+  'Earn yield',
 ]
 
 function ClientLoginContent() {
@@ -64,7 +63,7 @@ function ClientLoginContent() {
 
   const primaryLabel = ready ? 'Continue with Email, SMS, or Wallet' : 'Loading…'
 
-  const helperCopy = 'Use email, SMS, wallet, or passkey to access Remlo.'
+  const helperCopy = 'Sign in to your account.'
 
   const primaryBusy = !ready
 
@@ -170,20 +169,14 @@ function ClientLoginContent() {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           transition={{ duration: 0.4, delay: 0.4 }}
-          className="relative z-10 flex items-center gap-3"
+          className="relative z-10 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-overlay)] p-4"
         >
-          <div className="flex -space-x-2">
-            {['#059669', '#3B82F6', '#8B5CF6', '#F59E0B'].map((color, i) => (
-              <div
-                key={i}
-                className="w-7 h-7 rounded-full border-2 border-[var(--bg-surface)]"
-                style={{ background: color }}
-              />
-            ))}
-          </div>
-          <span className="text-xs text-[var(--text-muted)]">
-            Trusted by finance teams across 47 countries
-          </span>
+          <p className="text-sm leading-relaxed text-[var(--text-secondary)]">
+            “We funded treasury, ran payroll, and our team saw funds almost instantly.”
+          </p>
+          <p className="mt-3 text-xs text-[var(--text-muted)]">
+            Demo employer · Tempo × Stripe HIIT
+          </p>
         </motion.div>
       </div>
 
@@ -270,9 +263,9 @@ function ClientLoginContent() {
 
           <div className="mt-8 pt-6 border-t border-[var(--border-default)]">
             <p className="text-center text-xs text-[var(--text-muted)]">
-              Employer?{' '}
+              New to Remlo?{' '}
               <a href="/register" className="text-[var(--text-secondary)] font-medium hover:text-[var(--text-primary)] transition-colors">
-                Create your company account
+                Start free →
               </a>
             </p>
           </div>
