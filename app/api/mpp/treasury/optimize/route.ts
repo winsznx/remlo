@@ -6,12 +6,12 @@ import { keccak256, toBytes } from 'viem'
  * POST /api/mpp/treasury/optimize
  * MPP-10 — $0.10 session charge
  * Analyzes employer treasury and yield positions, returns optimization recommendations.
- * Uses Claude API to generate strategy suggestions based on current allocations.
+ * Accepts an optional natural-language question and returns a richer optimization summary.
  *
- * Body: { employerId: string }
+ * Body: { employerId: string, question?: string }
  */
 export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async (req: Request) => {
-  const { employerId } = await req.json() as { employerId: string }
+  const { employerId, question } = await req.json() as { employerId: string; question?: string }
 
   if (!employerId) {
     return Response.json({ error: 'employerId required' }, { status: 400 })
@@ -63,8 +63,15 @@ export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async 
     recommendations.push('Treasury is optimally positioned. No action needed.')
   }
 
+  const suggestion = question
+    ? `Question received: "${question}". Based on the current treasury posture, ${recommendations[0].charAt(0).toLowerCase()}${recommendations[0].slice(1)}`
+    : recommendations[0]
+
+  const projectedAnnualYieldUsd = ((availableUsd * apyPercent) / 100).toFixed(2)
+
   return Response.json({
-    employer_id: employerId,
+    employerId,
+    question: question ?? null,
     summary: {
       available_usd: availableUsd.toFixed(6),
       locked_usd: lockedUsd.toFixed(6),
@@ -72,9 +79,15 @@ export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async 
       current_apy_percent: apyPercent,
       accrued_yield_usd: (Number(accrued) / 1e6).toFixed(6),
     },
+    suggestion,
+    recommendations: recommendations.map((text, index) => ({
+      id: `rec-${index + 1}`,
+      text,
+      impact: index === 0 ? 'high' : 'medium',
+    })),
     current_allocation: allocation.map(Number),
     recommended_allocation: recommendedAllocation,
-    recommendations,
-    analyzed_at: new Date().toISOString(),
+    projected_annual_yield_usd: projectedAnnualYieldUsd,
+    analyzedAt: new Date().toISOString(),
   })
 })

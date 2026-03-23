@@ -1,6 +1,7 @@
 import { NextRequest } from 'next/server'
 import { mppx } from '@/lib/mpp'
 import { streamVesting } from '@/lib/contracts'
+import { createServerClient } from '@/lib/supabase-server'
 
 // ~$100k/yr in pathUSD (6 decimals): 100_000 * 1e6 / (365.25 * 24 * 3600) ≈ 3_170_979
 const SALARY_PER_SECOND = BigInt(3_170_979)
@@ -11,13 +12,27 @@ const SALARY_PER_SECOND = BigInt(3_170_979)
  * Streams getAccruedBalance + simulated salary accrual every second.
  * Returns SSE ReadableStream — NOT the simple charge wrapper.
  *
- * Query params: ?address=0x...
+ * Query params: ?employeeId=emp_123
+ * Legacy compatibility: ?address=0x...
  */
 export async function GET(req: NextRequest) {
   const url = new URL(req.url)
-  const address = url.searchParams.get('address') as `0x${string}` | null
+  const employeeId = url.searchParams.get('employeeId')
+  const legacyAddress = url.searchParams.get('address') as `0x${string}` | null
 
   return mppx.session({ amount: '0.001', unitType: 'second' })(async () => {
+    let address: `0x${string}` | null = legacyAddress
+    if (!address && employeeId) {
+      const supabase = createServerClient()
+      const { data: employee } = await supabase
+        .from('employees')
+        .select('wallet_address')
+        .eq('id', employeeId)
+        .single()
+
+      address = (employee?.wallet_address as `0x${string}` | null) ?? null
+    }
+
     let baseBalance = BigInt(0)
     if (address?.startsWith('0x')) {
       baseBalance = await streamVesting.read.getAccruedBalance([address]) as bigint
@@ -36,7 +51,10 @@ export async function GET(req: NextRequest) {
 
           const data = JSON.stringify({
             tick,
+            employeeId: employeeId ?? null,
             address: address ?? null,
+            balance: accrued.toString(),
+            balanceUsd: accruedUsd,
             accrued_raw: accrued.toString(),
             accrued_usd: accruedUsd,
             salary_per_second_usd: (Number(SALARY_PER_SECOND) / 1e6).toFixed(6),
