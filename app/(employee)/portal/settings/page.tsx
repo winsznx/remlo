@@ -1,32 +1,31 @@
 'use client'
 
 import * as React from 'react'
-import { motion } from 'framer-motion'
-import { User, Building2, Bell, Shield, ChevronRight, CheckCircle, Plus, KeyRound, LogOut } from 'lucide-react'
-import { usePrivy } from '@privy-io/react-auth'
+import Link from 'next/link'
+import { Bell, Building2, ChevronRight, CreditCard, Loader2, LogOut, Shield, User, Wallet } from 'lucide-react'
+import { useLinkWithPasskey, usePrivy } from '@privy-io/react-auth'
+import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
-import { useEmployee } from '@/lib/hooks/useEmployee'
-import { useEmployerForEmployee } from '@/lib/hooks/useEmployee'
-import { Input } from '@/components/ui/input'
+import { useEmployee, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
 import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
 import { cn } from '@/lib/utils'
 
-// ─── Toggle switch ────────────────────────────────────────────────────────────
-
-function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean) => void }) {
+function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
   return (
     <button
       role="switch"
       aria-checked={checked}
       onClick={() => onChange(!checked)}
       className={cn(
-        'relative h-6 w-11 rounded-full transition-colors duration-200 focus:outline-none',
+        'relative h-6 w-11 rounded-full transition-colors duration-200',
         checked ? 'bg-[var(--accent)]' : 'bg-[var(--border-strong)]'
       )}
     >
       <span
         className={cn(
-          'absolute top-0.5 left-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200',
+          'absolute left-0.5 top-0.5 h-5 w-5 rounded-full bg-white shadow-sm transition-transform duration-200',
           checked ? 'translate-x-5' : 'translate-x-0'
         )}
       />
@@ -34,227 +33,259 @@ function Toggle({ checked, onChange }: { checked: boolean; onChange: (v: boolean
   )
 }
 
-// ─── Section wrapper ──────────────────────────────────────────────────────────
-
-function Section({ id, icon: Icon, title, children }: {
-  id: string
+function Section({
+  icon: Icon,
+  title,
+  children,
+}: {
   icon: React.ElementType
   title: string
   children: React.ReactNode
 }) {
   return (
-    <motion.section
-      id={id}
-      initial={{ opacity: 0, y: 12 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ duration: 0.3 }}
-      className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden"
-    >
-      <div className="flex items-center gap-3 px-5 py-4 border-b border-[var(--border-default)]">
-        <div className="h-8 w-8 rounded-lg bg-[var(--bg-subtle)] flex items-center justify-center">
+    <section className="overflow-hidden rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)]">
+      <div className="flex items-center gap-3 border-b border-[var(--border-default)] px-5 py-4">
+        <div className="flex h-8 w-8 items-center justify-center rounded-lg bg-[var(--bg-subtle)]">
           <Icon className="h-4 w-4 text-[var(--text-muted)]" />
         </div>
         <h2 className="text-sm font-semibold text-[var(--text-primary)]">{title}</h2>
       </div>
       {children}
-    </motion.section>
+    </section>
   )
 }
-
-// ─── Read-only field ──────────────────────────────────────────────────────────
 
 function ReadOnlyField({ label, value }: { label: string; value: string }) {
   return (
-    <div className="px-5 py-3.5 flex items-center justify-between border-b border-[var(--border-default)] last:border-0">
+    <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5 last:border-0">
       <p className="text-sm text-[var(--text-muted)]">{label}</p>
-      <p className="text-sm text-[var(--text-secondary)] font-medium">{value}</p>
+      <p className="max-w-[55%] truncate text-right text-sm font-medium text-[var(--text-primary)]">{value}</p>
     </div>
   )
 }
 
-// ─── Notification row ─────────────────────────────────────────────────────────
+const SETTINGS_STORAGE_KEY = 'remlo-employee-settings'
 
-function NotifRow({ label, description, checked, onChange }: {
-  label: string
-  description: string
-  checked: boolean
-  onChange: (v: boolean) => void
-}) {
-  return (
-    <div className="px-5 py-3.5 flex items-center justify-between border-b border-[var(--border-default)] last:border-0">
-      <div>
-        <p className="text-sm font-medium text-[var(--text-primary)]">{label}</p>
-        <p className="text-xs text-[var(--text-muted)] mt-0.5">{description}</p>
-      </div>
-      <Toggle checked={checked} onChange={onChange} />
-    </div>
-  )
+type NotificationPrefs = {
+  paymentReceived: boolean
+  cardUsed: boolean
+  weeklySummary: boolean
 }
 
-// ─── Main page ────────────────────────────────────────────────────────────────
+const DEFAULT_PREFS: NotificationPrefs = {
+  paymentReceived: true,
+  cardUsed: true,
+  weeklySummary: false,
+}
 
 export default function SettingsPage() {
+  const authedFetch = usePrivyAuthedFetch()
+  const queryClient = useQueryClient()
   const { user, logout } = usePrivy()
+  const { linkWithPasskey } = useLinkWithPasskey()
   const { data: employee, isLoading } = useEmployee()
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
-
-  // Editable fields
-  const [preferredName, setPreferredName] = React.useState('')
-  const [phone, setPhone] = React.useState('')
-  const [saving, setSaving] = React.useState(false)
-
-  // Notification prefs
-  const [notifPaid, setNotifPaid] = React.useState(true)
-  const [notifCard, setNotifCard] = React.useState(true)
-  const [notifWeekly, setNotifWeekly] = React.useState(false)
+  const [prefs, setPrefs] = React.useState<NotificationPrefs>(DEFAULT_PREFS)
+  const [profile, setProfile] = React.useState({ firstName: '', lastName: '', countryCode: '' })
+  const [savingProfile, setSavingProfile] = React.useState(false)
+  const [linkingPasskey, setLinkingPasskey] = React.useState(false)
 
   React.useEffect(() => {
-    if (employee) {
-      setPreferredName(employee.first_name ?? '')
-      setPhone('')
-    }
-  }, [employee])
+    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
+    if (!raw) return
 
-  async function handleSaveProfile(e: React.FormEvent) {
-    e.preventDefault()
-    setSaving(true)
-    await new Promise((r) => setTimeout(r, 600))
-    setSaving(false)
-    toast.success('Profile updated')
+    try {
+      const parsed = JSON.parse(raw) as NotificationPrefs
+      setPrefs(parsed)
+    } catch {
+      // Ignore malformed local storage and keep defaults.
+    }
+  }, [])
+
+  React.useEffect(() => {
+    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(prefs))
+  }, [prefs])
+
+  React.useEffect(() => {
+    setProfile({
+      firstName: employee?.first_name ?? '',
+      lastName: employee?.last_name ?? '',
+      countryCode: employee?.country_code ?? '',
+    })
+  }, [employee?.country_code, employee?.first_name, employee?.last_name])
+
+  async function handleSaveProfile() {
+    if (!employee?.id) return
+
+    setSavingProfile(true)
+    try {
+      const response = await authedFetch(`/api/employees/${employee.id}`, {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(profile),
+      })
+
+      const body = (await response.json().catch(() => ({}))) as { error?: string }
+      if (!response.ok) {
+        throw new Error(body.error ?? 'Unable to update profile')
+      }
+
+      toast.success('Profile updated.')
+      await queryClient.invalidateQueries({ queryKey: ['employee', user?.id] })
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to update profile.')
+    } finally {
+      setSavingProfile(false)
+    }
   }
 
-  const hasBankAccount = Boolean(employee?.bridge_bank_account_id)
+  async function handleLinkPasskey() {
+    setLinkingPasskey(true)
+    try {
+      await linkWithPasskey()
+      toast.success('Passkey linked.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to link passkey.')
+    } finally {
+      setLinkingPasskey(false)
+    }
+  }
 
   if (isLoading) {
     return (
-      <div className="max-w-[640px] mx-auto px-4 pt-6 pb-24 space-y-4 animate-pulse">
-        {Array.from({ length: 4 }).map((_, i) => (
-          <div key={i} className="h-40 bg-[var(--bg-surface)] rounded-2xl border border-[var(--border-default)]" />
+      <div className="mx-auto max-w-[640px] space-y-4 px-4 pb-24 pt-6">
+        {Array.from({ length: 4 }).map((_, index) => (
+          <div key={index} className="h-40 animate-pulse rounded-2xl bg-[var(--bg-subtle)]" />
         ))}
       </div>
     )
   }
 
+  const hasPasskey = Boolean(user?.linkedAccounts?.some((account) => account.type === 'passkey'))
+
   return (
-    <div className="max-w-[640px] mx-auto px-4 pt-6 pb-24 space-y-4">
-      {/* 1 — Profile */}
-      <Section id="profile" icon={User} title="Profile">
-        <ReadOnlyField label="Full name" value={[employee?.first_name, employee?.last_name].filter(Boolean).join(' ') || '—'} />
-        <ReadOnlyField label="Email" value={employee?.email ?? user?.email?.address ?? '—'} />
-        <ReadOnlyField label="Company" value={employer?.company_name ?? '—'} />
-        <ReadOnlyField label="Job title" value={employee?.job_title ?? '—'} />
-
-        {/* Editable section */}
-        <form onSubmit={handleSaveProfile} className="px-5 py-4 space-y-3 border-t border-[var(--border-default)]">
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--text-muted)]">Preferred name</label>
+    <div className="mx-auto max-w-[640px] space-y-4 px-4 pb-24 pt-6">
+      <Section icon={User} title="Profile">
+        <div className="grid gap-4 border-b border-[var(--border-default)] px-5 py-4 sm:grid-cols-2">
+          <div className="space-y-2">
+            <p className="text-sm text-[var(--text-muted)]">First name</p>
             <Input
-              value={preferredName}
-              onChange={(e) => setPreferredName(e.target.value)}
-              placeholder="How should we address you?"
+              value={profile.firstName}
+              onChange={(event) => setProfile((current) => ({ ...current, firstName: event.target.value }))}
+              placeholder="First name"
             />
           </div>
-          <div className="space-y-1.5">
-            <label className="text-xs font-medium text-[var(--text-muted)]">Phone number</label>
+          <div className="space-y-2">
+            <p className="text-sm text-[var(--text-muted)]">Last name</p>
             <Input
-              type="tel"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              placeholder="+1 555 000 0000"
+              value={profile.lastName}
+              onChange={(event) => setProfile((current) => ({ ...current, lastName: event.target.value }))}
+              placeholder="Last name"
             />
           </div>
-          <Button type="submit" disabled={saving} size="sm">
-            {saving ? 'Saving…' : 'Save changes'}
+        </div>
+        <ReadOnlyField label="Email" value={employee?.email ?? user?.email?.address ?? 'Not set'} />
+        <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm text-[var(--text-muted)]">Country code</p>
+            <Input
+              value={profile.countryCode}
+              onChange={(event) => setProfile((current) => ({ ...current, countryCode: event.target.value.toUpperCase() }))}
+              placeholder="US"
+              className="mt-2 w-24"
+              maxLength={2}
+            />
+          </div>
+          <Button onClick={() => void handleSaveProfile()} disabled={savingProfile}>
+            {savingProfile ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            Save profile
           </Button>
-        </form>
+        </div>
+        <ReadOnlyField label="Company" value={employer?.company_name ?? 'Not set'} />
+        <ReadOnlyField label="Role" value={employee?.job_title ?? 'Not set'} />
       </Section>
 
-      {/* 2 — Bank Account */}
-      <Section id="bank" icon={Building2} title="Bank Account">
-        {hasBankAccount ? (
-          <div className="px-5 py-4 flex items-center gap-3">
-            <div className="h-10 w-10 rounded-xl bg-[var(--accent-subtle)] flex items-center justify-center shrink-0">
-              <CheckCircle className="h-5 w-5 text-[var(--accent)]" />
-            </div>
-            <div>
-              <p className="text-sm font-medium text-[var(--text-primary)]">Bank account connected</p>
-              <p className="text-xs text-[var(--text-muted)]">Ready for off-ramp transfers</p>
-            </div>
+      <Section icon={Building2} title="Bank Account">
+        <div className="px-5 py-4 text-sm leading-6 text-[var(--text-secondary)]">
+          {employee?.bridge_bank_account_id
+            ? 'A bank account is linked to your employee profile and ready for off-ramp transfers.'
+            : 'No bank account is linked yet. Once your employer and Bridge setup are ready, use the off-ramp page to move funds to your bank.'}
+        </div>
+        <div className="border-t border-[var(--border-default)] px-5 py-4">
+          <Button asChild className="w-full">
+            <Link href="/portal/settings/offramp">
+              <Wallet className="h-4 w-4" />
+              Open Off-ramp Settings
+            </Link>
+          </Button>
+        </div>
+      </Section>
+
+      <Section icon={Bell} title="Notifications">
+        <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Payment received</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Stored on this device for your employee portal.</p>
           </div>
-        ) : (
-          <div className="px-5 py-4 space-y-3">
-            <p className="text-sm text-[var(--text-muted)]">
-              Connect a bank account to transfer your earnings directly via ACH or SEPA.
+          <Toggle checked={prefs.paymentReceived} onChange={(value) => setPrefs((current) => ({ ...current, paymentReceived: value }))} />
+        </div>
+        <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Card activity</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Use this toggle to keep transaction nudges enabled locally.</p>
+          </div>
+          <Toggle checked={prefs.cardUsed} onChange={(value) => setPrefs((current) => ({ ...current, cardUsed: value }))} />
+        </div>
+        <div className="flex items-center justify-between px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Weekly summary</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">A lightweight preference for this browser session and future visits.</p>
+          </div>
+          <Toggle checked={prefs.weeklySummary} onChange={(value) => setPrefs((current) => ({ ...current, weeklySummary: value }))} />
+        </div>
+      </Section>
+
+      <Section icon={Shield} title="Security">
+        <ReadOnlyField
+          label="Sign-in method"
+          value={user?.email?.address ? `Email • ${user.email.address}` : 'Privy linked account'}
+        />
+        <ReadOnlyField label="Passkey" value={hasPasskey ? 'Linked in Privy' : 'No passkey linked'} />
+        <div className="flex items-center justify-between border-t border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Passkey protection</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">
+              Add a device-bound passkey for faster and stronger sign-in on this account.
             </p>
-            <button
-              onClick={() => toast.info('Bank connection flow — complete KYC first')}
-              className="flex items-center gap-2 h-10 px-4 rounded-lg border border-[var(--border-default)] bg-[var(--bg-subtle)] text-sm font-medium text-[var(--text-primary)] hover:bg-[var(--bg-surface)] transition-colors"
-            >
-              <Plus className="h-4 w-4" />
-              Connect Bank Account
-            </button>
-            <p className="text-xs text-[var(--text-muted)]">Powered by Bridge · USD, EUR, MXN, ARS</p>
           </div>
-        )}
-      </Section>
+          <Button variant="outline" onClick={() => void handleLinkPasskey()} disabled={hasPasskey || linkingPasskey}>
+            {linkingPasskey ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+            {hasPasskey ? 'Passkey linked' : 'Link passkey'}
+          </Button>
+        </div>
 
-      {/* 3 — Notifications */}
-      <Section id="notifications" icon={Bell} title="Notifications">
-        <NotifRow
-          label="Payment received"
-          description="Email and SMS when your salary is paid"
-          checked={notifPaid}
-          onChange={setNotifPaid}
-        />
-        <NotifRow
-          label="Card used"
-          description="SMS alert on every card transaction"
-          checked={notifCard}
-          onChange={setNotifCard}
-        />
-        <NotifRow
-          label="Weekly summary"
-          description="Every Monday: balance, spending, earnings"
-          checked={notifWeekly}
-          onChange={setNotifWeekly}
-        />
-      </Section>
-
-      {/* 4 — Security */}
-      <Section id="security" icon={Shield} title="Security">
-        <div className="px-5 py-3.5 border-b border-[var(--border-default)]">
-          <p className="text-xs text-[var(--text-muted)] mb-0.5">Sign-in method</p>
-          <p className="text-sm text-[var(--text-primary)] font-medium">
-            {user?.email?.address ? `Email — ${user.email.address}` : 'Linked account'}
+        <div className="border-t border-[var(--border-default)] px-5 py-3.5">
+          <p className="text-sm font-medium text-[var(--text-primary)]">Current session</p>
+          <p className="mt-1 text-xs leading-6 text-[var(--text-muted)]">
+            This browser session is managed by Privy. Use sign out below if you are on a shared device or need to end the active session immediately.
           </p>
         </div>
 
-        <button
-          onClick={() => toast.info('Passkey registration coming soon')}
-          className="w-full flex items-center justify-between px-5 py-3.5 border-b border-[var(--border-default)] hover:bg-[var(--bg-subtle)] transition-colors group"
+        <Link
+          href="/portal/card/activate"
+          className="flex w-full items-center justify-between border-t border-[var(--border-default)] px-5 py-3.5 transition-colors hover:bg-[var(--bg-subtle)]"
         >
           <div className="flex items-center gap-3">
-            <KeyRound className="h-4 w-4 text-[var(--text-muted)]" />
-            <span className="text-sm text-[var(--text-primary)]">Add Passkey</span>
+            <CreditCard className="h-4 w-4 text-[var(--text-muted)]" />
+            <span className="text-sm text-[var(--text-primary)]">Card Activation</span>
           </div>
           <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />
-        </button>
+        </Link>
 
-        <button
-          onClick={() => toast.info('Revoke all sessions — confirm in the dialog')}
-          className="w-full flex items-center justify-between px-5 py-3.5 hover:bg-[var(--bg-subtle)] transition-colors"
-        >
-          <div className="flex items-center gap-3">
-            <Shield className="h-4 w-4 text-[var(--status-error)]" />
-            <span className="text-sm text-[var(--status-error)]">Revoke all sessions</span>
-          </div>
-          <ChevronRight className="h-4 w-4 text-[var(--text-muted)]" />
-        </button>
-
-        <div className="px-5 py-4 border-t border-[var(--border-default)]">
+        <div className="border-t border-[var(--border-default)] px-5 py-4">
           <button
             onClick={() => void logout()}
-            className="flex items-center gap-2 text-sm text-[var(--text-muted)] hover:text-[var(--status-error)] transition-colors"
+            className="flex items-center gap-2 text-sm text-[var(--text-muted)] transition-colors hover:text-[var(--status-error)]"
           >
             <LogOut className="h-4 w-4" />
             Sign out

@@ -14,6 +14,7 @@ interface OffRampPanelProps {
   bankAccountLast4?: string
   bankName?: string
   onTransfer?: (amount: number) => Promise<void>
+  onComplete?: () => void
   className?: string
 }
 
@@ -22,6 +23,7 @@ export function OffRampPanel({
   bankAccountLast4,
   bankName = 'Bank account',
   onTransfer,
+  onComplete,
   className,
 }: OffRampPanelProps) {
   const [amount, setAmount] = React.useState('')
@@ -40,6 +42,7 @@ export function OffRampPanel({
     try {
       await onTransfer?.(numericAmount)
       setState('success')
+      onComplete?.()
     } catch (err) {
       setErrorMsg(err instanceof Error ? err.message : 'Transfer failed')
       setState('error')
