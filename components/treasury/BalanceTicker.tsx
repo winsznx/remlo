@@ -7,11 +7,12 @@ interface BalanceTickerProps {
   /** Starting balance in USD (6 decimal precision) */
   balance: number
   /** Amount added per second (e.g. annual_salary / 365 / 24 / 3600) */
-  ratePerSecond: number
+  ratePerSecond?: number
+  currency?: string
   className?: string
 }
 
-export function BalanceTicker({ balance, ratePerSecond, className }: BalanceTickerProps) {
+export function BalanceTicker({ balance, ratePerSecond = 0, currency = 'USD', className }: BalanceTickerProps) {
   const [current, setCurrent] = React.useState(balance)
   const startRef = React.useRef({ balance, timestamp: Date.now() })
 
@@ -36,9 +37,7 @@ export function BalanceTicker({ balance, ratePerSecond, className }: BalanceTick
     maximumFractionDigits: 4,
   }).format(current)
 
-  return (
-    <span className={cn('font-mono tabular-nums text-[var(--accent)]', className)}>
-      ${formatted}
-    </span>
-  )
+  const prefix = currency === 'USD' ? '$' : `${currency} `
+
+  return <span className={cn('font-mono tabular-nums text-[var(--accent)]', className)}>{prefix}{formatted}</span>
 }

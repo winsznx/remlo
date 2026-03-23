@@ -2,10 +2,11 @@ import * as React from 'react'
 import { cn } from '@/lib/utils'
 
 interface ChainBadgeProps {
+  chain?: string
   className?: string
 }
 
-export function ChainBadge({ className }: ChainBadgeProps) {
+export function ChainBadge({ chain = 'Tempo Moderato', className }: ChainBadgeProps) {
   return (
     <span
       className={cn(
@@ -14,7 +15,7 @@ export function ChainBadge({ className }: ChainBadgeProps) {
       )}
     >
       <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
-      Tempo
+      {chain}
     </span>
   )
 }

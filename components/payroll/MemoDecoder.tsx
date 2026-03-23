@@ -5,7 +5,8 @@ import { decodeMemo, type MemoFields } from '@/lib/memo'
 
 interface MemoDecoderProps {
   /** Raw 32-byte memo as 0x-prefixed hex */
-  memoHex: `0x${string}`
+  memo?: `0x${string}`
+  memoHex?: `0x${string}`
   className?: string
 }
 
@@ -49,10 +50,14 @@ function InvalidMemo({ hex }: { hex: string }) {
   )
 }
 
-export function MemoDecoder({ memoHex, className }: MemoDecoderProps) {
-  const decoded: MemoFields | null = React.useMemo(() => decodeMemo(memoHex), [memoHex])
+export function MemoDecoder({ memo, memoHex, className }: MemoDecoderProps) {
+  const resolvedMemo = memoHex ?? memo
+  const decoded: MemoFields | null = React.useMemo(
+    () => (resolvedMemo ? decodeMemo(resolvedMemo) : null),
+    [resolvedMemo]
+  )
 
-  if (!decoded) return <InvalidMemo hex={memoHex} />
+  if (!resolvedMemo || !decoded) return <InvalidMemo hex={resolvedMemo ?? 'No memo provided'} />
 
   return (
     <div
@@ -90,7 +95,7 @@ export function MemoDecoder({ memoHex, className }: MemoDecoderProps) {
       {/* Raw hex */}
       <div className="px-4 py-3 bg-[var(--bg-subtle)] border-t border-[var(--border-default)]">
         <p className="text-xs text-[var(--text-muted)] mb-1">Raw memo</p>
-        <p className="font-mono text-xs text-[var(--mono)] break-all">{memoHex}</p>
+        <p className="font-mono text-xs text-[var(--mono)] break-all">{resolvedMemo}</p>
       </div>
     </div>
   )
