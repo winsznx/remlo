@@ -19,8 +19,12 @@ The employer application lives under `/dashboard`. It combines operational route
 | `/dashboard/payroll/new` | Payroll creation wizard | `employees`, payroll prep APIs |
 | `/dashboard/payroll/[runId]` | Single payroll run detail | `payroll_runs`, `payment_items` |
 | `/dashboard/treasury` | Treasury balance, deposits, yield, and transaction history | `PayrollTreasury`, `YieldRouter`, `payment_items` |
+| `/dashboard/treasury/deposit` | Funding instructions and deposit readiness | `employers`, Bridge virtual-account state, treasury hints |
+| `/dashboard/cards` | Employer-managed employee card program | `employees`, `/api/employees/[id]/card` |
 | `/dashboard/compliance` | KYC and TIP-403 review surface | `employees`, `compliance_events`, TIP-403 |
 | `/dashboard/api-access` | MPP pricing, receipts, sessions, and agent demo | `mpp_sessions`, MPP routes |
+| `/dashboard/settings` | Organization profile and controls | `employers` |
+| `/dashboard/settings/billing` | Subscription, payroll volume, and MPP spend | `employers`, `payroll_runs`, `mpp_sessions` |
 | `/dashboard/demo` | Demo agent experience | `/api/demo/run-agent` SSE |
 
 ## Core employer workflows
@@ -60,12 +64,8 @@ The API access section is the operator console for machine clients. It surfaces:
 - Recent receipts
 - The live demo agent terminal
 
-## Reserved employer routes from the master
+## Additional dashboard behavior
 
-The master file reserves these employer routes, but the current repository does not ship them yet:
-
-- `/dashboard/treasury/deposit`
-- `/dashboard/cards`
-- `/dashboard/settings`
-- `/dashboard/settings/billing`
-
+- Team management includes CSV import, filters, column visibility, and row actions for salary updates, manual review holds, and removal.
+- Team detail includes overview, payment history, and compliance tabs plus employer actions and card issuance when Bridge prerequisites are satisfied.
+- API Access includes one-time agent key generation, receipt history, session history, and the live demo terminal.
