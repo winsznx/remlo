@@ -1,4 +1,0 @@
-﻿lib/mpp-multirail.ts(1,29): error TS2307: Cannot find module 'mppx/nextjs' or its corresponding type declarations.
-  There are types at 'C:/Users/DELL/Desktop/remlo/node_modules/mppx/dist/middlewares/nextjs.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
-lib/mpp-multirail.ts(2,24): error TS2307: Cannot find module 'mppx/stripe/server' or its corresponding type declarations.
-  There are types at 'C:/Users/DELL/Desktop/remlo/node_modules/mppx/dist/stripe/server/index.d.ts', but this result could not be resolved under your current 'moduleResolution' setting. Consider updating to 'node16', 'nodenext', or 'bundler'.
