@@ -12,6 +12,8 @@ const PUBLIC_PATHS = [
   '/careers',
   '/changelog',
   '/contact',
+  '/press',
+  '/status',
 ]
 
 const PUBLIC_PREFIXES = [
