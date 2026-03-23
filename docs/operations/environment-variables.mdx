@@ -44,10 +44,13 @@ These values appear in the current repository. They are not listed in Part 3, so
 | `DEMO_MPP_CREDENTIAL` | Local dev | Injects a payment credential into `scripts/demo-agent.ts` |
 | `DEMO_EMPLOYER_ID` | Local dev | Overrides the demo employer id in `scripts/demo-agent.ts` |
 | `DEMO_PAYROLL_RUN_ID` | Local dev | Overrides the demo payroll run id in `scripts/demo-agent.ts` |
+| `DEPLOYER_PRIVATE_KEY` | Local deploy | Foundry deployment key consumed by `contracts/script/Deploy.s.sol` |
 
 ## Notes
 
+- `.env.local.example` now mirrors the full current variable set so local boot and Vercel setup start from the same checklist.
 - Bridge and Tempo webhooks must be configured only on the server side.
 - The current repo assumes `REMLO_AGENT_PRIVATE_KEY` for server-side contract writes.
+- `DEPLOYER_PRIVATE_KEY` is only required when running `contracts/script/Deploy.s.sol`; it should not be added to client-exposed environments.
+- Existing employer rows must have `employer_admin_wallet` backfilled with the real Tempo admin wallet used for treasury deposits. That wallet is now the canonical source for deriving the on-chain employer account key.
 - If you keep `.env.local` in sync with the canonical table above, the public app and the core API surface will boot cleanly.
-

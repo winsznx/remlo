@@ -10,7 +10,7 @@ description: Boot the app locally, deploy contracts, and run the demo agent.
 - `pnpm`
 - Node.js 20 or newer
 - Foundry with Tempo support if you plan to build or deploy contracts
-- A populated `.env.local` based on Part 3 of `REMLO_MASTER.md`
+- A populated `.env.local` copied from `.env.local.example`
 
 ## Run the app locally
 
@@ -20,6 +20,8 @@ cp .env.local.example .env.local
 # fill in env vars from operations/environment-variables
 pnpm dev
 ```
+
+For existing Supabase projects created before the on-chain identity fix, run the SQL in `scripts/migrations/20260323_add_employer_admin_wallet.sql` and backfill each employer row with the Tempo or Privy wallet that actually funds `PayrollTreasury`.
 
 ## Deploy contracts
 
@@ -46,4 +48,3 @@ The demo agent opens an MPP session, queries yield, checks compliance, executes 
 3. Open `/dashboard/api-access` and confirm the pricing panel matches the MPP table in this docs set.
 4. Open `/dashboard/demo` and run the simulated agent stream.
 5. Visit `/portal` with an employee account and confirm the portal routes resolve cleanly.
-

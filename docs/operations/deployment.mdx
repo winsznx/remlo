@@ -16,6 +16,7 @@ The app is designed for Vercel with `pnpm build` as the production build command
 3. Verify Supabase service credentials are present for protected API routes and realtime reads.
 4. Verify Bridge keys and webhook secret are set before enabling employee KYC, card, or off-ramp flows.
 5. Verify `REMLO_AGENT_PRIVATE_KEY` and `MPP_SECRET_KEY` before enabling machine-paid write flows.
+6. Verify each employer row has `employer_admin_wallet` populated with the real Tempo or Privy wallet that funds `PayrollTreasury`.
 
 ### Post-deploy checks
 
@@ -53,6 +54,8 @@ Mintlify uses `docs.json` as the site configuration file. In this repository, `d
 ## Contract deployment
 
 The Foundry scripts in `contracts/` target Tempo Moderato. The current deployed addresses baked into `lib/constants.ts` are documented again in [Contracts](../protocol/contracts).
+
+If you redeploy after contract fixes, update all five `NEXT_PUBLIC_*` contract variables in Vercel and any local `.env.local` copies together. Do not rely on the fallback addresses in `lib/constants.ts` after a new deployment.
 
 ## Suggested release gate
 
