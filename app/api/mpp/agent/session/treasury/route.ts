@@ -1,6 +1,7 @@
 import { mppx } from '@/lib/mpp'
 import { treasury, yieldRouter, employeeRegistry, getServerWalletClient } from '@/lib/contracts'
-import { keccak256, toBytes } from 'viem'
+import { getEmployerById } from '@/lib/queries/employers'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
@@ -31,19 +32,29 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
     return Response.json({ error: 'action and employerId required' }, { status: 400 })
   }
 
-  const employerIdHash = keccak256(toBytes(employerId))
+  const employer = await getEmployerById(employerId)
+  if (!employer) {
+    return Response.json({ error: 'Employer not found' }, { status: 404 })
+  }
+
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return Response.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
   const timestamp = Date.now()
 
   switch (action) {
     case 'balance': {
       const [available, locked] = await Promise.all([
-        treasury.read.getAvailableBalance([employerIdHash]) as Promise<bigint>,
-        treasury.read.getLockedBalance([employerIdHash]) as Promise<bigint>,
+        treasury.read.getAvailableBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
+        treasury.read.getLockedBalance([onchainIdentity.employerAccountId]) as Promise<bigint>,
       ])
       return Response.json({
         action,
         result: {
           employerId,
+          employerAdminWallet: onchainIdentity.adminWallet,
+          employerAccountId: onchainIdentity.employerAccountId,
           availableRaw: available.toString(),
           availableUsd: (Number(available) / 1e6).toFixed(6),
           lockedRaw: locked.toString(),
@@ -56,11 +67,13 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
 
     case 'yield': {
       const apy = await yieldRouter.read.getCurrentAPY() as bigint
-      const accrued = await yieldRouter.read.getAccruedYield([employerIdHash]) as bigint
+      const accrued = await yieldRouter.read.getAccruedYield([onchainIdentity.employerAccountId]) as bigint
       return Response.json({
         action,
         result: {
           employerId,
+          employerAdminWallet: onchainIdentity.adminWallet,
+          employerAccountId: onchainIdentity.employerAccountId,
           apyBps: Number(apy),
           apyPercent: Number(apy) / 100,
           accruedRaw: accrued.toString(),
@@ -79,12 +92,14 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
         address: yieldRouter.address,
         abi: yieldRouter.abi,
         functionName: 'rebalance',
-        args: [employerIdHash, allocation.map(BigInt)],
+        args: [onchainIdentity.employerAccountId, allocation.map(BigInt)],
       })
       return Response.json({
         action,
         result: {
           employerId,
+          employerAdminWallet: onchainIdentity.adminWallet,
+          employerAccountId: onchainIdentity.employerAccountId,
           txHash,
           targetAllocation: allocation,
         },
@@ -93,11 +108,13 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
     }
 
     case 'headcount': {
-      const count = await employeeRegistry.read.getEmployeeCount([employerIdHash]) as bigint
+      const count = await employeeRegistry.read.getEmployeeCount([onchainIdentity.employerAccountId]) as bigint
       return Response.json({
         action,
         result: {
           employerId,
+          employerAdminWallet: onchainIdentity.adminWallet,
+          employerAccountId: onchainIdentity.employerAccountId,
           headcount: Number(count),
         },
         timestamp,

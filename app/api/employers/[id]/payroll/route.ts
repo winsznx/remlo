@@ -6,6 +6,7 @@ import { treasury, tip403Registry } from '@/lib/contracts'
 import { PayrollBatcherABI } from '@/lib/abis/PayrollBatcher'
 import { PAYROLL_BATCHER_ADDRESS, PATHUSD_ADDRESS } from '@/lib/constants'
 import { encodeMemo, memoHexToBytea } from '@/lib/memo'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -48,6 +49,11 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: 'payPeriod is required (YYYY-MM-DD)' }, { status: 400 })
   }
 
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return NextResponse.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
+
   // ── 1. Compute total in token units (pathUSD has 6 decimals) ─────────────
   const DECIMALS = 6
   let totalUnits = 0n
@@ -60,8 +66,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   }
 
   // ── 2. Validate treasury balance ──────────────────────────────────────────
-  const employerIdHash = keccak256(toBytes(employer.id))
-  const available = (await treasury.read.getAvailableBalance([employerIdHash])) as bigint
+  const available = (await treasury.read.getAvailableBalance([onchainIdentity.employerAccountId])) as bigint
 
   if (available < totalUnits) {
     return NextResponse.json(
@@ -116,7 +121,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
   const calldata = encodeFunctionData({
     abi: PayrollBatcherABI,
     functionName: 'executeBatchPayroll',
-    args: [recipients, amountsInUnits, memoBytes32, employerIdHash],
+    args: [recipients, amountsInUnits, memoBytes32, onchainIdentity.employerAccountId],
   })
 
   // ── 6. Persist draft payroll run in Supabase ─────────────────────────────
@@ -164,5 +169,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
     employeeCount: items.length,
     payrollRunId: runId ?? null,
     memos,
+    employer_admin_wallet: onchainIdentity.adminWallet,
+    employer_account_id: onchainIdentity.employerAccountId,
   })
 }

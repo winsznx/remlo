@@ -15,6 +15,7 @@ export interface Database {
           owner_user_id: string
           company_name: string
           company_size: string | null
+          employer_admin_wallet: string | null
           treasury_contract: string | null
           bridge_customer_id: string | null
           bridge_virtual_account_id: string | null
@@ -30,6 +31,7 @@ export interface Database {
           owner_user_id: string
           company_name: string
           company_size?: string | null
+          employer_admin_wallet?: string | null
           treasury_contract?: string | null
           bridge_customer_id?: string | null
           bridge_virtual_account_id?: string | null
@@ -45,6 +47,7 @@ export interface Database {
           owner_user_id?: string
           company_name?: string
           company_size?: string | null
+          employer_admin_wallet?: string | null
           treasury_contract?: string | null
           bridge_customer_id?: string | null
           bridge_virtual_account_id?: string | null

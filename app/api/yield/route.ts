@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { keccak256, toBytes } from 'viem'
 import { getCallerEmployer } from '@/lib/auth'
 import { yieldRouter } from '@/lib/contracts'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 /**
  * GET /api/yield
@@ -14,12 +14,15 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
   }
 
-  const employerIdHash = keccak256(toBytes(employer.id))
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return NextResponse.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
 
   const [apy, accrued, config] = await Promise.all([
     yieldRouter.read.getCurrentAPY() as Promise<bigint>,
-    yieldRouter.read.getAccruedYield([employerIdHash]) as Promise<bigint>,
-    yieldRouter.read.yieldConfig([employerIdHash]) as Promise<[number, number, string]>,
+    yieldRouter.read.getAccruedYield([onchainIdentity.employerAccountId]) as Promise<bigint>,
+    yieldRouter.read.yieldConfig([onchainIdentity.employerAccountId]) as Promise<[number, number, string]>,
   ])
 
   const YIELD_MODEL_LABELS = ['employer_keeps', 'employee_bonus', 'split'] as const
@@ -30,6 +33,8 @@ export async function GET(req: NextRequest) {
     apy_percent: Number(apy) / 100,
     accrued_raw: accrued.toString(),
     accrued_usd: (Number(accrued) / 1e6).toFixed(6),
+    employer_admin_wallet: onchainIdentity.adminWallet,
+    employer_account_id: onchainIdentity.employerAccountId,
     yield_model: YIELD_MODEL_LABELS[modelIndex] ?? 'employer_keeps',
     employee_split_bps: employeeSplitBps,
     strategy_address: strategy,

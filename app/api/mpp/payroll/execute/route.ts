@@ -2,9 +2,10 @@ import { Mppx } from 'mppx/server'
 import { mppxMultiRail } from '@/lib/mpp-multirail'
 import { payrollBatcher, getServerWalletClient } from '@/lib/contracts'
 import { getPayrollRunById, getPaymentItemsByRunId } from '@/lib/queries/payroll'
+import { getEmployerById } from '@/lib/queries/employers'
 import { createServerClient } from '@/lib/supabase-server'
-import { keccak256, toBytes } from 'viem'
 import { byteaMemoToHex } from '@/lib/memo'
+import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/lib/employer-onchain'
 
 const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
@@ -44,6 +45,16 @@ export async function POST(req: Request) {
     return Response.json({ error: 'No payment items found' }, { status: 400 })
   }
 
+  const employer = await getEmployerById(run.employer_id)
+  if (!employer) {
+    return Response.json({ error: 'Employer not found for payroll run' }, { status: 404 })
+  }
+
+  const onchainIdentity = getEmployerOnchainIdentity(employer)
+  if (!onchainIdentity) {
+    return Response.json(getEmployerOnchainIdentityError(employer), { status: 409 })
+  }
+
   // Fetch wallet addresses from employees table
   const supabase = createServerClient()
   const employeeIds = items.map((item) => item.employee_id)
@@ -75,14 +86,12 @@ export async function POST(req: Request) {
       { status: 422 }
     )
   }
-  const employerIdHash = keccak256(toBytes(run.employer_id))
-
   const walletClient = getServerWalletClient(DEPLOYER_KEY)
   const txHash = await walletClient.writeContract({
     address: payrollBatcher.address,
     abi: payrollBatcher.abi,
     functionName: 'executeBatchPayroll',
-    args: [recipients, amounts, memos as `0x${string}`[], employerIdHash],
+    args: [recipients, amounts, memos as `0x${string}`[], onchainIdentity.employerAccountId],
   })
 
   await supabase
@@ -95,5 +104,7 @@ export async function POST(req: Request) {
     tx_hash: txHash,
     payroll_run_id: payrollRunId,
     recipient_count: recipients.length,
+    employer_admin_wallet: onchainIdentity.adminWallet,
+    employer_account_id: onchainIdentity.employerAccountId,
   }))
 }

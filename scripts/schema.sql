@@ -7,6 +7,7 @@ CREATE TABLE IF NOT EXISTS employers (
   owner_user_id             TEXT NOT NULL,
   company_name              TEXT NOT NULL,
   company_size              TEXT,
+  employer_admin_wallet     TEXT,
   treasury_contract         TEXT,
   bridge_customer_id        TEXT,
   bridge_virtual_account_id TEXT,
