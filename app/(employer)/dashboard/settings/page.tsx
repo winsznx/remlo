@@ -6,8 +6,10 @@ import { Building2, CreditCard, Key, Landmark, ShieldCheck } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { FundingReadinessCard } from '@/components/treasury/FundingReadinessCard'
+import { WalletStatusPanel } from '@/components/wallet/WalletStatusPanel'
 import { useEmployer } from '@/lib/hooks/useEmployer'
 import { usePayrollRuns, useTreasury } from '@/lib/hooks/useDashboard'
+import { getPrimaryPrivyEthereumWallet } from '@/lib/privy-wallet'
 
 function InfoCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
@@ -26,6 +28,7 @@ export default function EmployerSettingsPage() {
   const { data: employer } = useEmployer()
   const { data: treasury } = useTreasury(employer?.id)
   const { data: payrollRuns } = usePayrollRuns(employer?.id, 1, 25)
+  const sessionWallet = getPrimaryPrivyEthereumWallet(user)
 
   const payrollVolume = payrollRuns?.runs.reduce((sum, run) => sum + run.total_amount, 0) ?? 0
 
@@ -79,9 +82,32 @@ export default function EmployerSettingsPage() {
               <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Treasury contract</p>
               <p className="mt-2 break-all font-mono text-sm text-[var(--mono)]">{employer?.treasury_contract ?? 'Not linked yet'}</p>
             </div>
+            <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-base)] p-4 sm:col-span-2">
+              <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">On-chain admin wallet</p>
+              <p className="mt-2 break-all font-mono text-sm text-[var(--mono)]">
+                {employer?.employer_admin_wallet ?? 'Not synced yet'}
+              </p>
+              <p className="mt-2 text-xs text-[var(--text-muted)]">
+                This wallet is the canonical employer identity used to derive treasury, payroll, and yield account keys on Tempo.
+              </p>
+            </div>
           </div>
         </div>
       </div>
+
+      <WalletStatusPanel
+        title="Employer Wallet Status"
+        description="Remlo uses a canonical employer wallet to derive treasury, payroll, and yield reads on Tempo. This panel shows the current Privy session wallet alongside the wallet saved to your employer record."
+        sessionLabel="Current session wallet"
+        sessionAddress={sessionWallet}
+        storedLabel="Canonical payroll wallet"
+        storedAddress={employer?.employer_admin_wallet}
+        syncedCopy="Your current Privy session wallet matches the employer wallet saved in Remlo. Treasury and payroll reads should resolve against the same on-chain identity."
+        missingStoredCopy="A wallet is available in your session, but Remlo has not saved it as the canonical employer wallet yet. Opening the dashboard on the latest deployment should sync it automatically."
+        mismatchCopy="The wallet saved in Remlo does not match the wallet in your current session. Treasury and payroll reads use the saved wallet, so confirm this difference is intentional before funding or testing payroll."
+        missingSessionCopy="Remlo has a saved employer wallet, but your current session did not surface a Privy wallet. This can happen if you signed in with a different method or need to reconnect."
+        footer="If you plan to test payroll from a different hot wallet intentionally, update the saved employer wallet so the treasury identity and signing wallet stay aligned."
+      />
     </div>
   )
 }
