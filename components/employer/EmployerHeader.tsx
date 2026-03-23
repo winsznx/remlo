@@ -4,14 +4,22 @@ import * as React from 'react'
 import { usePathname } from 'next/navigation'
 import { usePrivy } from '@privy-io/react-auth'
 
-const BREADCRUMB_MAP: Record<string, string> = {
-  '/dashboard': 'Dashboard',
-  '/dashboard/employees': 'Employees',
-  '/dashboard/payroll': 'Payroll',
-  '/dashboard/payments': 'Payments',
-  '/dashboard/compliance': 'Compliance',
-  '/dashboard/settings': 'Settings',
-  '/dashboard/api-access': 'API Access',
+function getPageTitle(pathname: string) {
+  if (pathname === '/dashboard') return 'Dashboard'
+  if (pathname === '/dashboard/team') return 'Team'
+  if (pathname === '/dashboard/team/add') return 'Add Employee'
+  if (pathname.startsWith('/dashboard/team/')) return 'Employee Details'
+  if (pathname === '/dashboard/payroll') return 'Payroll'
+  if (pathname === '/dashboard/payroll/new') return 'New Payroll'
+  if (pathname.startsWith('/dashboard/payroll/')) return 'Payroll Run'
+  if (pathname.startsWith('/dashboard/treasury')) return 'Treasury'
+  if (pathname.startsWith('/dashboard/cards')) return 'Cards'
+  if (pathname.startsWith('/dashboard/compliance')) return 'Compliance'
+  if (pathname === '/dashboard/api-access') return 'API Access'
+  if (pathname === '/dashboard/settings') return 'Settings'
+  if (pathname === '/dashboard/settings/billing') return 'Billing'
+
+  return pathname.split('/').filter(Boolean).pop() ?? 'Dashboard'
 }
 
 interface EmployerHeaderProps {
@@ -24,7 +32,7 @@ export function EmployerHeader({ onMobileMenuOpen }: EmployerHeaderProps) {
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
 
-  const pageTitle = BREADCRUMB_MAP[pathname] ?? pathname.split('/').filter(Boolean).pop() ?? 'Dashboard'
+  const pageTitle = getPageTitle(pathname)
   const userInitials = [user?.email?.address?.[0], user?.email?.address?.[1]]
     .filter(Boolean)
     .join('')

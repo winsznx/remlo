@@ -1,14 +1,17 @@
 'use client'
 
 import * as React from 'react'
-import { Copy, Check, Building2 } from 'lucide-react'
+import { Copy, Check, Building2, X, Wallet } from 'lucide-react'
 import { cn } from '@/lib/utils'
+import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 
 interface DepositPanelProps {
   bankName?: string
   accountNumber?: string
   routingNumber?: string
   swiftCode?: string
+  walletAddress?: string
+  onClose?: () => void
   className?: string
 }
 
@@ -47,8 +50,13 @@ export function DepositPanel({
   accountNumber,
   routingNumber,
   swiftCode,
+  walletAddress,
+  onClose,
   className,
 }: DepositPanelProps) {
+  const [tab, setTab] = React.useState<'bank' | 'crypto'>('bank')
+  const hasCryptoTab = Boolean(walletAddress)
+
   return (
     <div
       className={cn(
@@ -57,36 +65,94 @@ export function DepositPanel({
       )}
     >
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <div className="h-9 w-9 rounded-lg bg-[var(--bg-subtle)] flex items-center justify-center">
-          <Building2 className="h-5 w-5 text-[var(--text-muted)]" />
+      <div className="flex items-start justify-between gap-3">
+        <div className="flex items-center gap-3">
+          <div className="h-9 w-9 rounded-lg bg-[var(--bg-subtle)] flex items-center justify-center">
+            {tab === 'bank' ? (
+              <Building2 className="h-5 w-5 text-[var(--text-muted)]" />
+            ) : (
+              <Wallet className="h-5 w-5 text-[var(--text-muted)]" />
+            )}
+          </div>
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">
+              {tab === 'bank' ? 'Deposit via Bank Transfer' : 'Deposit via Crypto'}
+            </p>
+            <p className="text-xs text-[var(--text-muted)]">
+              {tab === 'bank' ? bankName : 'Direct stablecoin deposit'}
+            </p>
+          </div>
         </div>
-        <div>
-          <p className="text-sm font-medium text-[var(--text-primary)]">Deposit via Bank Transfer</p>
-          <p className="text-xs text-[var(--text-muted)]">{bankName}</p>
-        </div>
+        {onClose ? (
+          <button
+            onClick={onClose}
+            className="rounded-lg p-2 text-[var(--text-muted)] transition-colors hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)]"
+            aria-label="Close deposit panel"
+          >
+            <X className="h-4 w-4" />
+          </button>
+        ) : null}
       </div>
 
-      {/* Fields */}
-      <div className="rounded-lg border border-[var(--border-default)] divide-y divide-[var(--border-default)] overflow-hidden">
-        {accountNumber && (
-          <CopyField label="Account number" value={accountNumber} />
-        )}
-        {routingNumber && (
-          <CopyField label="Routing number (ACH)" value={routingNumber} />
-        )}
-        {swiftCode && (
-          <CopyField label="SWIFT / BIC" value={swiftCode} />
-        )}
-        {!accountNumber && !routingNumber && !swiftCode && (
-          <div className="py-8 text-center text-sm text-[var(--text-muted)]">
-            Bank details will appear after KYB verification
-          </div>
-        )}
-      </div>
+      {hasCryptoTab ? (
+        <div className="inline-flex rounded-lg bg-[var(--bg-subtle)] p-1">
+          <button
+            onClick={() => setTab('bank')}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              tab === 'bank' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+            )}
+          >
+            Bank Transfer
+          </button>
+          <button
+            onClick={() => setTab('crypto')}
+            className={cn(
+              'rounded-md px-3 py-1.5 text-xs font-medium transition-colors',
+              tab === 'crypto' ? 'bg-[var(--bg-surface)] text-[var(--text-primary)]' : 'text-[var(--text-muted)]'
+            )}
+          >
+            Crypto
+          </button>
+        </div>
+      ) : null}
+
+      {tab === 'bank' ? (
+        <div className="rounded-lg border border-[var(--border-default)] divide-y divide-[var(--border-default)] overflow-hidden">
+          {accountNumber && (
+            <CopyField label="Account number" value={accountNumber} />
+          )}
+          {routingNumber && (
+            <CopyField label="Routing number (ACH)" value={routingNumber} />
+          )}
+          {swiftCode && (
+            <CopyField label="SWIFT / BIC" value={swiftCode} />
+          )}
+          {!accountNumber && !routingNumber && !swiftCode && (
+            <div className="py-8 text-center text-sm text-[var(--text-muted)]">
+              Bank details will appear after KYB verification
+            </div>
+          )}
+        </div>
+      ) : (
+        <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] p-4">
+          {walletAddress ? (
+            <div className="space-y-3">
+              <p className="text-xs text-[var(--text-muted)]">Send supported stablecoins directly to this treasury address.</p>
+              <AddressDisplay address={walletAddress} showFull />
+            </div>
+          ) : (
+            <div className="py-8 text-center text-sm text-[var(--text-muted)]">
+              Crypto deposit details will appear when a treasury wallet is available
+            </div>
+          )}
+        </div>
+      )}
 
       <p className="text-xs text-[var(--text-muted)]">
-        Funds convert to pathUSD automatically on receipt. Typical settlement: same business day.
+        {tab === 'bank'
+          ? 'Funds convert to pathUSD automatically on receipt. Typical settlement: same business day.'
+          : 'Crypto deposits settle on Tempo immediately and can be used in payroll as soon as they confirm.'}
       </p>
     </div>
   )
