@@ -29,6 +29,7 @@ interface DataTableProps<TData, TValue> {
   data: TData[]
   searchKey?: string
   searchPlaceholder?: string
+  toolbarContent?: React.ReactNode
   onRowClick?: (row: TData) => void
   className?: string
 }
@@ -38,6 +39,7 @@ export function DataTable<TData, TValue>({
   data,
   searchKey,
   searchPlaceholder = 'Search...',
+  toolbarContent,
   onRowClick,
   className,
 }: DataTableProps<TData, TValue>) {
@@ -68,7 +70,7 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn('w-full space-y-3', className)}>
       {/* Toolbar */}
-      <div className="flex items-center gap-3 px-4 pt-4">
+      <div className="flex flex-col gap-3 px-4 pt-4 md:flex-row md:items-center">
         {searchKey && (
           <Input
             placeholder={searchPlaceholder}
@@ -77,9 +79,14 @@ export function DataTable<TData, TValue>({
             className="flex-1 sm:max-w-sm"
           />
         )}
+        {toolbarContent ? (
+          <div className="flex flex-1 flex-wrap items-center gap-2 md:justify-end">
+            {toolbarContent}
+          </div>
+        ) : null}
         <DropdownMenu>
           <DropdownMenuTrigger asChild>
-            <Button variant="outline" size="sm" className="ml-auto">
+            <Button variant="outline" size="sm" className={toolbarContent ? '' : 'md:ml-auto'}>
               Columns <ChevronDown className="ml-1 h-4 w-4" />
             </Button>
           </DropdownMenuTrigger>
