@@ -68,13 +68,13 @@ export function DataTable<TData, TValue>({
   return (
     <div className={cn('w-full space-y-3', className)}>
       {/* Toolbar */}
-      <div className="flex items-center gap-3">
+      <div className="flex items-center gap-3 px-4 pt-4">
         {searchKey && (
           <Input
             placeholder={searchPlaceholder}
             value={(table.getColumn(searchKey)?.getFilterValue() as string) ?? ''}
             onChange={(e) => table.getColumn(searchKey)?.setFilterValue(e.target.value)}
-            className="max-w-sm"
+            className="flex-1 sm:max-w-sm"
           />
         )}
         <DropdownMenu>
@@ -148,7 +148,7 @@ export function DataTable<TData, TValue>({
       </div>
 
       {/* Pagination */}
-      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 px-1 py-2">
+      <div className="flex flex-col-reverse sm:flex-row items-center justify-between gap-4 px-4 py-4">
         <div className="text-sm text-muted-foreground text-center sm:text-left">
           {table.getFilteredSelectedRowModel().rows.length} of{' '}
           {table.getFilteredRowModel().rows.length} row(s) selected.

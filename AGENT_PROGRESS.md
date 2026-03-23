@@ -873,3 +873,12 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 3. **Copy & navigation updates** — Updated `EmployerHeader.tsx` breadcrumb map to `/dashboard/*` paths; corrected `api-access/page.tsx` to display `$0.02/session` for MPP-12; wired all placeholder `#` footer links in `app/page.tsx` to real routes (`/pricing`, `/docs`, `/legal/privacy`, `/legal/terms`, etc.).
 4. **Route scaffolding** — Created `app/(public)/layout.tsx` (shared public shell with PublicNavbar), `pricing/page.tsx`, `docs/page.tsx`, `legal/privacy/page.tsx`, `legal/terms/page.tsx`, and the dynamic `app/(auth)/kyc/[token]/page.tsx` employee KYC clearance flow. Updated `login/page.tsx` Terms/Privacy anchors to use `next/link` pointing at the newly scaffolded legal routes.
 **Next task:** Await further instructions.
+---
+
+### T67 — Public Portal Expansion & Mobile UI Refinement ✅
+**Files modified:** `app/(public)/*` (8 routes), `components/ui/data-table.tsx`, `components/layout/PublicNavbar.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Finalized the application's public-facing presence and resolved mobile usability issues:
+1. **Content Expansion** — Fleshed out all 8 public routes (`Privacy`, `Terms`, `Cookies`, `Pricing`, `Docs`, `Changelog`, `About`, `Careers`, `Contact`, `Blog`) with professional, multi-section copy, pricing tiers, and API documentation.
+2. **Navigation UX** — Integrated a standardized "Back to home" link in the shared public layout and updated `PublicNavbar` to use absolute paths, ensuring consistent navigation from any subpage.
+3. **Responsive Table Fix** — Resolved a critical mobile UI bug where the search input and column filters were touching the container borders. Added `px-4 pt-4` padding to the `DataTable` toolbar and made the search input flexibly expand on small screens.
+**Next task:** Await final review and deployment.
