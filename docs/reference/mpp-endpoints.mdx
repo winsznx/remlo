@@ -82,16 +82,18 @@ Claims accrued streamed wages through `StreamVesting.claimAccrued()`.
 
 Writes a compliance event ledger entry even when the result is blocked.
 
-### `GET /api/mpp/employee/balance/stream?address=0x...`
+### `GET /api/mpp/employee/balance/stream?employeeId=emp_123`
 
 Returns an SSE stream with one event per second. The payload includes:
 
 - `tick`
-- `address`
-- `accrued_raw`
-- `accrued_usd`
+- `employeeId`
+- `balance`
+- `balanceUsd`
 - `salary_per_second_usd`
 - `timestamp`
+
+Legacy `address` query support is still accepted for compatibility, but `employeeId` is now the canonical request shape.
 
 ### `POST /api/mpp/bridge/offramp`
 
@@ -108,11 +110,32 @@ Returns an SSE stream with one event per second. The payload includes:
 
 ```json
 {
-  "employerId": "employer_123"
+  "employerId": "employer_123",
+  "question": "Should I keep more idle liquidity in treasury this week?"
 }
 ```
 
-Returns available balance, locked balance, APY, accrued yield, current allocation, and recommendation text.
+Returns a richer optimization payload with `summary`, `suggestion`, `recommendations`, current vs recommended allocation, and projected annual yield.
+
+### `GET /api/mpp/marketplace/compliance-list/[employerId]`
+
+Returns the marketplace allowlist contract:
+
+```json
+{
+  "providerId": "employer_123",
+  "clearedWallets": 24,
+  "list": [
+    {
+      "walletAddress": "0x1234...",
+      "checkedAt": "2026-03-23T08:00:00.000Z",
+      "employeeId": "emp_123",
+      "eventType": "mpp_check"
+    }
+  ],
+  "lastUpdated": "2026-03-23T08:00:00.000Z"
+}
+```
 
 ### `POST /api/mpp/agent/session/treasury`
 
@@ -130,5 +153,20 @@ Supported `action` values:
 - `rebalance`
 - `headcount`
 
-The `rebalance` action also expects an `allocation` array.
+The `rebalance` action accepts either:
 
+- `allocation`
+- `params.targetAllocation`
+
+All successful responses now return the canonical envelope:
+
+```json
+{
+  "action": "balance",
+  "result": {
+    "employerId": "employer_123",
+    "availableUsd": "12000.000000"
+  },
+  "timestamp": 1763892000000
+}
+```

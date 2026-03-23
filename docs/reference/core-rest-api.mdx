@@ -14,12 +14,28 @@ These routes are the internal application API. They are distinct from the MPP en
 | `POST` | `/api/employers` | Bearer token | Create an employer record for the signed-in admin |
 | `GET` | `/api/employers/[id]/team` | Bearer token, employer owner | List active employees |
 | `POST` | `/api/employers/[id]/team` | Bearer token, employer owner | Create an employee under an employer |
+| `PATCH` | `/api/employers/[id]/team/[employeeId]` | Bearer token, employer owner | Update salary, pause payroll, remove employee, or record manual review |
 | `POST` | `/api/employers/[id]/payroll` | Bearer token, employer owner | Build payroll calldata after treasury and TIP-403 checks |
+| `GET` | `/api/employers/[id]/payroll/runs` | Bearer token, employer owner | Paginated payroll runs |
+| `POST` | `/api/employers/[id]/payroll/[runId]/submit` | Bearer token, employer owner | Persist tx hash after Tempo submission |
 | `GET` | `/api/employers/[id]/treasury` | Bearer token, employer owner | Return available and locked treasury balances |
+| `GET` | `/api/employers/[id]/compliance` | Bearer token, employer owner | Employer compliance summary, employees, and audit log |
+| `GET` | `/api/employers/[id]/mpp-sessions` | Bearer token, employer owner | Recent MPP session history |
+| `GET` | `/api/employers/[id]/mpp-receipts` | Bearer token, employer owner | Aggregated MPP receipt and activity feed |
+| `POST` | `/api/employers/[id]/agent-key` | Bearer token, employer owner | Generate or rotate the one-time agent key |
 | `POST` | `/api/employees` | Bearer token, employer owner | Create employee record and send invite email |
+| `POST` | `/api/employees/bulk` | Bearer token, employer owner | Bulk-import employees from mapped CSV rows |
+| `PATCH` | `/api/employees/[id]` | Bearer token, employee | Update editable employee profile fields |
 | `POST` | `/api/employees/[id]/kyc` | Bearer token, employer owner | Create or refresh a Bridge KYC link |
+| `GET` | `/api/employees/[id]/balance` | Bearer token, employee | Read live employee wallet balance |
+| `GET/POST` | `/api/employees/[id]/card` | Bearer token, employee or employer owner | Read card status or issue a Bridge card |
+| `POST` | `/api/employees/[id]/offramp` | Bearer token, employee | Initiate a direct employee bank off-ramp |
 | `GET` | `/api/transactions` | Bearer token, employer owner | Paginated payroll transaction history |
 | `GET` | `/api/yield` | Bearer token, employer owner | Employer yield summary |
+| `GET` | `/api/admin?scope=...` | Bearer token, platform admin | Internal operational data entrypoint |
+| `POST` | `/api/ai/parse-csv` | Bearer token, employer owner | AI-assisted CSV column mapping |
+| `POST` | `/api/ai/anomaly-detect` | Bearer token, employer owner | Payroll anomaly analysis |
+| `POST` | `/api/ai/compliance-explain` | Bearer token, employer owner | Human-readable compliance explanation |
 | `POST` | `/api/demo/run-agent` | Public | SSE demo agent stream |
 
 ## Important route behavior
@@ -61,13 +77,12 @@ Creates a Bridge customer when needed, persists `bridge_customer_id`, then retur
 | `from` | ISO timestamp | Lower bound for `created_at` |
 | `to` | ISO timestamp | Upper bound for `created_at` |
 
-## Current gaps versus the master
+## Admin and AI behavior
 
-The master reserves these routes, but they are not present in the current repository:
+- `/api/admin` is internal-only and used by the admin route tree under `/admin`.
+- The `/api/ai/*` routes are server-only and require `CLAUDE_API_KEY`.
+- The browser app uses first-party employee routes for card and off-ramp actions; the MPP Bridge route is reserved for machine-paid callers.
 
-- `/api/employees/[id]/card`
-- `/api/ai/parse-csv`
-- `/api/ai/anomaly-detect`
-- `/api/ai/compliance-explain`
-- `/api/admin`
+## Master alignment
 
+The internal REST routes listed above now exist in the repository and cover the current employer, employee, admin, and AI surfaces defined by the reconciled master.
