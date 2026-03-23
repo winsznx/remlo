@@ -51,6 +51,22 @@ export async function getCallerEmployer(req: NextRequest): Promise<Employer | nu
   return data ?? null
 }
 
+/** Resolve the employee record for the authenticated caller. */
+export async function getCallerEmployee(req: NextRequest): Promise<Employee | null> {
+  const claims = getPrivyClaims(req)
+  if (!claims) return null
+
+  const supabase = createServerClient()
+  const { data } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('user_id', claims.sub)
+    .eq('active', true)
+    .maybeSingle()
+
+  return data ?? null
+}
+
 /** Resolve the employer by ID, verifying the caller is the owner. */
 export async function getAuthorizedEmployer(
   req: NextRequest,
@@ -65,6 +81,26 @@ export async function getAuthorizedEmployer(
     .select('*')
     .eq('id', employerId)
     .eq('owner_user_id', claims.sub)
+    .eq('active', true)
+    .maybeSingle()
+
+  return data ?? null
+}
+
+/** Resolve the employee by ID, verifying the caller owns that employee record. */
+export async function getAuthorizedEmployee(
+  req: NextRequest,
+  employeeId: string
+): Promise<Employee | null> {
+  const claims = getPrivyClaims(req)
+  if (!claims) return null
+
+  const supabase = createServerClient()
+  const { data } = await supabase
+    .from('employees')
+    .select('*')
+    .eq('id', employeeId)
+    .eq('user_id', claims.sub)
     .eq('active', true)
     .maybeSingle()
 

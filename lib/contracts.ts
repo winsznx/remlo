@@ -17,6 +17,16 @@ import { StreamVestingABI } from '@/lib/abis/StreamVesting'
 import { YieldRouterABI } from '@/lib/abis/YieldRouter'
 import { TIP403RegistryABI } from '@/lib/abis/TIP403Registry'
 
+const Tip20BalanceAbi = [
+  {
+    type: 'function',
+    name: 'balanceOf',
+    inputs: [{ name: 'account', type: 'address', internalType: 'address' }],
+    outputs: [{ name: '', type: 'uint256', internalType: 'uint256' }],
+    stateMutability: 'view',
+  },
+] as const
+
 export const tempoTransport = http(TEMPO_RPC_URL)
 
 export const publicClient = createPublicClient({
@@ -45,6 +55,12 @@ export function getServerWalletClient(privateKey: `0x${string}`) {
 export const treasury = getContract({
   address: PAYROLL_TREASURY_ADDRESS,
   abi: PayrollTreasuryABI,
+  client: publicClient,
+})
+
+export const pathUsdToken = getContract({
+  address: PATHUSD_ADDRESS,
+  abi: Tip20BalanceAbi,
   client: publicClient,
 })
 

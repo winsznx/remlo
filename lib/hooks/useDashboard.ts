@@ -1,6 +1,9 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
+import { usePrivy } from '@privy-io/react-auth'
+import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
+import type { Employee } from '@/lib/queries/employees'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -59,24 +62,22 @@ export interface MppSession {
   last_action: string | null
 }
 
-// ─── Fetchers ─────────────────────────────────────────────────────────────
-
-async function fetchJson<T>(url: string): Promise<T> {
-  const res = await fetch(url, { credentials: 'include' })
-  if (!res.ok) throw new Error(`${res.status} ${res.statusText}`)
-  return res.json() as Promise<T>
-}
-
 // ─── Hooks ────────────────────────────────────────────────────────────────
 
 export function useYield() {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
   return useQuery<YieldData>({
     queryKey: ['yield'],
     queryFn: () => fetchJson('/api/yield'),
+    enabled: ready && authenticated,
   })
 }
 
 export function useTransactions(params?: { page?: number; limit?: number; employeeId?: string }) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
   const qs = new URLSearchParams()
   if (params?.page) qs.set('page', String(params.page))
   if (params?.limit) qs.set('limit', String(params.limit))
@@ -85,38 +86,51 @@ export function useTransactions(params?: { page?: number; limit?: number; employ
   return useQuery<{ items: Transaction[]; total: number; page: number }>({
     queryKey: ['transactions', params],
     queryFn: () => fetchJson(`/api/transactions?${qs.toString()}`),
+    enabled: ready && authenticated,
   })
 }
 
 export function useTreasury(employerId: string | undefined) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
   return useQuery<TreasuryData>({
     queryKey: ['treasury', employerId],
     queryFn: () => fetchJson(`/api/employers/${employerId}/treasury`),
-    enabled: Boolean(employerId),
+    enabled: ready && authenticated && Boolean(employerId),
   })
 }
 
 export function useTeam(employerId: string | undefined) {
-  return useQuery({
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<{ employees: Employee[] }>({
     queryKey: ['team', employerId],
-    queryFn: () => fetchJson<{ employees: unknown[] }>(`/api/employers/${employerId}/team`),
-    enabled: Boolean(employerId),
+    queryFn: () => fetchJson(`/api/employers/${employerId}/team`),
+    enabled: ready && authenticated && Boolean(employerId),
   })
 }
 
 export function usePayrollRuns(employerId: string | undefined, page = 1, limit = 10) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
   return useQuery<{ runs: PayrollRun[]; total: number }>({
     queryKey: ['payroll-runs', employerId, page, limit],
     queryFn: () => fetchJson(`/api/employers/${employerId}/payroll/runs?page=${page}&limit=${limit}`),
-    enabled: Boolean(employerId),
+    enabled: ready && authenticated && Boolean(employerId),
   })
 }
 
 export function useMppSessions(employerId: string | undefined) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
   return useQuery<{ sessions: MppSession[] }>({
     queryKey: ['mpp-sessions', employerId],
     queryFn: () => fetchJson(`/api/employers/${employerId}/mpp-sessions`),
-    enabled: Boolean(employerId),
+    enabled: ready && authenticated && Boolean(employerId),
     refetchInterval: 10_000, // poll every 10s for active sessions
   })
 }
