@@ -2,10 +2,10 @@ import { NextRequest, NextResponse } from 'next/server'
 import { encodeFunctionData, keccak256, toBytes, parseUnits } from 'viem'
 import { createServerClient } from '@/lib/supabase-server'
 import { getAuthorizedEmployer } from '@/lib/auth'
-import { publicClient, treasury, tip403Registry } from '@/lib/contracts'
+import { treasury, tip403Registry } from '@/lib/contracts'
 import { PayrollBatcherABI } from '@/lib/abis/PayrollBatcher'
 import { PAYROLL_BATCHER_ADDRESS, PATHUSD_ADDRESS } from '@/lib/constants'
-import { encodeMemo } from '@/lib/memo'
+import { encodeMemo, memoHexToBytea } from '@/lib/memo'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -146,6 +146,7 @@ export async function POST(req: NextRequest, ctx: RouteContext) {
         payroll_run_id: runId!,
         employee_id: item.employeeId,
         amount: parseFloat(item.amount),
+        memo_bytes: memoHexToBytea(memos[i]),
         memo_decoded: {
           employerId: employer.id,
           employeeId: item.employeeId,

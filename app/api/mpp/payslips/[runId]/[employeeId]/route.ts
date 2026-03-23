@@ -1,7 +1,7 @@
 import { NextRequest } from 'next/server'
 import { mppx } from '@/lib/mpp'
 import { getPayslip } from '@/lib/queries/payroll'
-import { decodeMemo } from '@/lib/memo'
+import { byteaMemoToHex, decodeMemo } from '@/lib/memo'
 
 /**
  * GET /api/mpp/payslips/[runId]/[employeeId]
@@ -22,9 +22,8 @@ export async function GET(
     }
 
     const { run, item } = result
-    const memoFields = item.memo_decoded
-      ? decodeMemo(item.memo_decoded as `0x${string}`)
-      : null
+    const memoHex = byteaMemoToHex(item.memo_bytes)
+    const memoFields = item.memo_decoded ?? (memoHex ? decodeMemo(memoHex) : null)
 
     return Response.json({
       payslip: {
