@@ -68,16 +68,16 @@ function FooterLink({
 export function PublicFooter() {
   return (
     <footer className="relative overflow-hidden border-t border-white/5 py-16">
-      <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center overflow-hidden">
+      <div className="pointer-events-none absolute inset-x-0 top-10 flex justify-center overflow-hidden px-5 sm:px-8 md:top-4 md:px-10 lg:px-14">
         <div
           aria-hidden="true"
-          className="select-none whitespace-nowrap text-[22vw] font-semibold uppercase leading-none tracking-[0.28em] text-white/[0.035] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.9),rgba(0,0,0,0.35),transparent)]"
+          className="select-none whitespace-nowrap text-[30vw] font-semibold uppercase leading-[0.82] tracking-[0.16em] text-white/[0.03] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.82),rgba(0,0,0,0.32),transparent)] md:text-[22vw] md:tracking-[0.2em] lg:text-[18vw]"
         >
           REMLO
         </div>
       </div>
 
-      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-400/[0.035] via-transparent to-transparent" />
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-48 bg-gradient-to-b from-emerald-400/[0.03] via-transparent to-transparent md:h-40" />
 
       <div className="relative z-10 max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
