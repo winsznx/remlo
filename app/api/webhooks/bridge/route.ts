@@ -11,7 +11,7 @@ export async function POST(req: NextRequest) {
   const rawBody = await req.text()
 
   // ── Verify RSA signature from Bridge ─────────────────────────────────────
-  const signature = req.headers.get('bridge-signature')
+  const signature = req.headers.get('x-webhook-signature') ?? req.headers.get('bridge-signature')
   if (!signature) {
     return NextResponse.json({ error: 'Missing signature' }, { status: 401 })
   }
@@ -50,17 +50,22 @@ function verifyBridgeSignature(payload: string, signature: string, secret: strin
 }
 
 interface BridgeWebhookEvent {
-  type: string
-  data: Record<string, unknown>
-  created_at: string
+  type?: string
+  event_type?: string
+  data?: Record<string, unknown>
+  event_object?: Record<string, unknown>
+  created_at?: string
 }
 
 async function handleBridgeEvent(event: BridgeWebhookEvent): Promise<void> {
   const supabase = createServerClient()
+  const eventType = event.event_type ?? event.type ?? ''
+  const payload = (event.event_object ?? event.data ?? {}) as Record<string, unknown>
 
-  switch (event.type) {
+  switch (eventType) {
+    case 'transfer.payment_processed':
     case 'transfer.state_changed': {
-      const transfer = event.data as {
+      const transfer = payload as {
         id: string
         status: string
         customer_id?: string
@@ -74,14 +79,20 @@ async function handleBridgeEvent(event: BridgeWebhookEvent): Promise<void> {
       break
     }
 
+    case 'customer.updated':
     case 'kyc.status_updated': {
-      const kyc = event.data as {
-        customer_id: string
+      const kyc = payload as {
+        id?: string
+        customer_id?: string
         status: 'approved' | 'rejected' | 'pending' | 'expired'
+        kyc_status?: 'approved' | 'rejected' | 'pending' | 'expired'
         rejection_reasons?: string[]
       }
 
-      const newStatus = mapKycStatus(kyc.status)
+      const customerId = kyc.customer_id ?? kyc.id
+      if (!customerId) break
+
+      const newStatus = mapKycStatus(kyc.kyc_status ?? kyc.status)
       const updates: Record<string, unknown> = { kyc_status: newStatus }
       if (newStatus === 'approved') {
         updates.kyc_verified_at = new Date().toISOString()
@@ -90,7 +101,7 @@ async function handleBridgeEvent(event: BridgeWebhookEvent): Promise<void> {
       const { data: employee } = await supabase
         .from('employees')
         .update(updates)
-        .eq('bridge_customer_id', kyc.customer_id)
+        .eq('bridge_customer_id', customerId)
         .select('id, employer_id')
         .single()
 
@@ -98,15 +109,16 @@ async function handleBridgeEvent(event: BridgeWebhookEvent): Promise<void> {
         await supabase.from('compliance_events').insert({
           employer_id: employee.employer_id,
           employee_id: employee.id,
-          event_type: 'kyc_' + kyc.status,
+          event_type: 'kyc_' + (kyc.kyc_status ?? kyc.status),
           result: newStatus === 'approved' ? 'CLEAR' : 'BLOCKED',
           description: kyc.rejection_reasons?.join('; ') ?? null,
-          metadata: { kyc_customer_id: kyc.customer_id, status: kyc.status },
+          metadata: { kyc_customer_id: customerId, status: kyc.kyc_status ?? kyc.status },
         })
       }
       break
     }
 
+    case 'card_transaction.created':
     case 'card.transaction': {
       // Card transactions are surfaced in the employee portal via Bridge API directly.
       // No Supabase persistence needed at this time.
