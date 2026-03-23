@@ -3,11 +3,13 @@
 import * as React from 'react'
 import { motion } from 'framer-motion'
 import { Snowflake, AlertTriangle, ArrowDownRight } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
 import { useEmployee } from '@/lib/hooks/useEmployee'
 import { VisaCardDisplay } from '@/components/card/VisaCardDisplay'
 import { CardTransactions, type CardTransaction } from '@/components/card/CardTransactions'
 import { OffRampPanel } from '@/components/card/OffRampPanel'
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from '@/components/ui/sheet'
+import { usePrivyAuthedFetch, usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 
 // ─── Mock card transactions (T40 will wire to Bridge API) ─────────────────────
 
@@ -38,20 +40,35 @@ function CardSkeleton() {
 
 export default function CardPage() {
   const { data: employee, isLoading } = useEmployee()
+  const authedFetch = usePrivyAuthedFetch()
+  const authedJson = usePrivyAuthedJson()
   const [frozen, setFrozen] = React.useState(false)
   const [offRampOpen, setOffRampOpen] = React.useState(false)
+
+  const { data: balanceData } = useQuery<{ available_raw: string; available_usd: number }>({
+    queryKey: ['employee-balance', employee?.id],
+    queryFn: () => authedJson(`/api/employees/${employee?.id}/balance`),
+    enabled: Boolean(employee?.id),
+    staleTime: 30_000,
+  })
 
   const hasCard = Boolean(employee?.bridge_card_id)
   const cardStatus = frozen ? 'frozen' : hasCard ? 'active' : 'pending'
 
   async function handleTransfer(amount: number) {
-    const res = await fetch('/api/mpp/bridge/offramp', {
+    if (!employee?.id) {
+      throw new Error('Employee profile not found')
+    }
+
+    const res = await authedFetch(`/api/employees/${employee.id}/offramp`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ amount, employeeId: employee?.id }),
-      credentials: 'include',
+      body: JSON.stringify({ amount: amount.toFixed(2) }),
     })
-    if (!res.ok) throw new Error(`Transfer failed: ${res.status}`)
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}))
+      throw new Error(data.error ?? `Transfer failed: ${res.status}`)
+    }
   }
 
   if (isLoading) return <CardSkeleton />
@@ -140,7 +157,7 @@ export default function CardPage() {
             <SheetTitle>Transfer to Bank</SheetTitle>
           </SheetHeader>
           <OffRampPanel
-            availableBalance={0}
+            availableBalance={employee?.bridge_bank_account_id ? balanceData?.available_usd ?? 0 : 0}
             bankName={employee?.bridge_bank_account_id ? 'Connected bank' : 'No bank connected'}
             onTransfer={handleTransfer}
           />
