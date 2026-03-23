@@ -4,7 +4,7 @@ import { keccak256, toBytes } from 'viem'
 
 /**
  * POST /api/mpp/treasury/optimize
- * MPP-10 — $0.10 single charge
+ * MPP-10 — $0.10 session charge
  * Analyzes employer treasury and yield positions, returns optimization recommendations.
  * Uses Claude API to generate strategy suggestions based on current allocations.
  *
