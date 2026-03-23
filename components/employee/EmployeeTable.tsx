@@ -7,6 +7,13 @@ import { MoreHorizontal, ArrowUpDown } from 'lucide-react'
 import { DataTable } from '@/components/ui/data-table'
 import { Button } from '@/components/ui/button'
 import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from '@/components/ui/select'
+import {
   DropdownMenu,
   DropdownMenuContent,
   DropdownMenuItem,
@@ -51,15 +58,72 @@ function getKycStatus(employee: Employee): 'approved' | 'pending' | 'rejected' |
   return 'pending'
 }
 
+function getOperationalStatus(employee: Employee): 'active' | 'pending' | 'needs_attention' {
+  if (employee.kyc_status === 'rejected' || employee.kyc_status === 'expired') {
+    return 'needs_attention'
+  }
+  if (!employee.wallet_address || employee.kyc_status !== 'approved') {
+    return 'pending'
+  }
+  return 'active'
+}
+
 interface EmployeeTableProps {
-  data: Employee[]
+  data?: Employee[]
+  employees?: Employee[]
+  onSelect?: (id: string) => void
   onEdit?: (id: string) => void
+  onView?: (id: string) => void
+  onEditSalary?: (id: string) => void
+  onPausePayments?: (id: string) => void
   onRemove?: (id: string) => void
   onSendInvite?: (id: string) => void
 }
 
-export function EmployeeTable({ data, onEdit, onRemove, onSendInvite }: EmployeeTableProps) {
+export function EmployeeTable({
+  data,
+  employees,
+  onSelect,
+  onEdit,
+  onView,
+  onEditSalary,
+  onPausePayments,
+  onRemove,
+}: EmployeeTableProps) {
   const router = useRouter()
+  const rows = data ?? employees ?? []
+  const [departmentFilter, setDepartmentFilter] = React.useState<string>('all')
+  const [statusFilter, setStatusFilter] = React.useState<string>('all')
+  const [walletFilter, setWalletFilter] = React.useState<string>('all')
+
+  const departments = React.useMemo(
+    () =>
+      Array.from(
+        new Set(
+          rows
+            .map((employee) => employee.department?.trim())
+            .filter((value): value is string => Boolean(value))
+        )
+      ).sort((left, right) => left.localeCompare(right)),
+    [rows],
+  )
+
+  const filteredRows = React.useMemo(
+    () =>
+      rows.filter((employee) => {
+        const departmentValue = employee.department?.trim() || 'Unassigned'
+        const matchesDepartment =
+          departmentFilter === 'all' ||
+          (departmentFilter === 'unassigned' ? !employee.department?.trim() : departmentValue === departmentFilter)
+        const matchesStatus =
+          statusFilter === 'all' || getOperationalStatus(employee) === statusFilter
+        const matchesWallet =
+          walletFilter === 'all' || getWalletState(employee) === walletFilter
+
+        return matchesDepartment && matchesStatus && matchesWallet
+      }),
+    [rows, departmentFilter, statusFilter, walletFilter],
+  )
 
   const columns = React.useMemo<ColumnDef<Employee>[]>(
     () => [
@@ -195,11 +259,14 @@ export function EmployeeTable({ data, onEdit, onRemove, onSendInvite }: Employee
               </Button>
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
-              <DropdownMenuItem onClick={() => onEdit?.(row.original.id)}>
-                Edit details
+              <DropdownMenuItem onClick={() => (onView ?? onEdit)?.(row.original.id)}>
+                View details
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => onSendInvite?.(row.original.id)}>
-                Resend invite
+              <DropdownMenuItem onClick={() => onEditSalary?.(row.original.id)}>
+                Edit salary
+              </DropdownMenuItem>
+              <DropdownMenuItem onClick={() => onPausePayments?.(row.original.id)}>
+                Pause payments
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem
@@ -216,17 +283,66 @@ export function EmployeeTable({ data, onEdit, onRemove, onSendInvite }: Employee
         size: 48,
       },
     ],
-    [onEdit, onRemove, onSendInvite],
+    [onEdit, onEditSalary, onPausePayments, onRemove, onView],
+  )
+
+  const toolbarContent = (
+    <>
+      <Select value={departmentFilter} onValueChange={setDepartmentFilter}>
+        <SelectTrigger className="w-full min-[460px]:w-[180px]">
+          <SelectValue placeholder="Department" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All departments</SelectItem>
+          <SelectItem value="unassigned">Unassigned</SelectItem>
+          {departments.map((department) => (
+            <SelectItem key={department} value={department}>
+              {department}
+            </SelectItem>
+          ))}
+        </SelectContent>
+      </Select>
+
+      <Select value={statusFilter} onValueChange={setStatusFilter}>
+        <SelectTrigger className="w-full min-[460px]:w-[170px]">
+          <SelectValue placeholder="Status" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All statuses</SelectItem>
+          <SelectItem value="active">Active</SelectItem>
+          <SelectItem value="pending">Pending</SelectItem>
+          <SelectItem value="needs_attention">Needs attention</SelectItem>
+        </SelectContent>
+      </Select>
+
+      <Select value={walletFilter} onValueChange={setWalletFilter}>
+        <SelectTrigger className="w-full min-[460px]:w-[170px]">
+          <SelectValue placeholder="Wallet" />
+        </SelectTrigger>
+        <SelectContent>
+          <SelectItem value="all">All wallet states</SelectItem>
+          <SelectItem value="connected">Wallet connected</SelectItem>
+          <SelectItem value="pending">Invite pending</SelectItem>
+          <SelectItem value="none">No wallet</SelectItem>
+        </SelectContent>
+      </Select>
+    </>
   )
 
   return (
     <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-hidden">
       <DataTable
         columns={columns}
-        data={data}
+        data={filteredRows}
         searchKey="name"
         searchPlaceholder="Search employees..."
-        onRowClick={(row) => router.push(`/dashboard/team/${row.id}`)}
+        toolbarContent={toolbarContent}
+        onRowClick={(row) => {
+          onSelect?.(row.id)
+          if (!onSelect) {
+            router.push(`/dashboard/team/${row.id}`)
+          }
+        }}
       />
     </div>
   )

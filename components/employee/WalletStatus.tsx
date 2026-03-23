@@ -6,7 +6,8 @@ type WalletState = 'connected' | 'pending' | 'none'
 
 interface WalletStatusProps {
   address?: string | null
-  status: WalletState
+  linked?: boolean
+  status?: WalletState
   className?: string
 }
 
@@ -28,10 +29,11 @@ const STATE_CONFIG: Record<WalletState, { label: string; dot: string; text: stri
   },
 }
 
-export function WalletStatus({ address, status, className }: WalletStatusProps) {
-  const cfg = STATE_CONFIG[status]
+export function WalletStatus({ address, linked, status, className }: WalletStatusProps) {
+  const resolvedStatus: WalletState = status ?? (linked || address ? 'connected' : 'none')
+  const cfg = STATE_CONFIG[resolvedStatus]
 
-  if (status === 'connected' && address) {
+  if (resolvedStatus === 'connected' && address) {
     return (
       <span className={cn('inline-flex items-center gap-1.5', className)}>
         <span className={cn('h-1.5 w-1.5 rounded-full', cfg.dot)} />
