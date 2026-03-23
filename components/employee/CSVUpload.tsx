@@ -3,8 +3,11 @@
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Upload, X, CheckCircle, AlertCircle, ChevronDown } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { cn } from '@/lib/utils'
+import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
+import { CSV_EMPLOYEE_FIELDS, autoMapEmployeeHeaders, type CsvMappedEmployee } from '@/lib/csv-mapping'
 
 // ─── Types ────────────────────────────────────────────────────────────────────
 
@@ -14,37 +17,22 @@ interface RawRow {
   [key: string]: string
 }
 
-interface MappedEmployee {
-  email: string
-  first_name: string
-  last_name: string
-  job_title: string
-  department: string
-  country_code: string
-  salary_amount: string
-  salary_currency: string
-  pay_frequency: string
-}
-
 interface CSVUploadProps {
   open: boolean
   onClose: () => void
+  onUpload?: (count: number) => void
   onImported?: (count: number) => void
 }
 
-// ─── Column mapper ────────────────────────────────────────────────────────────
+interface BulkImportSummary {
+  imported: number
+  created: number
+  existing: number
+  emailSent: number
+  kycPrepared: number
+}
 
-const REQUIRED_FIELDS: Array<{ key: keyof MappedEmployee; label: string; required: boolean }> = [
-  { key: 'email', label: 'Email', required: true },
-  { key: 'first_name', label: 'First Name', required: true },
-  { key: 'last_name', label: 'Last Name', required: true },
-  { key: 'job_title', label: 'Job Title', required: false },
-  { key: 'department', label: 'Department', required: false },
-  { key: 'country_code', label: 'Country Code (ISO 2)', required: false },
-  { key: 'salary_amount', label: 'Salary Amount', required: false },
-  { key: 'salary_currency', label: 'Currency', required: false },
-  { key: 'pay_frequency', label: 'Pay Frequency', required: false },
-]
+// ─── Column mapper ────────────────────────────────────────────────────────────
 
 function parseCSV(text: string): { headers: string[]; rows: RawRow[] } {
   const lines = text.split('\n').filter((l) => l.trim())
@@ -57,40 +45,21 @@ function parseCSV(text: string): { headers: string[]; rows: RawRow[] } {
   return { headers, rows }
 }
 
-function autoMapHeaders(headers: string[]): Partial<Record<keyof MappedEmployee, string>> {
-  const mapping: Partial<Record<keyof MappedEmployee, string>> = {}
-  const lcHeaders = headers.map((h) => h.toLowerCase())
-  const aliases: Record<keyof MappedEmployee, string[]> = {
-    email: ['email', 'e-mail', 'email address'],
-    first_name: ['first name', 'firstname', 'first', 'given name'],
-    last_name: ['last name', 'lastname', 'last', 'surname', 'family name'],
-    job_title: ['job title', 'title', 'position', 'role'],
-    department: ['department', 'dept', 'team'],
-    country_code: ['country', 'country code', 'iso', 'nationality'],
-    salary_amount: ['salary', 'amount', 'annual salary', 'salary amount', 'pay'],
-    salary_currency: ['currency', 'salary currency'],
-    pay_frequency: ['frequency', 'pay frequency', 'payment frequency'],
-  }
-  for (const [field, keys] of Object.entries(aliases) as [keyof MappedEmployee, string[]][]) {
-    const match = keys.find((k) => lcHeaders.includes(k))
-    if (match) {
-      const idx = lcHeaders.indexOf(match)
-      mapping[field] = headers[idx]
-    }
-  }
-  return mapping
-}
-
 // ─── Component ────────────────────────────────────────────────────────────────
 
-export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
+export function CSVUpload({ open, onClose, onUpload, onImported }: CSVUploadProps) {
+  const authedFetch = usePrivyAuthedFetch()
   const [step, setStep] = React.useState<Step>('upload')
   const [dragging, setDragging] = React.useState(false)
   const [headers, setHeaders] = React.useState<string[]>([])
   const [rows, setRows] = React.useState<RawRow[]>([])
-  const [mapping, setMapping] = React.useState<Partial<Record<keyof MappedEmployee, string>>>({})
+  const [mapping, setMapping] = React.useState<Partial<Record<keyof CsvMappedEmployee, string>>>({})
   const [importing, setImporting] = React.useState(false)
   const [error, setError] = React.useState<string | null>(null)
+  const [summary, setSummary] = React.useState<BulkImportSummary | null>(null)
+  const [mappingWarnings, setMappingWarnings] = React.useState<string[]>([])
+  const [mappingConfidence, setMappingConfidence] = React.useState<'low' | 'medium' | 'high' | null>(null)
+  const [aiMappingLoading, setAiMappingLoading] = React.useState(false)
   const fileInputRef = React.useRef<HTMLInputElement>(null)
 
   function reset() {
@@ -101,11 +70,48 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
     setMapping({})
     setImporting(false)
     setError(null)
+    setSummary(null)
+    setMappingWarnings([])
+    setMappingConfidence(null)
+    setAiMappingLoading(false)
   }
 
   function handleClose() {
     reset()
     onClose()
+  }
+
+  async function improveMappingWithAi(
+    nextHeaders: string[],
+    nextRows: RawRow[],
+    heuristic: Partial<Record<keyof CsvMappedEmployee, string>>
+  ) {
+    setAiMappingLoading(true)
+
+    try {
+      const res = await authedFetch('/api/ai/parse-csv', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          headers: nextHeaders,
+          sampleRows: nextRows.slice(0, 3),
+        }),
+      })
+
+      const data = (await res.json().catch(() => ({}))) as {
+        mapping?: Partial<Record<keyof CsvMappedEmployee, string>>
+        confidence?: 'low' | 'medium' | 'high'
+        warnings?: string[]
+      }
+
+      if (!res.ok) return
+
+      setMapping((current) => ({ ...heuristic, ...current, ...(data.mapping ?? {}) }))
+      setMappingWarnings(data.warnings ?? [])
+      setMappingConfidence(data.confidence ?? null)
+    } finally {
+      setAiMappingLoading(false)
+    }
   }
 
   function processFile(file: File) {
@@ -121,11 +127,22 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
         setError('Could not parse CSV. Make sure the first row contains headers.')
         return
       }
+      const heuristic = autoMapEmployeeHeaders(h)
       setHeaders(h)
       setRows(r)
-      setMapping(autoMapHeaders(h))
+      setMapping(heuristic)
+      setMappingWarnings([])
+      setMappingConfidence(null)
       setError(null)
       setStep('map')
+
+      const missingRequired = CSV_EMPLOYEE_FIELDS
+        .filter((field) => field.required && !heuristic[field.key])
+        .length
+
+      if (missingRequired > 0) {
+        void improveMappingWithAi(h, r, heuristic)
+      }
     }
     reader.readAsText(file)
   }
@@ -142,7 +159,7 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
     if (file) processFile(file)
   }
 
-  function mapRow(row: RawRow): MappedEmployee {
+  function mapRow(row: RawRow): CsvMappedEmployee {
     return {
       email: row[mapping.email ?? ''] ?? '',
       first_name: row[mapping.first_name ?? ''] ?? '',
@@ -157,7 +174,7 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
   }
 
   const preview = rows.slice(0, 5).map(mapRow)
-  const mappingErrors = REQUIRED_FIELDS
+  const mappingErrors = CSV_EMPLOYEE_FIELDS
     .filter((f) => f.required && !mapping[f.key])
     .map((f) => f.label)
 
@@ -166,17 +183,47 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
     setError(null)
     try {
       const employees = rows.map(mapRow)
-      const res = await fetch('/api/employees/bulk', {
+      const res = await authedFetch('/api/employees/bulk', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ employees }),
       })
+
+      const data = await res.json().catch(() => ({})) as {
+        error?: string
+        row?: number
+        rows?: Array<{ row: number; errors: string[] }>
+        imported?: number
+        created?: number
+        existing?: number
+        emailSent?: number
+        kycPrepared?: number
+      }
+
       if (!res.ok) {
-        const data = await res.json().catch(() => ({}))
+        if (data.rows?.length) {
+          const first = data.rows[0]
+          throw new Error(`Row ${first.row}: ${first.errors.join(', ')}`)
+        }
+
+        if (data.row) {
+          throw new Error(`Row ${data.row}: ${data.error ?? 'Import failed'}`)
+        }
+
         throw new Error(data.error ?? 'Import failed')
       }
+
+      setSummary({
+        imported: data.imported ?? employees.length,
+        created: data.created ?? 0,
+        existing: data.existing ?? 0,
+        emailSent: data.emailSent ?? 0,
+        kycPrepared: data.kycPrepared ?? 0,
+      })
       setStep('done')
-      onImported?.(employees.length)
+      onUpload?.(data.imported ?? employees.length)
+      onImported?.(data.imported ?? employees.length)
+      toast.success(`Imported ${data.imported ?? employees.length} employee${(data.imported ?? employees.length) === 1 ? '' : 's'}`)
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Import failed')
     } finally {
@@ -245,6 +292,19 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
         </div>
 
         <div className="p-6">
+          {aiMappingLoading ? (
+            <div className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              Reviewing ambiguous headers with Claude…
+            </div>
+          ) : null}
+
+          {mappingConfidence ? (
+            <div className="mb-4 rounded-xl border border-[var(--border-default)] bg-[var(--bg-subtle)] px-4 py-3 text-sm text-[var(--text-secondary)]">
+              Mapping confidence: <span className="font-medium text-[var(--text-primary)]">{mappingConfidence}</span>
+              {mappingWarnings.length > 0 ? ` · ${mappingWarnings.join(' ')}` : ''}
+            </div>
+          ) : null}
+
           <AnimatePresence mode="wait">
             {/* Step 1: Upload */}
             {step === 'upload' && (
@@ -299,7 +359,7 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
                   {rows.length} rows found. Match each field to the correct CSV column.
                 </p>
                 <div className="space-y-2 max-h-64 overflow-y-auto pr-1">
-                  {REQUIRED_FIELDS.map((field) => (
+                  {CSV_EMPLOYEE_FIELDS.map((field) => (
                     <div key={field.key} className="grid grid-cols-2 items-center gap-3">
                       <div className="flex items-center gap-1.5">
                         <p className="text-sm text-[var(--text-primary)]">{field.label}</p>
@@ -415,8 +475,20 @@ export function CSVUpload({ open, onClose, onImported }: CSVUploadProps) {
                 <CheckCircle className="h-12 w-12 text-[var(--status-success)] mx-auto" />
                 <p className="text-base font-semibold text-[var(--text-primary)]">Import complete!</p>
                 <p className="text-sm text-[var(--text-muted)]">
-                  {rows.length} employees have been added and invite emails sent.
+                  {summary?.created ?? rows.length} new employees created{summary && summary.existing > 0 ? `, ${summary.existing} already on file` : ''}.
                 </p>
+                {summary && (
+                  <div className="mx-auto grid max-w-md grid-cols-2 gap-2 text-left">
+                    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)]">Invite emails</p>
+                      <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{summary.emailSent}</p>
+                    </div>
+                    <div className="rounded-lg border border-[var(--border-default)] bg-[var(--bg-subtle)] px-3 py-2">
+                      <p className="text-[10px] uppercase tracking-[0.12em] text-[var(--text-muted)]">KYC links</p>
+                      <p className="mt-1 text-sm font-medium text-[var(--text-primary)]">{summary.kycPrepared}</p>
+                    </div>
+                  </div>
+                )}
                 <Button
                   onClick={handleClose}
                   className="mt-4 bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
