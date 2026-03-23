@@ -10,12 +10,15 @@ type TxStatusState = 'pending' | 'confirming' | 'confirmed' | 'failed'
 
 interface TxStatusProps {
   status: TxStatusState
+  hash?: string
   txHash?: string
   confirmTime?: number
   className?: string
 }
 
-export function TxStatus({ status, txHash, confirmTime, className }: TxStatusProps) {
+export function TxStatus({ status, hash, txHash, confirmTime, className }: TxStatusProps) {
+  const resolvedHash = txHash ?? hash
+
   return (
     <span className={cn('inline-flex items-center gap-1.5 text-sm', className)}>
       <AnimatePresence mode="wait">
@@ -57,9 +60,9 @@ export function TxStatus({ status, txHash, confirmTime, className }: TxStatusPro
             {confirmTime != null
               ? `Confirmed in ${confirmTime.toFixed(1)}s`
               : 'Confirmed'}
-            {txHash && (
+            {resolvedHash && (
               <a
-                href={`${TEMPO_EXPLORER_URL}/tx/${txHash}`}
+                href={`${TEMPO_EXPLORER_URL}/tx/${resolvedHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="text-[var(--text-muted)] hover:text-[var(--accent)]"

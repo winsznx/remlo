@@ -6,8 +6,11 @@ import { TrendingUp, Lock } from 'lucide-react'
 import { cn } from '@/lib/utils'
 
 interface TreasuryCardProps {
-  available: number
-  locked: number
+  available?: number
+  locked?: number
+  balance?: number
+  yieldAmount?: number
+  'yield'?: number
   currency?: string
   className?: string
 }
@@ -29,9 +32,20 @@ function AnimatedNumber({ value, decimals = 2 }: { value: number; decimals?: num
   return <motion.span>{display}</motion.span>
 }
 
-export function TreasuryCard({ available, locked, currency = 'USD', className }: TreasuryCardProps) {
-  const total = available + locked
-  const availablePct = total > 0 ? (available / total) * 100 : 0
+export function TreasuryCard({
+  available,
+  locked,
+  balance,
+  yieldAmount,
+  yield: legacyYield,
+  currency = 'USD',
+  className,
+}: TreasuryCardProps) {
+  const resolvedAvailable = available ?? balance ?? 0
+  const resolvedLocked = locked ?? 0
+  const resolvedYield = yieldAmount ?? legacyYield
+  const total = resolvedAvailable + resolvedLocked
+  const availablePct = total > 0 ? (resolvedAvailable / total) * 100 : 0
 
   return (
     <div
@@ -72,17 +86,20 @@ export function TreasuryCard({ available, locked, currency = 'USD', className }:
             <TrendingUp className="h-3.5 w-3.5 text-[var(--accent)]" />
             <span className="text-[var(--text-secondary)]">Available</span>
             <span className="font-semibold text-[var(--text-primary)]">
-              $<AnimatedNumber value={available} />
+              $<AnimatedNumber value={resolvedAvailable} />
             </span>
           </div>
           <div className="flex items-center gap-2">
             <Lock className="h-3.5 w-3.5 text-[var(--status-pending)]" />
             <span className="text-[var(--text-secondary)]">Locked</span>
             <span className="font-semibold text-[var(--text-primary)]">
-              $<AnimatedNumber value={locked} />
+              $<AnimatedNumber value={resolvedLocked} />
             </span>
           </div>
         </div>
+        {resolvedYield != null ? (
+          <p className="text-xs text-[var(--text-muted)]">Yield earned: ${resolvedYield.toFixed(2)}</p>
+        ) : null}
       </div>
     </div>
   )

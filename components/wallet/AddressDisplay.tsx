@@ -7,6 +7,7 @@ import { TEMPO_EXPLORER_URL } from '@/lib/constants'
 
 interface AddressDisplayProps {
   address: string
+  label?: string
   showFull?: boolean
   showExplorer?: boolean
   className?: string
@@ -19,6 +20,7 @@ function truncateAddress(address: string): string {
 
 export function AddressDisplay({
   address,
+  label,
   showFull = false,
   showExplorer = true,
   className,
@@ -32,7 +34,8 @@ export function AddressDisplay({
   }
 
   return (
-    <span className={cn('inline-flex items-center gap-1.5', className)}>
+    <span className={cn('inline-flex items-center gap-1.5', className)} title={label ? `${label}: ${address}` : address}>
+      {label ? <span className="text-xs text-[var(--text-muted)]">{label}</span> : null}
       <span className="font-mono text-sm text-[var(--mono)]">
         {showFull ? address : truncateAddress(address)}
       </span>
