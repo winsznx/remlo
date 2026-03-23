@@ -6,7 +6,7 @@ import { YieldCard } from '@/components/treasury/YieldCard'
 import { DepositPanel } from '@/components/treasury/DepositPanel'
 import { TxHistoryTable, type TxHistoryItem } from '@/components/treasury/TxHistoryTable'
 import { SectionHeader } from '@/components/ui/SectionHeader'
-import { useYield, useTransactions } from '@/lib/hooks/useDashboard'
+import { useTreasury, useYield, useTransactions } from '@/lib/hooks/useDashboard'
 import { useEmployer, usePayrollRunsRealtime, usePaymentItemsRealtime } from '@/lib/hooks/useEmployer'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -51,6 +51,7 @@ export default function TreasuryPage() {
   const [page, setPage] = React.useState(1)
   const queryClient = useQueryClient()
   const { data: employer } = useEmployer()
+  const { data: treasuryData } = useTreasury(employer?.id)
   const { data: yieldData } = useYield()
   const { data: txData, refetch: refetchTx, isLoading: txLoading, isError: txError } = useTransactions({ page, limit: PAGE_SIZE })
 
@@ -89,7 +90,11 @@ export default function TreasuryPage() {
       />
 
       {/* TreasuryCard — full width prominent */}
-      <TreasuryCard available={47250} locked={12750} className="w-full" />
+      <TreasuryCard
+        available={treasuryData?.available_usd ?? 47250}
+        locked={treasuryData?.locked_usd ?? 12750}
+        className="w-full"
+      />
 
       {/* Deposit + Yield */}
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">

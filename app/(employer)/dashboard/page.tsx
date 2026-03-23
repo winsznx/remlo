@@ -25,7 +25,7 @@ import {
 } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { PayrollRunCard } from '@/components/payroll/PayrollRunCard'
-import { useYield, useTransactions } from '@/lib/hooks/useDashboard'
+import { usePayrollRuns, useYield, useTransactions } from '@/lib/hooks/useDashboard'
 import { useEmployer, usePayrollRunsRealtime, usePaymentItemsRealtime } from '@/lib/hooks/useEmployer'
 import { useQueryClient } from '@tanstack/react-query'
 
@@ -183,6 +183,7 @@ export default function DashboardPage() {
   const queryClient = useQueryClient()
   const { data: employer } = useEmployer()
   const { data: yieldData } = useYield()
+  const { data: payrollRunsData } = usePayrollRuns(employer?.id, 1, 5)
   const { data: txData, refetch: refetchTx } = useTransactions({ limit: 30 })
 
   // Supabase realtime invalidation
@@ -200,6 +201,15 @@ export default function DashboardPage() {
   // Merge real yield data over mock fallback
   const displayYieldApy = yieldData?.apy_percent ?? 3.7
   const displayYieldEarned = yieldData ? parseFloat(yieldData.accrued_usd) : 184.5
+  const recentRuns = payrollRunsData?.runs?.length
+    ? payrollRunsData.runs.map((run) => ({
+        id: run.id,
+        status: run.status,
+        totalAmount: run.total_amount,
+        employeeCount: run.employee_count,
+        createdAt: run.created_at,
+      }))
+    : MOCK_RUNS
 
   const totalEmployees = MOCK_COMPLIANCE.reduce((s, c) => s + c.value, 0)
 
@@ -274,7 +284,7 @@ export default function DashboardPage() {
             </Link>
           </div>
           <div className="divide-y divide-[var(--border-default)]">
-            {MOCK_RUNS.map((run) => (
+            {recentRuns.map((run) => (
               <PayrollRunCard
                 key={run.id}
                 {...run}
