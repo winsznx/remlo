@@ -1027,3 +1027,14 @@ This pass stayed disciplined: it only recovered concrete product detail that mad
 
 **Validation:** `pnpm build` passed. `pnpm exec tsc --noEmit` passed after the build regenerated fresh route types in `.next/types`.
 **Next task:** Group the full worktree into logical commits for review and push readiness.
+
+---
+
+### T83 — Hero Regression Fix ✅
+**Files modified:** `components/marketing/HyperspeedHeroBackground.tsx`, `components/marketing/HyperspeedHeroBackground.module.css`, `AGENT_PROGRESS.md`
+**Summary:** Investigated the reported frontend crash after the hero refresh. Verified first that no `three` or `postprocessing` dependency had actually landed in the codebase, so the regression was not a Three.js load problem. The real risk was the first-pass hero implementation itself: too many fullscreen animated layers, blend-mode stacking, pseudo-element sweep animations, and filter-heavy glow effects running at once. Reworked the background into a lighter version that keeps the fast-transaction narrative but removes the most GPU-expensive pieces.
+
+The safer version now uses fewer converging beams, no particle layer, no animated pseudo-element sweeps, no blend-mode stacking, and no chained glow filters. Motion is reduced to a simple low-cost pulse on each beam, and the component still respects reduced-motion preferences.
+
+**Validation:** `pnpm build` passed. `pnpm exec tsc --noEmit` passed after the build refreshed `.next/types`.
+**Next task:** Manually verify the hero on the target browsers/devices that were crashing before and only then decide whether to keep this safer version or tune it further.
