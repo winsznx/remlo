@@ -67,8 +67,19 @@ function FooterLink({
 
 export function PublicFooter() {
   return (
-    <footer className="border-t border-white/5 py-16">
-      <div className="max-w-5xl mx-auto px-6">
+    <footer className="relative overflow-hidden border-t border-white/5 py-16">
+      <div className="pointer-events-none absolute inset-x-0 top-0 flex justify-center overflow-hidden">
+        <div
+          aria-hidden="true"
+          className="select-none whitespace-nowrap text-[22vw] font-semibold uppercase leading-none tracking-[0.28em] text-white/[0.035] [mask-image:linear-gradient(to_bottom,rgba(0,0,0,0.9),rgba(0,0,0,0.35),transparent)]"
+        >
+          REMLO
+        </div>
+      </div>
+
+      <div className="pointer-events-none absolute inset-x-0 top-0 h-40 bg-gradient-to-b from-emerald-400/[0.035] via-transparent to-transparent" />
+
+      <div className="relative z-10 max-w-5xl mx-auto px-6">
         <div className="grid grid-cols-2 md:grid-cols-4 gap-8 mb-12">
           <div className="col-span-2 md:col-span-1">
             <RemloLogo
