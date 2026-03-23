@@ -4,6 +4,7 @@ import { usePrivy } from '@privy-io/react-auth'
 import { useQuery } from '@tanstack/react-query'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/lib/database.types'
+import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 
 type Employee = Database['public']['Tables']['employees']['Row']
 type PaymentItem = Database['public']['Tables']['payment_items']['Row']
@@ -80,5 +81,56 @@ export function useEmployerForEmployee(employerId: string | undefined) {
     },
     enabled: Boolean(employerId),
     staleTime: 300_000,
+  })
+}
+
+export interface EmployeeBalanceResponse {
+  wallet_address: string | null
+  available_raw: string
+  available_usd: number
+}
+
+export function useEmployeeBalance(employeeId: string | undefined) {
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<EmployeeBalanceResponse>({
+    queryKey: ['employee-balance', employeeId],
+    queryFn: () => fetchJson(`/api/employees/${employeeId}/balance`),
+    enabled: Boolean(employeeId),
+    staleTime: 30_000,
+  })
+}
+
+export interface EmployeeCardResponse {
+  hasCard: boolean
+  canIssue: boolean
+  card: {
+    id: string
+    last4: string | null
+    expiryMonth: number | null
+    expiryYear: number | null
+    status: string
+  } | null
+  transactions: Array<{
+    id: string
+    merchant: string
+    category: string
+    amount: number
+    currency: string
+    date: string
+    status: 'completed' | 'pending' | 'declined'
+  }>
+  bankAccountConnected: boolean
+  kycStatus: string
+}
+
+export function useEmployeeCard(employeeId: string | undefined) {
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<EmployeeCardResponse>({
+    queryKey: ['employee-card', employeeId],
+    queryFn: () => fetchJson(`/api/employees/${employeeId}/card`),
+    enabled: Boolean(employeeId),
+    staleTime: 30_000,
   })
 }

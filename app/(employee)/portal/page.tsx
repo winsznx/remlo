@@ -4,7 +4,7 @@ import * as React from 'react'
 import { motion } from 'framer-motion'
 import { CreditCard, ArrowDownRight, Eye, Wallet, TrendingUp, ArrowRight } from 'lucide-react'
 import Link from 'next/link'
-import { useEmployee, useEmployeePayments, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
+import { useEmployee, useEmployeeBalance, useEmployeePayments, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
 import { BalanceTicker } from '@/components/treasury/BalanceTicker'
 import { TxStatus } from '@/components/wallet/TxStatus'
 
@@ -17,12 +17,12 @@ function greeting(): string {
   return 'Good evening'
 }
 
-function formatUsd(microUnits: number): string {
+function formatUsd(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-  }).format(microUnits / 1_000_000)
+  }).format(amount)
 }
 
 function formatDate(iso: string): string {
@@ -46,15 +46,6 @@ function decodeMemoLabel(memoDecoded: unknown): string {
   }
   return 'Salary payment'
 }
-
-// ─── Quick actions ────────────────────────────────────────────────────────────
-
-const QUICK_ACTIONS = [
-  { label: 'View Payments', href: '/portal/payments', icon: CreditCard, description: 'Full payment history' },
-  { label: 'Manage Card', href: '/portal/card', icon: CreditCard, description: 'Freeze, transactions' },
-  { label: 'Off-ramp to Bank', href: '/portal/card', icon: ArrowDownRight, description: 'Transfer to bank account' },
-  { label: 'Settings', href: '/portal/settings', icon: Eye, description: 'Profile & security' },
-]
 
 // ─── Skeleton ─────────────────────────────────────────────────────────────────
 
@@ -82,10 +73,12 @@ export default function PortalHomePage() {
   const { data: employee, isLoading } = useEmployee()
   const { data: payments } = useEmployeePayments(employee?.id, 1)
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
+  const { data: balanceData } = useEmployeeBalance(employee?.id)
 
   const firstName = employee?.first_name ?? employee?.email?.split('@')[0] ?? 'there'
   const companyName = employer?.company_name ?? 'Your company'
   const isStreaming = employee?.pay_frequency === 'stream'
+  const availableBalance = balanceData?.available_usd ?? 0
 
   // Salary per second for streaming employees (salary_amount is in USD, 6 decimals)
   const salaryPerSecond =
@@ -94,6 +87,18 @@ export default function PortalHomePage() {
       : 0
 
   const lastPayment = payments?.[0]
+  const quickActions = [
+    { label: 'View Payments', href: '/portal/payments', icon: CreditCard, description: 'Full payment history' },
+    {
+      label: employee?.bridge_card_id ? 'Manage Card' : 'Activate Card',
+      href: employee?.bridge_card_id ? '/portal/card' : '/portal/card/activate',
+      icon: CreditCard,
+      description: employee?.bridge_card_id ? 'Card status and transfers' : 'Issue your Remlo card',
+    },
+    { label: 'Wallet', href: '/portal/wallet', icon: Wallet, description: 'Wallet and stream status' },
+    { label: 'Off-ramp', href: '/portal/settings/offramp', icon: ArrowDownRight, description: 'Transfer to bank account' },
+    { label: 'Settings', href: '/portal/settings', icon: Eye, description: 'Profile and security' },
+  ]
 
   if (isLoading) return <PortalSkeleton />
 
@@ -123,12 +128,12 @@ export default function PortalHomePage() {
             <p className="text-xs text-[var(--text-muted)] mb-1">Available balance</p>
             {isStreaming ? (
               <BalanceTicker
-                balance={0}
+                balance={availableBalance}
                 ratePerSecond={salaryPerSecond}
                 className="text-2xl"
               />
             ) : (
-              <p className="number-xl text-2xl text-[var(--text-primary)]">$0.00</p>
+              <p className="number-xl text-2xl text-[var(--text-primary)]">{formatUsd(availableBalance)}</p>
             )}
           </div>
           {isStreaming && (
@@ -226,7 +231,7 @@ export default function PortalHomePage() {
       >
         <p className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wider px-0.5">Quick actions</p>
         <div className="grid grid-cols-2 gap-3">
-          {QUICK_ACTIONS.map((action) => {
+          {quickActions.map((action) => {
             const Icon = action.icon
             return (
               <Link

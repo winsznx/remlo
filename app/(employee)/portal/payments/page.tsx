@@ -12,12 +12,12 @@ import { byteaMemoToHex } from '@/lib/memo'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
-function formatUsd(microUnits: number): string {
+function formatUsd(amount: number): string {
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
     currency: 'USD',
     minimumFractionDigits: 2,
-  }).format(microUnits / 1_000_000)
+  }).format(amount)
 }
 
 function formatDate(iso: string): string {
@@ -42,8 +42,7 @@ function decodeMemoLabel(memoDecoded: unknown): string {
     const months = ['January', 'February', 'March', 'April', 'May', 'June',
       'July', 'August', 'September', 'October', 'November', 'December']
     const monthName = months[parseInt(mo, 10) - 1] ?? mo
-    const dept = m.costCenter ? '' : ' – Engineering'
-    return `${monthName} ${y} Salary${dept}`
+    return `${monthName} ${y} Salary`
   }
   return 'Salary payment'
 }
@@ -160,11 +159,17 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
                 </div>
               )}
 
-              {/* Payslip download (mock) */}
-              <button className="flex items-center gap-2 text-xs text-[var(--accent)] hover:underline">
-                <Download className="h-3.5 w-3.5" />
-                Download payslip PDF
-              </button>
+              {payment.tx_hash ? (
+                <a
+                  href={`${TEMPO_EXPLORER_URL}/tx/${payment.tx_hash}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  View settlement on Tempo Explorer
+                </a>
+              ) : null}
             </div>
           </motion.div>
         )}
