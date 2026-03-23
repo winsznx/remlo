@@ -1,0 +1,72 @@
+---
+title: Web Routes
+description: Complete page inventory for public, auth, employer, and employee routes in the current repository.
+---
+
+# Web Routes
+
+This page is the route inventory for the current repository. Reserved routes from the master that are not yet in the app are listed separately at the bottom.
+
+## Public routes
+
+| Route | Purpose |
+| --- | --- |
+| `/` | Marketing landing page |
+| `/pricing` | Pricing and plan surface |
+| `/docs` | Public docs landing page inside the app shell |
+| `/about` | Company background page |
+| `/blog` | Blog index page |
+| `/careers` | Hiring page |
+| `/changelog` | Product change log page |
+| `/contact` | Contact page |
+| `/legal/privacy` | Privacy policy |
+| `/legal/terms` | Terms of service |
+| `/legal/cookies` | Cookie policy |
+
+## Auth routes
+
+| Route | Purpose |
+| --- | --- |
+| `/login` | Unified sign-in screen for email, SMS, wallet, and passkey |
+| `/register` | Employer company setup |
+| `/invite/[token]` | Employee invite claim route |
+| `/kyc/[token]` | KYC handoff route |
+
+## Employer routes
+
+| Route | Purpose |
+| --- | --- |
+| `/dashboard` | Employer overview |
+| `/dashboard/team` | Team directory |
+| `/dashboard/team/add` | Employee creation flow |
+| `/dashboard/team/[id]` | Employee detail page |
+| `/dashboard/payroll` | Payroll history |
+| `/dashboard/payroll/new` | Payroll run creation wizard |
+| `/dashboard/payroll/[runId]` | Single payroll run page |
+| `/dashboard/treasury` | Treasury and yield management |
+| `/dashboard/compliance` | KYC and TIP-403 review |
+| `/dashboard/api-access` | MPP pricing, sessions, receipts, and demo tooling |
+| `/dashboard/demo` | Demo agent experience |
+
+## Employee routes
+
+| Route | Purpose |
+| --- | --- |
+| `/portal` | Employee home and balance view |
+| `/portal/payments` | Payment history and memo details |
+| `/portal/card` | Card view and off-ramp entry |
+| `/portal/settings` | Employee profile and bank settings |
+
+## Reserved in the master, not present in this build
+
+| Route family | Status |
+| --- | --- |
+| `/dashboard/treasury/deposit` | Reserved in master |
+| `/dashboard/cards` | Reserved in master |
+| `/dashboard/settings` | Reserved in master |
+| `/dashboard/settings/billing` | Reserved in master |
+| `/portal/card/activate` | Reserved in master |
+| `/portal/wallet` | Reserved in master |
+| `/portal/settings/offramp` | Reserved in master |
+| `/admin/*` | Reserved in master |
+
