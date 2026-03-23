@@ -882,3 +882,10 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 2. **Navigation UX** — Integrated a standardized "Back to home" link in the shared public layout and updated `PublicNavbar` to use absolute paths, ensuring consistent navigation from any subpage.
 3. **Responsive Table Fix** — Resolved a critical mobile UI bug where the search input and column filters were touching the container borders. Added `px-4 pt-4` padding to the `DataTable` toolbar and made the search input flexibly expand on small screens.
 **Next task:** Await final review and deployment.
+
+---
+
+### T68 — Audit Cleanup & Public Shell Repair ✅
+**Files modified:** `components/layout/PublicFooter.tsx`, `app/page.tsx`, `app/(public)/layout.tsx`, `app/(public)/about/page.tsx`, `app/api/mpp/payroll/execute/route.ts`, `app/api/mpp/bridge/offramp/route.ts`, `app/api/mpp/agent/session/treasury/route.ts`, `app/api/mpp/treasury/optimize/route.ts`, `AGENT_PROGRESS.md`
+**Summary:** Fixed the broken JSX in `/about`, added a shared `PublicFooter` so landing and public subpages now use the same footer shell, removed the last placeholder social link from the shared footer, and corrected Stripe compose charges to pass explicit USD cent decimals. Also aligned MPP-10 and MPP-12 session comments and unit semantics with the master.
+**Next task:** Await further review or deployment.
