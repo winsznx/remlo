@@ -20,7 +20,7 @@ import { randomUUID } from 'crypto'
 export async function POST(req: Request) {
   const mppxResult = await Mppx.compose(
     mppxMultiRail.tempo.charge({ amount: '0.25' }),
-    mppxMultiRail.stripe.charge({ amount: '0.25', currency: 'usd' })
+    mppxMultiRail.stripe.charge({ amount: '0.25', currency: 'usd', decimals: 2 })
   )(req)
 
   if (mppxResult.status === 402) return mppxResult.challenge
