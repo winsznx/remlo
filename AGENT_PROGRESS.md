@@ -1038,3 +1038,14 @@ The safer version now uses fewer converging beams, no particle layer, no animate
 
 **Validation:** `pnpm build` passed. `pnpm exec tsc --noEmit` passed after the build refreshed `.next/types`.
 **Next task:** Manually verify the hero on the target browsers/devices that were crashing before and only then decide whether to keep this safer version or tune it further.
+
+---
+
+### T84 — Real Hyperspeed Hero Integration ✅
+**Files modified:** `package.json`, `pnpm-lock.yaml`, `app/page.tsx`, `components/marketing/Hyperspeed.tsx`, `components/marketing/Hyperspeed.module.css`, `components/marketing/HyperspeedHeroBackground.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Replaced the interim CSS-only hero treatment with a real React Bits-style `Hyperspeed` implementation built on `three` and `postprocessing`. Added the actual scene component with the same `effectOptions` contract and preset surface the source example uses, then wired the landing hero to a fixed Remlo-specific config based on the user-provided usage snippet. The hero now renders as a real WebGL road-and-lights scene instead of a visual approximation.
+
+To unblock `pnpm`, first traced the install failure to a stale direct dependency that was still listed in `package.json` but not referenced anywhere in the app code. Because `pnpm add` was trying to re-resolve that private package dependency first, it failed before reaching the hero packages. Removed the unused dependency, then installed `three`, `postprocessing`, and `@types/three` cleanly with `pnpm` and completed the proper integration. Also updated the hero overlay so it does not swallow pointer events, which keeps the background behavior closer to the source pattern without blocking the actual CTA layer above it.
+
+**Validation:** `pnpm exec tsc --noEmit` passed. `pnpm build` passed.
+**Next task:** Visually verify the live hero in-browser and then commit the Hyperspeed dependency + implementation swap as one focused marketing/frontend change.
