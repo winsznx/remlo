@@ -1,0 +1,50 @@
+---
+title: Privy Integration
+description: Identity, wallet creation, supported chains, and the current login model.
+---
+
+# Privy Integration
+
+Privy owns user sign-in and wallet creation. Remlo uses it to keep Tempo wallet management out of the critical path for both employers and employees.
+
+## Current chain configuration
+
+| Property | Value |
+| --- | --- |
+| Chain name | Tempo Moderato |
+| Chain ID | `42431` |
+| Currency | USD, 6 decimals |
+| RPC | `https://rpc.moderato.tempo.xyz` |
+| Explorer | `https://explore.tempo.xyz` |
+
+## Login surface
+
+| Mechanism | Current status |
+| --- | --- |
+| Email | Enabled |
+| SMS | Enabled |
+| External wallet | Enabled |
+| Passkey | Enabled through the login screen action |
+| Google | Disabled |
+| Twitter | Disabled |
+| Discord | Disabled |
+| Farcaster | Disabled |
+
+## Embedded wallet behavior
+
+`embeddedWallets.createOnLogin` is set to `users-without-wallets`. That means:
+
+1. A new user does not have to bring a wallet to start using Remlo.
+2. An employee invite can be accepted without any chain-specific setup.
+3. A wallet can still be linked later if the user prefers a self-custodied route.
+
+## Access model
+
+- Middleware reads the Privy token from cookies for route protection.
+- Internal APIs read the Privy JWT from the `Authorization` header.
+- Product role is derived from Supabase, not from Privy alone.
+
+## WalletConnect
+
+The current config can add WalletConnect support when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is present. That variable is optional in the current codebase.
+
