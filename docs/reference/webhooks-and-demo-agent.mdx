@@ -19,17 +19,24 @@ This repository includes two public webhook routes and one public demo-agent str
 
 ### Verification
 
-- Header: `bridge-signature`
+- Header: canonical `x-webhook-signature`
+- Compatibility header: `bridge-signature`
 - Primary verification: RSA-SHA256 with `BRIDGE_WEBHOOK_SECRET`
 - Fallback verification: HMAC-SHA256 for test or sandbox-style secrets
 
-### Events currently handled
+### Canonical events handled
 
 | Event type | Effect |
 | --- | --- |
-| `transfer.state_changed` | Updates `payment_items.status` by transfer id |
-| `kyc.status_updated` | Updates employee `kyc_status` and records a compliance event |
-| `card.transaction` | Accepted without local persistence in the current code |
+| `transfer.payment_processed` | Updates `payment_items.status` by transfer id |
+| `customer.updated` | Updates employee `kyc_status` and records a compliance event |
+| `card_transaction.created` | Accepted without local persistence in the current code |
+
+### Compatibility events also accepted
+
+- `transfer.state_changed`
+- `kyc.status_updated`
+- `card.transaction`
 
 ## Tempo webhook
 
@@ -68,4 +75,3 @@ Each event carries:
 ```
 
 The employer dashboard demo terminal and the standalone `scripts/demo-agent.ts` script are built around this flow.
-

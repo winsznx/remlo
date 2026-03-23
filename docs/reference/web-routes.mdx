@@ -19,6 +19,8 @@ This page is the route inventory for the current repository. Reserved routes fro
 | `/careers` | Hiring page |
 | `/changelog` | Product change log page |
 | `/contact` | Contact page |
+| `/press` | Press and media page |
+| `/status` | Product and infrastructure health page |
 | `/legal/privacy` | Privacy policy |
 | `/legal/terms` | Terms of service |
 | `/legal/cookies` | Cookie policy |
@@ -44,8 +46,12 @@ This page is the route inventory for the current repository. Reserved routes fro
 | `/dashboard/payroll/new` | Payroll run creation wizard |
 | `/dashboard/payroll/[runId]` | Single payroll run page |
 | `/dashboard/treasury` | Treasury and yield management |
+| `/dashboard/treasury/deposit` | Dedicated funding instructions and deposit readiness |
+| `/dashboard/cards` | Employer card-program management |
 | `/dashboard/compliance` | KYC and TIP-403 review |
 | `/dashboard/api-access` | MPP pricing, sessions, receipts, and demo tooling |
+| `/dashboard/settings` | Employer organization settings |
+| `/dashboard/settings/billing` | Employer billing and spend view |
 | `/dashboard/demo` | Demo agent experience |
 
 ## Employee routes
@@ -55,18 +61,16 @@ This page is the route inventory for the current repository. Reserved routes fro
 | `/portal` | Employee home and balance view |
 | `/portal/payments` | Payment history and memo details |
 | `/portal/card` | Card view and off-ramp entry |
+| `/portal/card/activate` | Employee card activation flow |
+| `/portal/wallet` | Employee wallet identity and account details |
 | `/portal/settings` | Employee profile and bank settings |
+| `/portal/settings/offramp` | Employee bank off-ramp management |
 
-## Reserved in the master, not present in this build
+## Admin routes
 
-| Route family | Status |
+| Route | Purpose |
 | --- | --- |
-| `/dashboard/treasury/deposit` | Reserved in master |
-| `/dashboard/cards` | Reserved in master |
-| `/dashboard/settings` | Reserved in master |
-| `/dashboard/settings/billing` | Reserved in master |
-| `/portal/card/activate` | Reserved in master |
-| `/portal/wallet` | Reserved in master |
-| `/portal/settings/offramp` | Reserved in master |
-| `/admin/*` | Reserved in master |
-
+| `/admin` | Internal operations overview |
+| `/admin/employers` | Internal employer directory |
+| `/admin/compliance` | Cross-employer compliance feed |
+| `/admin/monitoring` | Internal monitoring and webhook health |
