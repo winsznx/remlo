@@ -35,6 +35,7 @@ export interface AdminEmployersResponse {
     id: string
     company_name: string
     owner_user_id: string
+    employer_admin_wallet: string | null
     subscription_tier: string
     bridge_customer_id: string | null
     bridge_virtual_account_id: string | null

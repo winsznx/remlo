@@ -75,6 +75,8 @@ export default function AdminEmployersPage() {
                   {employer.bridge_customer_id ? 'Bridge linked' : 'Bridge pending'}
                   <br />
                   {employer.treasury_contract ? 'Treasury linked' : 'Treasury pending'}
+                  <br />
+                  {employer.employer_admin_wallet ? 'On-chain admin linked' : 'On-chain admin pending'}
                 </td>
               </tr>
             ))}

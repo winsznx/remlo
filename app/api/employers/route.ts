@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
+import { getAddress, isAddress } from 'viem'
 import { createServerClient } from '@/lib/supabase-server'
 
 function decodePrivyToken(token: string): { sub: string } | null {
@@ -27,10 +28,21 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
   }
 
-  const body = (await req.json()) as { companyName?: string; companySize?: string }
+  const body = (await req.json()) as {
+    companyName?: string
+    companySize?: string
+    employerAdminWallet?: string
+  }
   const companyName = body.companyName?.trim()
-  if (!companyName) {
-    return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
+  const employerAdminWallet = body.employerAdminWallet?.trim()
+  const normalizedEmployerAdminWallet = employerAdminWallet
+    ? isAddress(employerAdminWallet)
+      ? getAddress(employerAdminWallet)
+      : null
+    : null
+
+  if (employerAdminWallet && !normalizedEmployerAdminWallet) {
+    return NextResponse.json({ error: 'employerAdminWallet must be a valid EVM address' }, { status: 400 })
   }
 
   const supabase = createServerClient()
@@ -43,7 +55,17 @@ export async function POST(req: NextRequest) {
     .single()
 
   if (existing) {
+    if (normalizedEmployerAdminWallet) {
+      await supabase
+        .from('employers')
+        .update({ employer_admin_wallet: normalizedEmployerAdminWallet })
+        .eq('id', existing.id)
+    }
     return NextResponse.json({ employerId: existing.id })
+  }
+
+  if (!companyName) {
+    return NextResponse.json({ error: 'Company name is required' }, { status: 400 })
   }
 
   const { data, error } = await supabase
@@ -52,6 +74,7 @@ export async function POST(req: NextRequest) {
       owner_user_id: decoded.sub,
       company_name: companyName,
       company_size: body.companySize ?? null,
+      employer_admin_wallet: normalizedEmployerAdminWallet,
       subscription_tier: 'starter',
       active: true,
     })

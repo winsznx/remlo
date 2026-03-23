@@ -68,7 +68,7 @@ async function getEmployers() {
   const [{ data: employers }, { data: employees }, { data: payrollRuns }, { data: sessions }] = await Promise.all([
     supabase
       .from('employers')
-      .select('id, company_name, owner_user_id, subscription_tier, bridge_customer_id, bridge_virtual_account_id, treasury_contract, created_at')
+      .select('id, company_name, owner_user_id, employer_admin_wallet, subscription_tier, bridge_customer_id, bridge_virtual_account_id, treasury_contract, created_at')
       .eq('active', true)
       .order('created_at', { ascending: false }),
     supabase
