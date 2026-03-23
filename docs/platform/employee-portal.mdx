@@ -10,7 +10,7 @@ The employee application lives under `/portal`. It is designed for a worker who 
 ## Live routes
 
 | Route | Purpose | Primary data sources |
-| --- | --- | --- |
+| 
 | `/portal` | Balance overview, last payment, quick actions, streaming-salary state | `employees`, `payment_items`, employer lookup |
 | `/portal/payments` | Full payment history with decoded memo details | `payment_items`, `payroll_runs`, Tempo explorer links |
 | `/portal/card` | Card display, live transaction history, and bank transfer entry point | Bridge-backed card state, `/api/employees/[id]/card`, `/api/employees/[id]/offramp` |
