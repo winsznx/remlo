@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { RemloLogo } from '@/components/brand/RemloLogo'
-import { LayoutDashboard, Users, Banknote, Wallet, ShieldCheck, Terminal, ChevronLeft, ChevronRight, X } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Wallet, ShieldCheck, Terminal, ChevronLeft, ChevronRight, X, CreditCard, Settings } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -44,6 +44,12 @@ const NAV_ITEMS: NavItem[] = [
     label: 'Compliance',
     icon: <ShieldCheck className="w-5 h-5" />,
   },
+  {
+    href: '/dashboard/cards',
+    activeMatch: '/dashboard/cards',
+    label: 'Cards',
+    icon: <CreditCard className="w-5 h-5" />,
+  },
 ]
 
 const BOTTOM_ITEMS: NavItem[] = [
@@ -52,6 +58,12 @@ const BOTTOM_ITEMS: NavItem[] = [
     activeMatch: '/dashboard/api-access',
     label: 'API & Demo',
     icon: <Terminal className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/settings',
+    activeMatch: '/dashboard/settings',
+    label: 'Settings',
+    icon: <Settings className="w-5 h-5" />,
   },
 ]
 
