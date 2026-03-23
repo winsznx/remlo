@@ -1119,3 +1119,164 @@ These are the Tempo hackathon judging criteria mapped to Remlo's specific differ
 
 *REMLO_MASTER.md — single source of truth for all Claude Code sessions. Version 1.0, March 2026.*
 *Whenever you see any contradiction between this file and the three source documents, this file wins.*
+
+## RECONCILIATION ADDITIONS (March 2026)
+
+These additions were recovered from the source documents during a full reconciliation pass. They do not rewrite prior sections; they add omitted detail and clarify where live implementation should align.
+
+### Naming normalization
+
+- Any historical occurrence of `PayStream` in older source material now maps to `Remlo`.
+- UI copy, docs, metadata, and product references should use `Remlo` only.
+
+### Doc A Section 5 — component prop compatibility notes
+
+The following prop contracts are canonical for compatibility with the architecture spec:
+
+- `AddressDisplay`: `address`, `label`
+- `TxStatus`: `hash`, `status`
+- `ChainBadge`: `chain`
+- `TreasuryCard`: `balance`, `yield`, `currency`
+- `BalanceTicker`: `balance`, `currency`
+- `DepositPanel`: `onClose`
+- `EmployeeTable`: `employees[]`, `onSelect`
+- `CSVUpload`: `onUpload`
+- `WalletStatus`: `address`, `linked`
+- `VisaCardDisplay`: `card`
+- `CardActivation`: `card`, `onActivate`
+- `OffRampPanel`: `onComplete`
+- `MemoDecoder`: `memo`
+
+Where live implementation exposes a richer prop surface, the richer API may remain, but the spec-compatible aliases should continue to be accepted.
+
+Implementation may intentionally supersede the older prop contract when the live product is more accurate:
+
+- `PayrollRunCard`: flattened props are acceptable instead of a single `run` object when route-first linking is cleaner.
+- `PayrollWizard`: explicit `employees` and `employerId` inputs are acceptable because real payroll execution requires that context.
+- `BatchProgress`: execution lifecycle states are acceptable instead of raw `total/confirmed/failed` counters when they better represent Tempo transaction phases.
+
+### Doc A Section 6 — canonical landing copy strings
+
+These strings are canonical for the public marketing surface:
+
+- Navbar links: `Features`, `How It Works`, `Pricing`, `Docs`
+- Navbar CTA: `Start Free Trial`
+- Hero H1: `Pay anyone, anywhere. Settle in half a second.`
+- Hero subheadline: `The global payroll platform that moves money at the speed of blockchain — with the compliance of Stripe.`
+- Hero CTAs: `Get Started Free`, `See how it works →`
+- Problem headline: `International payroll is bleeding your business.`
+- Transition copy: `There is a better way.`
+- Solution headline: `Global payroll that feels like sending a Venmo.`
+- How It Works headline: `From signup to first payroll in 15 minutes.`
+- Comparison headline: `Remlo vs the alternatives.`
+- Pricing headline: `Simple, transparent pricing.`
+- Footer tagline: `Pay faster. Earn more. Settle anywhere.`
+
+Canonical FAQ copy from Doc A Section 6.9 should remain unchanged unless a later reconciled master update explicitly replaces it.
+
+### Doc A Section 7 — wireframe details that matter
+
+The following wireframe details are part of the intended product shape:
+
+- `/login`: split layout, left-side value panel, small testimonial, right-side auth surface, `New to Remlo? Start free →`
+- `/dashboard/team`: filter bar includes search, filter dropdown, and column visibility control
+- `/dashboard/team/[id]`: header includes avatar, name, job title, country, status badge, and actions dropdown; overview shows wallet, salary, Visa card, bank account; compliance shows Bridge customer ID and manual review action for platform admins
+- `/portal/card`: full card-management actions eventually include freeze/report-lost/PIN flows
+- `/portal/settings`: eventual surface includes editable profile, passkey management, session/security controls, and bank-link management
+
+If a live implementation omits one of these details, log it as a gap rather than silently treating the route as complete.
+
+### Doc B — Tempo, Bridge, security, and memo addenda
+
+#### TempoTransaction send pattern
+
+The full Tempo transaction pattern recovered from Doc B is:
+
+- transaction type `0x76`
+- batched `calls`
+- `feeToken`
+- `feePayer`
+- `feePayerSignature`
+
+For sponsored multi-call payroll execution, this is the target pattern even if an interim implementation uses a simpler single-call transaction path.
+
+#### Bridge webhook canonical event shapes
+
+Doc B explicitly references these webhook categories as canonical examples:
+
+- `transfer.payment_processed`
+- `card_transaction.created`
+- `customer.updated`
+
+Bridge integrations may support additional or newer event names, but these canonical payload families should be documented and mapped.
+
+#### OpenZeppelin / Tempo caveats
+
+- `BALANCE` and `SELFBALANCE` return zero on Tempo because there is no native gas token.
+- Replace native balance checks with TIP-20 `balanceOf()` checks.
+- Tempo storage creation is materially more expensive:
+  - `250,000` gas for a new storage slot
+  - `1,000` gas per byte for contract creation
+
+#### Security considerations recovered from Doc B
+
+- Batch payroll should use `ReentrancyGuard` for defense in depth.
+- Vesting arithmetic should preserve multiplication-before-division safety and be tested at high value ranges.
+- Yield routing should account for front-running and sequencing concerns even with Tempo finality.
+
+#### ISO 20022 memo byte table
+
+The canonical 32-byte TIP-20 payroll memo layout is:
+
+- bytes `0–3`: ISO 20022 message type, `paic`
+- bytes `4–11`: employer ID
+- bytes `12–19`: employee ID
+- bytes `20–23`: pay period packed as `YYYYMMDD`
+- bytes `24–27`: cost center
+- bytes `28–31`: truncated record hash
+
+This table should stay aligned across contracts, indexers, decoding utilities, payslips, and MPP memo endpoints.
+
+### Doc C — MPP reconciliation notes
+
+All 12 MPP routes exist, but the following deviations must remain visible until reconciled:
+
+- `GET /api/mpp/employee/balance/stream`: Doc C models `employeeId`-centric SSE streaming; current implementations may use `address`-centric reads and different streamed field names.
+- `POST /api/mpp/treasury/optimize`: Doc C frames this as conversational optimization with follow-up questions; deterministic optimization summaries are acceptable only as an interim implementation.
+- `GET /api/mpp/marketplace/compliance-list/[employerId]`: Doc C expects a wallet allowlist marketplace payload; full event-history responses should be treated as a deviation, not as final parity.
+- `POST /api/mpp/agent/session/treasury`: Doc C describes `$0.02` per action within a session and a `{ action, result, timestamp }` envelope; different pricing semantics or response envelopes should be logged explicitly.
+
+### Reconciliation rule carried forward
+
+If the implementation is more correct than an older source document, keep the implementation and note that it supersedes the older spec. Do not regress a working compatibility or correctness fix just to match an outdated draft.
+
+## RECONCILIATION ADDITIONS II (March 2026)
+
+### PayrollTreasury employer account key
+
+`PayrollTreasury` does **not** key employer balances by the Supabase `employers.id` UUID.
+
+The canonical on-chain employer treasury key is:
+
+- `keccak256(abi.encodePacked(employerAdminAddress))`
+
+This matters for every treasury and payroll route that reads:
+
+- available balance
+- locked balance
+- yield allocation
+- accrued yield
+
+An off-chain employer UUID may still be used as the application-level identifier, but it must not be used directly as the on-chain treasury account id unless a verified mapping layer converts it to the canonical admin wallet address first.
+
+### Tempo payroll transport note
+
+The target sponsored execution pattern remains:
+
+- TempoTransaction `type: 'tempo'`
+- `calls`
+- `feeToken`
+- `feePayer`
+- `feePayerSignature`
+
+If the client wallet surface in use only supports a standard unsigned transaction request, treat the exact sponsored Tempo flow as still open and do not replace it with an unverified approximation.
