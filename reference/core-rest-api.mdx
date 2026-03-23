@@ -1,0 +1,73 @@
+---
+title: Core REST API
+description: Internal authenticated routes for employer, employee, treasury, payroll, transaction, yield, and invite workflows.
+---
+
+# Core REST API
+
+These routes are the internal application API. They are distinct from the MPP endpoints. Most of them expect an `Authorization: Bearer <privy-jwt>` header and resolve the caller through Supabase.
+
+## Route inventory
+
+| Method | Route | Auth | Purpose |
+| --- | --- | --- | --- |
+| `POST` | `/api/employers` | Bearer token | Create an employer record for the signed-in admin |
+| `GET` | `/api/employers/[id]/team` | Bearer token, employer owner | List active employees |
+| `POST` | `/api/employers/[id]/team` | Bearer token, employer owner | Create an employee under an employer |
+| `POST` | `/api/employers/[id]/payroll` | Bearer token, employer owner | Build payroll calldata after treasury and TIP-403 checks |
+| `GET` | `/api/employers/[id]/treasury` | Bearer token, employer owner | Return available and locked treasury balances |
+| `POST` | `/api/employees` | Bearer token, employer owner | Create employee record and send invite email |
+| `POST` | `/api/employees/[id]/kyc` | Bearer token, employer owner | Create or refresh a Bridge KYC link |
+| `GET` | `/api/transactions` | Bearer token, employer owner | Paginated payroll transaction history |
+| `GET` | `/api/yield` | Bearer token, employer owner | Employer yield summary |
+| `POST` | `/api/demo/run-agent` | Public | SSE demo agent stream |
+
+## Important route behavior
+
+### `POST /api/employers`
+
+Creates the first employer record for a Privy-authenticated user. If the user already owns an employer record, the route returns the existing id instead of creating a duplicate.
+
+### `POST /api/employers/[id]/payroll`
+
+This is the main payroll preparation route for the frontend. It:
+
+1. Parses the payroll items
+2. Converts amounts into 6-decimal token units
+3. Confirms the employer has enough available treasury balance
+4. Runs TIP-403 checks on every recipient when the employer has a policy id
+5. Builds memo bytes
+6. Writes a draft run and payment items into Supabase
+7. Returns unsigned calldata for `executeBatchPayroll`
+
+### `POST /api/employees`
+
+Creates the employee record and sends an invite email through Resend when `RESEND_API_KEY` is set. If the employee already exists for the employer and email, the route returns the existing id.
+
+### `POST /api/employees/[id]/kyc`
+
+Creates a Bridge customer when needed, persists `bridge_customer_id`, then returns a fresh KYC link.
+
+## Query parameters
+
+### `GET /api/transactions`
+
+| Parameter | Type | Notes |
+| --- | --- | --- |
+| `page` | integer | 1-indexed, defaults to `1` |
+| `limit` | integer | Max `100`, default `25` |
+| `employeeId` | string | Filter by employee id |
+| `status` | string | Filter by payment status |
+| `from` | ISO timestamp | Lower bound for `created_at` |
+| `to` | ISO timestamp | Upper bound for `created_at` |
+
+## Current gaps versus the master
+
+The master reserves these routes, but they are not present in the current repository:
+
+- `/api/employees/[id]/card`
+- `/api/ai/parse-csv`
+- `/api/ai/anomaly-detect`
+- `/api/ai/compliance-explain`
+- `/api/admin`
+

@@ -1,0 +1,71 @@
+---
+title: Webhooks and Demo Agent
+description: Bridge and Tempo webhook handling plus the demo agent SSE surface.
+---
+
+# Webhooks and Demo Agent
+
+This repository includes two public webhook routes and one public demo-agent stream route.
+
+## Public operational routes
+
+| Method | Route | Purpose |
+| --- | --- | --- |
+| `POST` | `/api/webhooks/bridge` | Receive Bridge transfer and KYC events |
+| `POST` | `/api/webhooks/tempo` | Receive Tempo transaction confirmation events |
+| `POST` | `/api/demo/run-agent` | Stream the demo agent terminal sequence as SSE |
+
+## Bridge webhook
+
+### Verification
+
+- Header: `bridge-signature`
+- Primary verification: RSA-SHA256 with `BRIDGE_WEBHOOK_SECRET`
+- Fallback verification: HMAC-SHA256 for test or sandbox-style secrets
+
+### Events currently handled
+
+| Event type | Effect |
+| --- | --- |
+| `transfer.state_changed` | Updates `payment_items.status` by transfer id |
+| `kyc.status_updated` | Updates employee `kyc_status` and records a compliance event |
+| `card.transaction` | Accepted without local persistence in the current code |
+
+## Tempo webhook
+
+### Verification
+
+- Header: `x-tempo-signature`
+- Secret: `TEMPO_WEBHOOK_SECRET`
+- Scheme: HMAC-SHA256 with `sha256=` prefix
+
+### Events currently handled
+
+| Event type | Effect |
+| --- | --- |
+| `transaction.confirmed` | Marks a payroll run as completed and confirms its payment items |
+| `transaction.failed` | Marks the payroll run and payment items as failed |
+
+## Demo agent route
+
+`POST /api/demo/run-agent` returns `text/event-stream`. The current implementation emits a scripted sequence that mirrors the sixty-second pitch:
+
+1. Session open
+2. Yield-rate request
+3. Treasury balance request
+4. Compliance sweep
+5. Payroll execute request
+6. Session close
+
+Each event carries:
+
+```json
+{
+  "type": "system",
+  "text": "Remlo Agent v1.0 ...",
+  "timestamp": "14:03:22"
+}
+```
+
+The employer dashboard demo terminal and the standalone `scripts/demo-agent.ts` script are built around this flow.
+
