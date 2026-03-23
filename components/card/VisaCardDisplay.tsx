@@ -6,6 +6,14 @@ import { cn } from '@/lib/utils'
 type CardStatus = 'active' | 'inactive' | 'frozen' | 'pending'
 
 interface VisaCardDisplayProps {
+  card?: {
+    last4?: string | null
+    holderName?: string | null
+    cardholderName?: string | null
+    expiryMonth?: number | null
+    expiryYear?: number | null
+    status?: CardStatus | string | null
+  } | null
   last4?: string
   holderName?: string
   expiryMonth?: number
@@ -29,6 +37,7 @@ const STATUS_COLOR: Record<CardStatus, string> = {
 }
 
 export function VisaCardDisplay({
+  card,
   last4 = '••••',
   holderName = 'CARDHOLDER',
   expiryMonth,
@@ -36,9 +45,21 @@ export function VisaCardDisplay({
   status = 'pending',
   className,
 }: VisaCardDisplayProps) {
+  const resolvedLast4 = card?.last4 ?? last4
+  const resolvedHolderName = card?.cardholderName ?? card?.holderName ?? holderName
+  const resolvedExpiryMonth = card?.expiryMonth ?? expiryMonth
+  const resolvedExpiryYear = card?.expiryYear ?? expiryYear
+  const resolvedStatus = (() => {
+    const candidate = card?.status ?? status
+    if (candidate === 'active' || candidate === 'inactive' || candidate === 'frozen' || candidate === 'pending') {
+      return candidate
+    }
+    return 'pending'
+  })()
+
   const expiry =
-    expiryMonth != null && expiryYear != null
-      ? `${String(expiryMonth).padStart(2, '0')}/${String(expiryYear).slice(-2)}`
+    resolvedExpiryMonth != null && resolvedExpiryYear != null
+      ? `${String(resolvedExpiryMonth).padStart(2, '0')}/${String(resolvedExpiryYear).slice(-2)}`
       : '••/••'
 
   return (
@@ -62,14 +83,14 @@ export function VisaCardDisplay({
 
         {/* Card number */}
         <p className="font-mono text-lg tracking-[0.25em] text-white/90 mb-6">
-          •••• •••• •••• {last4}
+          •••• •••• •••• {resolvedLast4}
         </p>
 
         {/* Bottom row */}
         <div className="flex items-end justify-between">
           <div>
             <p className="text-white/40 text-xs uppercase tracking-wider mb-0.5">Card holder</p>
-            <p className="font-mono text-sm text-white/90 uppercase tracking-wider">{holderName}</p>
+            <p className="font-mono text-sm text-white/90 uppercase tracking-wider">{resolvedHolderName}</p>
           </div>
           <div className="text-right">
             <p className="text-white/40 text-xs uppercase tracking-wider mb-0.5">Expires</p>
@@ -81,8 +102,8 @@ export function VisaCardDisplay({
       {/* Status row */}
       <div className="flex items-center justify-between px-1">
         <p className="text-sm text-[var(--text-muted)]">Visa Prepaid Debit</p>
-        <p className={cn('text-sm font-medium', STATUS_COLOR[status])}>
-          {STATUS_LABEL[status]}
+        <p className={cn('text-sm font-medium', STATUS_COLOR[resolvedStatus])}>
+          {STATUS_LABEL[resolvedStatus]}
         </p>
       </div>
     </div>
