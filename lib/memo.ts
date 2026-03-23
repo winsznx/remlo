@@ -114,6 +114,26 @@ export function encodeMemo(fields: Omit<MemoFields, 'messageType'>): `0x${string
   return `0x${bytesToHex(buf)}`
 }
 
+export function memoHexToBytea(memoHex: `0x${string}`): string {
+  return `\\x${memoHex.slice(2)}`
+}
+
+export function byteaMemoToHex(memoBytes: string | null | undefined): `0x${string}` | null {
+  if (!memoBytes) return null
+
+  const normalized = memoBytes.startsWith('\\x')
+    ? `0x${memoBytes.slice(2)}`
+    : memoBytes.startsWith('0x')
+      ? memoBytes
+      : null
+
+  if (!normalized || normalized.length !== 66) {
+    return null
+  }
+
+  return normalized as `0x${string}`
+}
+
 /**
  * Decode a 32-byte `0x`-prefixed hex string into memo fields.
  * Returns null if the buffer is not 32 bytes or the message type is unrecognized.

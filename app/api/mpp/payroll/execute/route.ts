@@ -4,6 +4,7 @@ import { payrollBatcher, getServerWalletClient } from '@/lib/contracts'
 import { getPayrollRunById, getPaymentItemsByRunId } from '@/lib/queries/payroll'
 import { createServerClient } from '@/lib/supabase-server'
 import { keccak256, toBytes } from 'viem'
+import { byteaMemoToHex } from '@/lib/memo'
 
 const DEPLOYER_KEY = process.env.REMLO_AGENT_PRIVATE_KEY as `0x${string}`
 
@@ -67,9 +68,13 @@ export async function POST(req: Request) {
 
   const recipients = items.map((item) => walletMap.get(item.employee_id)! as `0x${string}`)
   const amounts = items.map((item) => BigInt(Math.round(item.amount * 1e6)))
-  const memos = items.map((item) =>
-    (item.memo_decoded as string | null ?? '0x' + '0'.repeat(64)) as `0x${string}`
-  )
+  const memos = items.map((item) => byteaMemoToHex(item.memo_bytes))
+  if (memos.some((memo) => !memo)) {
+    return Response.json(
+      { error: 'One or more payment items are missing a valid 32-byte payroll memo' },
+      { status: 422 }
+    )
+  }
   const employerIdHash = keccak256(toBytes(run.employer_id))
 
   const walletClient = getServerWalletClient(DEPLOYER_KEY)
@@ -77,7 +82,7 @@ export async function POST(req: Request) {
     address: payrollBatcher.address,
     abi: payrollBatcher.abi,
     functionName: 'executeBatchPayroll',
-    args: [recipients, amounts, memos, employerIdHash],
+    args: [recipients, amounts, memos as `0x${string}`[], employerIdHash],
   })
 
   await supabase
