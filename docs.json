@@ -9,13 +9,13 @@
     "dark": "#059669"
   },
   "logo": {
-    "light": "/logo-light.svg",
-    "dark": "/logo-dark.svg",
+    "light": "/docs/logo-light.svg",
+    "dark": "/docs/logo-dark.svg",
     "href": "https://remlo-drab.vercel.app"
   },
   "favicon": {
-    "light": "/favicon.svg",
-    "dark": "/favicon.svg"
+    "light": "/docs/favicon.svg",
+    "dark": "/docs/favicon.svg"
   },
   "styling": {
     "eyebrows": "breadcrumbs",
@@ -39,16 +39,16 @@
           {
             "group": "Start here",
             "pages": [
-              "index",
-              "architecture",
-              "quickstart"
+              "docs/index",
+              "docs/architecture",
+              "docs/quickstart"
             ]
           },
           {
             "group": "Operations",
             "pages": [
-              "operations/environment-variables",
-              "operations/deployment"
+              "docs/operations/environment-variables",
+              "docs/operations/deployment"
             ]
           }
         ]
@@ -61,15 +61,15 @@
           {
             "group": "Access",
             "pages": [
-              "platform/auth-and-access",
-              "reference/web-routes"
+              "docs/platform/auth-and-access",
+              "docs/reference/web-routes"
             ]
           },
           {
             "group": "Applications",
             "pages": [
-              "platform/employer-dashboard",
-              "platform/employee-portal"
+              "docs/platform/employer-dashboard",
+              "docs/platform/employee-portal"
             ]
           }
         ]
@@ -82,15 +82,15 @@
           {
             "group": "On-chain",
             "pages": [
-              "protocol/contracts",
-              "protocol/memo-and-compliance"
+              "docs/protocol/contracts",
+              "docs/protocol/memo-and-compliance"
             ]
           },
           {
             "group": "Integrations",
             "pages": [
-              "integrations/bridge",
-              "integrations/privy"
+              "docs/integrations/bridge",
+              "docs/integrations/privy"
             ]
           }
         ]
@@ -103,9 +103,9 @@
           {
             "group": "HTTP surface",
             "pages": [
-              "reference/core-rest-api",
-              "reference/mpp-endpoints",
-              "reference/webhooks-and-demo-agent"
+              "docs/reference/core-rest-api",
+              "docs/reference/mpp-endpoints",
+              "docs/reference/webhooks-and-demo-agent"
             ]
           }
         ]
