@@ -56,7 +56,7 @@ function HeroSection() {
   return (
     <section className="relative flex min-h-screen items-center justify-center overflow-hidden pt-16">
       <HyperspeedHeroBackground />
-      <div className="absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.08),transparent_26%),linear-gradient(180deg,rgba(2,6,18,0.12)_0%,rgba(2,6,18,0.16)_32%,rgba(2,6,18,0.48)_100%)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(circle_at_top,rgba(52,211,153,0.08),transparent_26%),linear-gradient(180deg,rgba(2,6,18,0.12)_0%,rgba(2,6,18,0.16)_32%,rgba(2,6,18,0.48)_100%)]" />
 
       <div className="relative z-10 mx-auto max-w-6xl px-6 text-center">
         <motion.a
