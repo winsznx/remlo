@@ -2,11 +2,22 @@ import { NextRequest, NextResponse } from 'next/server'
 
 // ─── Public path classification ───────────────────────────────────────────────
 
-const PUBLIC_PATHS = ['/login', '/register', '/pricing', '/docs', '/blog']
+const PUBLIC_PATHS = [
+  '/login',
+  '/register',
+  '/pricing',
+  '/docs',
+  '/blog',
+  '/about',
+  '/careers',
+  '/changelog',
+  '/contact',
+]
 
 const PUBLIC_PREFIXES = [
   '/invite/',
   '/kyc/',
+  '/legal/',
   '/_next/',
   '/api/webhooks/', // Bridge + Tempo webhooks must be unauthenticated
 ]
