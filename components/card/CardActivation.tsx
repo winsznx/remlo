@@ -9,11 +9,15 @@ import { cn } from '@/lib/utils'
 type ActivationState = 'idle' | 'activating' | 'success' | 'error'
 
 interface CardActivationProps {
+  card?: {
+    last4?: string | null
+    status?: string | null
+  } | null
   onActivate?: () => Promise<void>
   className?: string
 }
 
-export function CardActivation({ onActivate, className }: CardActivationProps) {
+export function CardActivation({ card, onActivate, className }: CardActivationProps) {
   const [state, setState] = React.useState<ActivationState>('idle')
   const [errorMsg, setErrorMsg] = React.useState<string | null>(null)
 
@@ -51,7 +55,9 @@ export function CardActivation({ onActivate, className }: CardActivationProps) {
             <div>
               <p className="text-base font-semibold text-[var(--text-primary)]">Activate your card</p>
               <p className="text-sm text-[var(--text-muted)] mt-1">
-                Your Visa Prepaid Debit card is ready to activate
+                {card?.last4
+                  ? `Your Visa Prepaid Debit card ending in ${card.last4} is ready to activate`
+                  : 'Your Visa Prepaid Debit card is ready to activate'}
               </p>
             </div>
             <Button onClick={handleActivate} className="w-full">
