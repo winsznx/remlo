@@ -1,0 +1,49 @@
+---
+title: Contracts
+description: Tempo contracts deployed for treasury, payroll batching, employee registry, streaming salary, and yield routing.
+---
+
+# Contracts
+
+The current repository points to deployed Moderato testnet addresses in `lib/constants.ts`. Frontend pages use the public addresses, and server-side write routes use the same contracts through `lib/contracts.ts`.
+
+## Deployed addresses
+
+| Contract | Address | Responsibility |
+| --- | --- | --- |
+| `PayrollTreasury` | `0x93dfCcd80895147EfC1c191013cD935f18a79859` | Tracks employer available balance, locked payroll balance, and treasury accounting |
+| `PayrollBatcher` | `0x58E5102BAED1c703dC1052cc7f5E30A96af34Eb8` | Executes atomic multi-recipient payroll batches with memo fields |
+| `EmployeeRegistry` | `0x1fF7E623CFdb6e263Be0D25A9142DD7888F5CBdA` | Tracks employee membership and headcount per employer |
+| `StreamVesting` | `0x71a2BA383d2C8ec15310705A13693F054271531f` | Exposes accrued salary reads and employee claims |
+| `YieldRouter` | `0x41dD786b2e01825437e2F67b51719CBeDcd527b0` | Reads APY, accrued yield, allocation, and rebalances treasury capital |
+
+## Read methods used by the app
+
+| Contract | Read methods used in app code |
+| --- | --- |
+| `PayrollTreasury` | `getAvailableBalance`, `getLockedBalance` |
+| `PayrollBatcher` | Execution handled by server or wallet client rather than read access |
+| `EmployeeRegistry` | `getEmployeeCount` |
+| `StreamVesting` | `getAccruedBalance` |
+| `YieldRouter` | `getCurrentAPY`, `getYieldSources`, `getAllocation`, `getAccruedYield`, `yieldConfig` |
+| `TIP403Registry` precompile | `isAuthorized` |
+
+## Write methods used by the app
+
+| Contract | Write methods used in app code |
+| --- | --- |
+| `PayrollBatcher` | `executeBatchPayroll` |
+| `StreamVesting` | `claimAccrued` |
+| `YieldRouter` | `rebalance` |
+
+## Tempo constants
+
+| Constant | Value |
+| --- | --- |
+| Chain ID | `42431` |
+| RPC | `https://rpc.moderato.tempo.xyz` |
+| Explorer | `https://explore.tempo.xyz` |
+| Sponsor URL | `https://sponsor.moderato.tempo.xyz` |
+| PathUSD | `0x20c0000000000000000000000000000000000000` |
+| TIP-403 Registry | `0x403c000000000000000000000000000000000000` |
+
