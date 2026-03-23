@@ -36,6 +36,18 @@ The current repository points to deployed Moderato testnet addresses in `lib/con
 | `StreamVesting` | `claimAccrued` |
 | `YieldRouter` | `rebalance` |
 
+## Payroll treasury account key
+
+`PayrollTreasury` does not key employer balances by the Supabase `employers.id` UUID.
+
+It keys each account by:
+
+```solidity
+keccak256(abi.encodePacked(employerAdminAddress))
+```
+
+That means any read or write flow that wants to inspect treasury balances, locked payroll, or gas budget must first resolve the canonical employer admin wallet address used for deposits. Off-chain employer ids are useful application identifiers, but they are not the on-chain treasury account key.
+
 ## Tempo constants
 
 | Constant | Value |
@@ -46,4 +58,3 @@ The current repository points to deployed Moderato testnet addresses in `lib/con
 | Sponsor URL | `https://sponsor.moderato.tempo.xyz` |
 | PathUSD | `0x20c0000000000000000000000000000000000000` |
 | TIP-403 Registry | `0x403c000000000000000000000000000000000000` |
-

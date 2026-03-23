@@ -15,7 +15,7 @@ Bridge is the fiat rail inside Remlo. All Bridge calls go through `lib/bridge.ts
 | Sandbox base URL | `https://api.sandbox.bridge.xyz/v0` |
 | Auth header | `Api-Key: <BRIDGE_API_KEY>` |
 | Idempotency | `Idempotency-Key` on write requests |
-| Verification | `bridge-signature` on incoming webhooks |
+| Verification | Canonical `x-webhook-signature` header, with legacy `bridge-signature` accepted for compatibility |
 
 ## Route mapping
 
@@ -24,17 +24,27 @@ Bridge is the fiat rail inside Remlo. All Bridge calls go through `lib/bridge.ts
 | `POST /api/employees/[id]/kyc` | `POST /customers`, `POST /kyc_links` | Create employee Bridge customer and return a KYC URL |
 | `GET /api/employers/[id]/treasury` | No direct Bridge call on read path | Surface treasury state after deposits are accounted for in Remlo |
 | Reserved in master: `POST /api/employers/[id]/treasury` | `POST /customers/{id}/virtual_accounts` | Create a deposit account for employer funding |
-| Reserved in master: `POST /api/employees/[id]/card` | `POST /customers/{id}/card_accounts` | Issue a Visa prepaid debit card |
-| `POST /api/mpp/bridge/offramp` | `POST /transfers` | Push payroll balance to ACH, SEPA, SPEI, or PIX |
+| `GET/POST /api/employees/[id]/card` | `POST /customers/{id}/card_accounts` | Read card status or issue a Visa prepaid debit card |
+| `POST /api/employees/[id]/offramp` | `POST /transfers` | Push payroll balance to ACH, SEPA, SPEI, or PIX from the employee portal |
+| `POST /api/mpp/bridge/offramp` | `POST /transfers` | Machine-paid off-ramp route for agents and external callers |
 | `POST /api/webhooks/bridge` | Incoming Bridge webhook | Update KYC and transfer state inside Supabase |
+
+## Canonical webhook families
+
+- `transfer.payment_processed`
+- `card_transaction.created`
+- `customer.updated`
+
+The route also accepts older compatibility names still seen in some sandboxes:
+
+- `transfer.state_changed`
+- `card.transaction`
+- `kyc.status_updated`
 
 ## Supported money paths in current code
 
 - Employee KYC links
 - Employee Bridge customer creation
-- Off-ramp transfers from Bridge wallet balance to bank rails
-
-## Coverage assumptions from the master
-
-The master file assumes Bridge-backed virtual accounts for employer treasury funding and Visa cards for employees in supported regions. The current repo already contains the Bridge client helpers for these paths, but some of the reserved routes are not yet wired into the live Next.js route tree.
-
+- Employee card issuance
+- Employee off-ramp transfers from Bridge wallet balance to bank rails
+- Machine-paid off-ramp via the MPP route
