@@ -1,0 +1,54 @@
+---
+title: Memo and Compliance Model
+description: Payroll memo encoding, TIP-403 checks, and how Remlo records compliance outcomes.
+---
+
+# Memo and Compliance Model
+
+Remlo uses two pieces of protocol metadata on every serious money movement:
+
+1. A fixed-width payroll memo carried on TIP-20 transfers
+2. A TIP-403 authorization check against the recipient wallet
+
+## Payroll memo fields
+
+The master file defines a fixed 32-byte ISO 20022 payroll memo that carries:
+
+| Field | Why it exists |
+| --- | --- |
+| `paic` message type | Marks the transfer as a payroll instruction |
+| Employer id | Ties the transfer back to the employer record |
+| Employee id | Ties the transfer to a single employee record |
+| Pay period | Anchors the transfer to a payroll period |
+| Cost center | Allows department or accounting segmentation |
+| Record hash | Gives the transfer a short integrity link back to the payroll record |
+
+In the current repository, `encodeMemo()` is used during payroll preparation and `decodeMemo()` is exposed to both the UI and the MPP memo decoder endpoint.
+
+## Where memo data shows up
+
+| Surface | Use |
+| --- | --- |
+| `POST /api/employers/[id]/payroll` | Builds memo values before execution |
+| `/portal/payments` | Displays decoded payroll context to employees |
+| `/api/mpp/memo/decode` | Returns decoded memo fields to auditors or machine clients |
+| `/api/mpp/payslips/[runId]/[employeeId]` | Includes memo context on a single payslip response |
+
+## TIP-403 enforcement
+
+TIP-403 is checked in two ways:
+
+- Inline during employer payroll preparation to block unauthorized recipients before batch submission
+- Through the public MPP compliance endpoint for auditors, employers, or autonomous agents
+
+## Compliance event ledger
+
+The application records compliance outcomes into `compliance_events`. The main event producers are:
+
+| Source | Event type examples |
+| --- | --- |
+| MPP compliance checks | `mpp_check` |
+| Bridge KYC updates | `kyc_approved`, `kyc_rejected`, `kyc_pending`, `kyc_expired` |
+
+This is the data source behind `/dashboard/compliance` and the marketplace compliance list MPP endpoint.
+
