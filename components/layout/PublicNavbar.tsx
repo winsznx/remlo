@@ -8,12 +8,10 @@ import { RemloLogo } from '@/components/brand/RemloLogo'
 import { cn } from '@/lib/utils'
 
 const NAV_LINKS = [
-  { label: 'Product', href: '/#product' },
-  { label: 'How it works', href: '/#how-it-works' },
-  { label: 'Pricing', href: '/pricing' },
-  { label: 'Developers', href: '/docs' },
-  { label: 'GitHub', href: 'https://github.com/winsznx/remlo', external: true },
-  { label: 'X (Twitter)', href: 'https://x.com/remlo_xyz/', external: true },
+  { label: 'Features', href: '/#features' },
+  { label: 'How It Works', href: '/#how-it-works' },
+  { label: 'Pricing', href: '/#pricing' },
+  { label: 'Docs', href: '/docs' },
 ]
 
 export function PublicNavbar() {
@@ -59,22 +57,20 @@ export function PublicNavbar() {
           </Link>
 
           {/* Desktop nav links */}
-          <nav className="hidden md:flex items-center gap-1">
+          <nav className="hidden lg:flex items-center gap-1">
             {NAV_LINKS.map((link) => (
-              <a
+              <Link
                 key={link.label}
                 href={link.href}
-                target={link.external ? '_blank' : undefined}
-                rel={link.external ? 'noopener noreferrer' : undefined}
                 className="px-3 py-1.5 rounded-lg text-sm text-white/60 hover:text-white hover:bg-white/5 transition-colors"
               >
                 {link.label}
-              </a>
+              </Link>
             ))}
           </nav>
 
           {/* Desktop CTAs */}
-          <div className="hidden md:flex items-center gap-3">
+          <div className="hidden lg:flex items-center gap-3">
             <Link
               href="/login"
               className="text-sm text-white/70 hover:text-white transition-colors"
@@ -85,13 +81,13 @@ export function PublicNavbar() {
               href="/register"
               className="h-9 px-4 rounded-lg bg-accent text-accent-foreground text-sm font-semibold hover:opacity-90 active:opacity-80 transition-opacity flex items-center"
             >
-              Start free
+              Start Free Trial
             </Link>
           </div>
 
           {/* Mobile hamburger */}
           <button
-            className="md:hidden h-9 w-9 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/5 transition-colors"
+            className="lg:hidden h-9 w-9 rounded-lg flex items-center justify-center text-white/70 hover:text-white hover:bg-white/5 transition-colors"
             onClick={() => setMobileOpen(true)}
             aria-label="Open menu"
           >
@@ -128,19 +124,21 @@ export function PublicNavbar() {
 
             <nav className="flex-1 flex flex-col justify-center px-6 space-y-2">
               {NAV_LINKS.map((link, i) => (
-                <motion.a
+                <motion.div
                   key={link.label}
-                  href={link.href}
-                  target={link.external ? '_blank' : undefined}
-                  rel={link.external ? 'noopener noreferrer' : undefined}
                   initial={{ opacity: 0, x: -12 }}
                   animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: i * 0.06 }}
-                  onClick={() => setMobileOpen(false)}
-                  className="text-2xl font-bold text-white/80 hover:text-white py-2 transition-colors"
+                  className="py-2"
                 >
-                  {link.label}
-                </motion.a>
+                  <Link
+                    href={link.href}
+                    onClick={() => setMobileOpen(false)}
+                    className="text-2xl font-bold text-white/80 hover:text-white transition-colors"
+                  >
+                    {link.label}
+                  </Link>
+                </motion.div>
               ))}
             </nav>
 
@@ -150,7 +148,7 @@ export function PublicNavbar() {
                 onClick={() => setMobileOpen(false)}
                 className="flex items-center justify-center h-14 rounded-xl bg-accent text-accent-foreground text-base font-bold"
               >
-                Start free
+                Start Free Trial
               </Link>
               <Link
                 href="/login"
