@@ -5,8 +5,8 @@ const FOOTER_COLS = [
   {
     label: 'Product',
     links: [
-      { label: 'Overview', href: '/#product' },
-      { label: 'How it works', href: '/#how-it-works' },
+      { label: 'Features', href: '/#features' },
+      { label: 'How It Works', href: '/#how-it-works' },
       { label: 'Pricing', href: '/pricing' },
       { label: 'Changelog', href: '/changelog' },
     ],
@@ -27,6 +27,8 @@ const FOOTER_COLS = [
       { label: 'Blog', href: '/blog' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact', href: '/contact' },
+      { label: 'Press', href: '/press' },
+      { label: 'Status', href: '/status' },
     ],
   },
   {
@@ -88,7 +90,7 @@ export function PublicFooter() {
               labelClassName="text-white text-sm"
             />
             <p className="text-xs text-white/30 leading-relaxed max-w-[180px]">
-              AI-native global payroll on Tempo. Pay anyone, anywhere, in 0.4 seconds.
+              Pay faster. Earn more. Settle anywhere.
             </p>
           </div>
 
@@ -108,8 +110,28 @@ export function PublicFooter() {
           ))}
         </div>
 
-        <div className="pt-8 border-t border-white/5 flex flex-col md:flex-row items-center justify-between gap-4">
-          <p className="text-xs text-white/20">© 2026 Remlo. Built on Tempo Moderato.</p>
+        <div className="pt-8 border-t border-white/5 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+          <div className="flex flex-col items-center gap-3 text-center lg:items-start lg:text-left">
+            <p className="text-xs text-white/20">© 2026 Remlo, Inc.</p>
+            <div className="flex flex-wrap items-center justify-center gap-2 lg:justify-start">
+              <a
+                href="https://tempo.xyz"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/45 transition-colors hover:border-white/20 hover:text-white/70"
+              >
+                Built on Tempo
+              </a>
+              <a
+                href="https://stripe.com/bridge"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="rounded-full border border-white/10 bg-white/[0.03] px-3 py-1 text-[11px] font-medium uppercase tracking-[0.14em] text-white/45 transition-colors hover:border-white/20 hover:text-white/70"
+              >
+                Stripe Bridge
+              </a>
+            </div>
+          </div>
           <div className="flex items-center gap-4">
             <a
               href="https://x.com/remlo_xyz/"
