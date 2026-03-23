@@ -1,0 +1,12 @@
+<svg width="280" height="64" viewBox="0 0 280 64" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <rect x="2" y="2" width="60" height="60" rx="18" fill="#0B1220"/>
+  <rect x="2.5" y="2.5" width="59" height="59" rx="17.5" stroke="#1E293B"/>
+  <circle cx="49" cy="17" r="12" fill="#34D399" fill-opacity="0.14"/>
+  <circle cx="20" cy="49" r="10.5" fill="#059669" fill-opacity="0.2"/>
+  <path d="M20 17.5V46.5" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round"/>
+  <path d="M20 17.5H34.5C38.9183 17.5 42.5 21.0817 42.5 25.5C42.5 29.9183 38.9183 33.5 34.5 33.5H20" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <path d="M32.5 33.5L44.5 45.5" stroke="#FFFFFF" stroke-width="6" stroke-linecap="round" stroke-linejoin="round"/>
+  <rect x="40.5" y="16.5" width="8" height="3" rx="1.5" fill="#34D399"/>
+  <rect x="42" y="22" width="6.5" height="3" rx="1.5" fill="#34D399" fill-opacity="0.6"/>
+  <text x="82" y="40" fill="#F8FAFC" font-family="Inter, Arial, sans-serif" font-size="30" font-weight="700" letter-spacing="-0.03em">Remlo</text>
+</svg>

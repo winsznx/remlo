@@ -1,0 +1,128 @@
+{
+  "$schema": "https://mintlify.com/docs.json",
+  "theme": "willow",
+  "name": "Remlo",
+  "description": "Borderless enterprise payroll on Tempo L1. Remlo combines Tempo-native payroll contracts, TIP-403 policy checks, Bridge fiat rails, Privy embedded wallets, and MPP-gated machine access in one operating surface.",
+  "colors": {
+    "primary": "#34D399",
+    "light": "#86EFAC",
+    "dark": "#059669"
+  },
+  "logo": {
+    "light": "/logo-light.svg",
+    "dark": "/logo-dark.svg",
+    "href": "https://remlo-drab.vercel.app"
+  },
+  "favicon": {
+    "light": "/favicon.svg",
+    "dark": "/favicon.svg"
+  },
+  "styling": {
+    "eyebrows": "breadcrumbs",
+    "codeblocks": {
+      "theme": {
+        "light": "github-light",
+        "dark": "github-dark"
+      }
+    },
+    "icons": {
+      "library": "lucide"
+    }
+  },
+  "navigation": {
+    "dropdowns": [
+      {
+        "dropdown": "Overview",
+        "icon": "book-open",
+        "description": "What Remlo ships, how it is structured, and how to run it.",
+        "groups": [
+          {
+            "group": "Start here",
+            "pages": [
+              "index",
+              "architecture",
+              "quickstart"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "operations/environment-variables",
+              "operations/deployment"
+            ]
+          }
+        ]
+      },
+      {
+        "dropdown": "Product",
+        "icon": "layout-dashboard",
+        "description": "User-facing routes, access rules, and product workflows.",
+        "groups": [
+          {
+            "group": "Access",
+            "pages": [
+              "platform/auth-and-access",
+              "reference/web-routes"
+            ]
+          },
+          {
+            "group": "Applications",
+            "pages": [
+              "platform/employer-dashboard",
+              "platform/employee-portal"
+            ]
+          }
+        ]
+      },
+      {
+        "dropdown": "Protocol",
+        "icon": "blocks",
+        "description": "The Tempo, Bridge, Privy, and compliance layers behind Remlo.",
+        "groups": [
+          {
+            "group": "On-chain",
+            "pages": [
+              "protocol/contracts",
+              "protocol/memo-and-compliance"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "integrations/bridge",
+              "integrations/privy"
+            ]
+          }
+        ]
+      },
+      {
+        "dropdown": "Reference",
+        "icon": "terminal",
+        "description": "Internal APIs, MPP endpoints, webhooks, and the demo agent flow.",
+        "groups": [
+          {
+            "group": "HTTP surface",
+            "pages": [
+              "reference/core-rest-api",
+              "reference/mpp-endpoints",
+              "reference/webhooks-and-demo-agent"
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "navbar": {
+    "links": [
+      {
+        "label": "App",
+        "href": "https://remlo-drab.vercel.app"
+      }
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open Remlo",
+      "href": "https://remlo-drab.vercel.app"
+    }
+  }
+}
