@@ -5,7 +5,7 @@ import { getComplianceEventsByEmployerId } from '@/lib/queries/compliance'
 /**
  * GET /api/mpp/marketplace/compliance-list/[employerId]
  * MPP-11 — $0.50 single charge
- * Returns full compliance event history for an employer.
+ * Returns a paid allowlist of recently cleared wallets for an employer.
  * Useful for auditors, marketplace buyers, and compliance officers.
  *
  * Query params: ?limit=100
@@ -20,20 +20,27 @@ export async function GET(
 
   return mppx.charge({ amount: '0.50' })(async () => {
     const events = await getComplianceEventsByEmployerId(employerId, limit)
+    const latestClearByWallet = new Map<string, (typeof events)[number]>()
 
-    const summary = {
-      total: events.length,
-      clear: events.filter((e) => e.result === 'CLEAR').length,
-      blocked: events.filter((e) => e.result === 'BLOCKED').length,
-      mpp_checks: events.filter((e) => e.event_type === 'mpp_check').length,
-      kyc_events: events.filter((e) => e.event_type?.startsWith('kyc_')).length,
+    for (const event of events) {
+      if (event.result !== 'CLEAR' || !event.wallet_address) continue
+      if (!latestClearByWallet.has(event.wallet_address)) {
+        latestClearByWallet.set(event.wallet_address, event)
+      }
     }
 
+    const list = Array.from(latestClearByWallet.values()).map((event) => ({
+      walletAddress: event.wallet_address,
+      checkedAt: event.created_at,
+      employeeId: event.employee_id,
+      eventType: event.event_type,
+    }))
+
     return Response.json({
-      employer_id: employerId,
-      summary,
-      events,
-      retrieved_at: new Date().toISOString(),
+      providerId: employerId,
+      clearedWallets: list.length,
+      list,
+      lastUpdated: list[0]?.checkedAt ?? null,
     })
   })(req)
 }

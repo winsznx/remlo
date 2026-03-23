@@ -12,22 +12,27 @@ type Action = 'balance' | 'yield' | 'rebalance' | 'headcount'
  * AI agent treasury management endpoint.
  * Handles 4 actions: balance, yield, rebalance, headcount.
  *
- * Body: { action: Action, employerId: string, allocation?: number[] }
+ * Body: { action: Action, employerId: string, allocation?: number[], params?: { targetAllocation?: number[] } }
  */
 export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async (req: Request) => {
   const body = await req.json() as {
     action: Action
     employerId: string
     allocation?: number[]
+    params?: {
+      targetAllocation?: number[]
+    }
   }
 
-  const { action, employerId, allocation } = body
+  const { action, employerId } = body
+  const allocation = body.allocation ?? body.params?.targetAllocation
 
   if (!action || !employerId) {
     return Response.json({ error: 'action and employerId required' }, { status: 400 })
   }
 
   const employerIdHash = keccak256(toBytes(employerId))
+  const timestamp = Date.now()
 
   switch (action) {
     case 'balance': {
@@ -37,12 +42,15 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
       ])
       return Response.json({
         action,
-        employer_id: employerId,
-        available_raw: available.toString(),
-        available_usd: (Number(available) / 1e6).toFixed(6),
-        locked_raw: locked.toString(),
-        locked_usd: (Number(locked) / 1e6).toFixed(6),
-        total_usd: ((Number(available) + Number(locked)) / 1e6).toFixed(6),
+        result: {
+          employerId,
+          availableRaw: available.toString(),
+          availableUsd: (Number(available) / 1e6).toFixed(6),
+          lockedRaw: locked.toString(),
+          lockedUsd: (Number(locked) / 1e6).toFixed(6),
+          totalUsd: ((Number(available) + Number(locked)) / 1e6).toFixed(6),
+        },
+        timestamp,
       })
     }
 
@@ -51,11 +59,14 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
       const accrued = await yieldRouter.read.getAccruedYield([employerIdHash]) as bigint
       return Response.json({
         action,
-        employer_id: employerId,
-        apy_bps: Number(apy),
-        apy_percent: Number(apy) / 100,
-        accrued_raw: accrued.toString(),
-        accrued_usd: (Number(accrued) / 1e6).toFixed(6),
+        result: {
+          employerId,
+          apyBps: Number(apy),
+          apyPercent: Number(apy) / 100,
+          accruedRaw: accrued.toString(),
+          accruedUsd: (Number(accrued) / 1e6).toFixed(6),
+        },
+        timestamp,
       })
     }
 
@@ -72,9 +83,12 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
       })
       return Response.json({
         action,
-        employer_id: employerId,
-        tx_hash: txHash,
-        new_allocation: allocation,
+        result: {
+          employerId,
+          txHash,
+          targetAllocation: allocation,
+        },
+        timestamp,
       })
     }
 
@@ -82,8 +96,11 @@ export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async 
       const count = await employeeRegistry.read.getEmployeeCount([employerIdHash]) as bigint
       return Response.json({
         action,
-        employer_id: employerId,
-        headcount: Number(count),
+        result: {
+          employerId,
+          headcount: Number(count),
+        },
+        timestamp,
       })
     }
 
