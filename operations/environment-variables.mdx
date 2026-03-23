@@ -1,0 +1,53 @@
+---
+title: Environment Variables
+description: Canonical environment variables from the Remlo master spec, plus optional current-code overrides.
+---
+
+# Environment Variables
+
+Part 3 of `REMLO_MASTER.md` is the canonical environment contract. The table below preserves that contract exactly for deployment-critical values. A second table lists optional variables that appear in the current codebase but are not part of the master contract.
+
+## Canonical variables
+
+| Variable | Scope | Purpose |
+| --- | --- | --- |
+| `NEXT_PUBLIC_TEMPO_RPC` | Public | Tempo Moderato RPC URL used by client and server contract callers |
+| `NEXT_PUBLIC_TEMPO_CHAIN_ID` | Public | Tempo chain ID. Current value: `42431` |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Public | Privy application identifier |
+| `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Browser-safe Supabase anon key |
+| `NEXT_PUBLIC_PAYROLL_TREASURY` | Public | Deployed `PayrollTreasury` address |
+| `NEXT_PUBLIC_PAYROLL_BATCHER` | Public | Deployed `PayrollBatcher` address |
+| `NEXT_PUBLIC_EMPLOYEE_REGISTRY` | Public | Deployed `EmployeeRegistry` address |
+| `NEXT_PUBLIC_STREAM_VESTING` | Public | Deployed `StreamVesting` address |
+| `NEXT_PUBLIC_YIELD_ROUTER` | Public | Deployed `YieldRouter` address |
+| `NEXT_PUBLIC_APP_URL` | Public | Public app origin used in redirects and MPP callbacks |
+| `SUPABASE_SERVICE_KEY` | Server only | Supabase service role key for protected API writes |
+| `BRIDGE_API_KEY` | Server only | Bridge API key used by the server-side Bridge client |
+| `BRIDGE_WEBHOOK_SECRET` | Server only | Bridge webhook verification key |
+| `REMLO_TREASURY_ADDRESS` | Server only | Tempo wallet that receives MPP fees |
+| `REMLO_AGENT_PRIVATE_KEY` | Server only | Private key for the server-side payroll and treasury agent actions |
+| `RESEND_API_KEY` | Server only | Resend key for invite email delivery |
+| `CLAUDE_API_KEY` | Server only | Anthropic key reserved for AI-assisted routes |
+| `STRIPE_SECRET_KEY` | Server only | Stripe key used by the multi-rail MPP fallback |
+| `MPP_SECRET_KEY` | Server only | Session signing key for `mppx` |
+
+## Optional current-code overrides
+
+These values appear in the current repository. They are not listed in Part 3, so treat them as implementation-specific until the master spec is updated.
+
+| Variable | Scope | Purpose in current code |
+| --- | --- | --- |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Public | Enables WalletConnect inside the Privy config when present |
+| `ADMIN_USER_IDS` | Server only | Comma-separated platform admin allowlist used by middleware role resolution |
+| `TEMPO_WEBHOOK_SECRET` | Server only | HMAC verification secret for `/api/webhooks/tempo` |
+| `DEMO_MPP_CREDENTIAL` | Local dev | Injects a payment credential into `scripts/demo-agent.ts` |
+| `DEMO_EMPLOYER_ID` | Local dev | Overrides the demo employer id in `scripts/demo-agent.ts` |
+| `DEMO_PAYROLL_RUN_ID` | Local dev | Overrides the demo payroll run id in `scripts/demo-agent.ts` |
+
+## Notes
+
+- Bridge and Tempo webhooks must be configured only on the server side.
+- The current repo assumes `REMLO_AGENT_PRIVATE_KEY` for server-side contract writes.
+- If you keep `.env.local` in sync with the canonical table above, the public app and the core API surface will boot cleanly.
+
