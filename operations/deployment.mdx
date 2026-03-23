@@ -1,0 +1,65 @@
+---
+title: Deployment
+description: Deploy the Next.js app, publish the Mintlify docs, and verify the integration surface.
+---
+
+# Deployment
+
+## Application deployment
+
+The app is designed for Vercel with `pnpm build` as the production build command.
+
+### App checklist
+
+1. Set every canonical environment variable from [Environment Variables](environment-variables).
+2. Confirm the deployed contract addresses in `lib/constants.ts` and the `NEXT_PUBLIC_*` contract variables match.
+3. Verify Supabase service credentials are present for protected API routes and realtime reads.
+4. Verify Bridge keys and webhook secret are set before enabling employee KYC, card, or off-ramp flows.
+5. Verify `REMLO_AGENT_PRIVATE_KEY` and `MPP_SECRET_KEY` before enabling machine-paid write flows.
+
+### Post-deploy checks
+
+| Surface | What to verify |
+| --- | --- |
+| Public site | `/`, `/pricing`, `/docs`, `/about`, `/contact`, `/legal/terms`, `/legal/privacy` |
+| Auth | `/login`, `/register`, `/invite/[token]`, `/kyc/[token]` |
+| Employer app | `/dashboard`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/api-access`, `/dashboard/demo` |
+| Employee app | `/portal`, `/portal/payments`, `/portal/card`, `/portal/settings` |
+| MPP | Confirm 402 challenges and successful receipts on the twelve endpoints |
+| Webhooks | Confirm Bridge and Tempo webhook signatures verify correctly |
+
+## Mintlify deployment
+
+Mintlify now uses `docs.json` as the site configuration file. This repository includes that file at the repo root, plus the MDX pages and SVG brand assets the docs site needs.
+
+### How Mintlify should be wired
+
+1. Connect the repository to Mintlify through the Mintlify GitHub app.
+2. Keep `docs.json` in the repository root. Mintlify reads it as the site blueprint.
+3. Push changes to the connected branch. Mintlify rebuilds the docs site from the committed MDX files.
+4. Use preview deployments for branch review when you need layout or copy approval before merge.
+
+### What this docs bundle includes
+
+- Product overview and system architecture
+- Full route inventory for public, auth, employer, and employee pages
+- Internal REST API reference
+- Full MPP endpoint reference
+- Webhook and demo-agent reference
+- Contract, Bridge, Privy, and environment documentation
+
+## Contract deployment
+
+The Foundry scripts in `contracts/` target Tempo Moderato. The current deployed addresses baked into `lib/constants.ts` are documented again in [Contracts](../protocol/contracts).
+
+## Suggested release gate
+
+Do not call the deployment complete until all of the following are true:
+
+1. `pnpm build` passes.
+2. `pnpm exec tsc --noEmit` passes.
+3. The public legal pages resolve without an auth redirect.
+4. The login screen links for Terms and Privacy resolve to the correct public pages.
+5. The MPP pricing page matches the backend charges.
+6. The Bridge and Tempo webhooks accept signed requests in the deployed environment.
+
