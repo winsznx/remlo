@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { getCallerEmployer } from '@/lib/auth'
-import { decodeMemo } from '@/lib/memo'
 
 const DEFAULT_PAGE_SIZE = 25
 
@@ -55,8 +54,38 @@ export async function GET(req: NextRequest) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
+  const items = (data ?? []).map((item) => {
+    const employee = Array.isArray(item.employees) ? item.employees[0] : item.employees
+    const memo = (item.memo_decoded && typeof item.memo_decoded === 'object')
+      ? item.memo_decoded as Record<string, unknown>
+      : null
+    const payPeriod = typeof memo?.payPeriod === 'string' ? memo.payPeriod : null
+    const employeeName = [employee?.first_name, employee?.last_name]
+      .filter(Boolean)
+      .join(' ')
+      || employee?.email
+      || 'employee'
+
+    return {
+      id: item.id,
+      type: 'payroll',
+      description: payPeriod
+        ? `Payroll payment to ${employeeName} · ${payPeriod}`
+        : `Payroll payment to ${employeeName}`,
+      amount: item.amount,
+      tx_hash: item.tx_hash,
+      created_at: item.created_at,
+      status: item.status,
+      memo_decoded: item.memo_decoded,
+    }
+  })
+
   return NextResponse.json({
-    transactions: data ?? [],
+    items,
+    total: count ?? 0,
+    page,
+    limit,
+    transactions: items,
     pagination: {
       page,
       limit,
