@@ -889,3 +889,24 @@ All 48 tasks complete. Production build passing. Demo script exits clean.
 **Files modified:** `components/layout/PublicFooter.tsx`, `app/page.tsx`, `app/(public)/layout.tsx`, `app/(public)/about/page.tsx`, `app/api/mpp/payroll/execute/route.ts`, `app/api/mpp/bridge/offramp/route.ts`, `app/api/mpp/agent/session/treasury/route.ts`, `app/api/mpp/treasury/optimize/route.ts`, `AGENT_PROGRESS.md`
 **Summary:** Fixed the broken JSX in `/about`, added a shared `PublicFooter` so landing and public subpages now use the same footer shell, removed the last placeholder social link from the shared footer, and corrected Stripe compose charges to pass explicit USD cent decimals. Also aligned MPP-10 and MPP-12 session comments and unit semantics with the master.
 **Next task:** Await further review or deployment.
+
+---
+
+### T69 — Footer Background Wordmark Pass ✅
+**Files modified:** `components/layout/PublicFooter.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Added a soft oversized `REMLO` background wordmark behind the shared public footer to fill the empty footer field with a more editorial brand treatment. Kept the treatment low-contrast and masked so the navigation links and legal copy remain the primary reading layer on both desktop and mobile.
+**Next task:** Review the visual balance on desktop and mobile, then adjust size, opacity, or vertical placement if we want a stronger brand presence.
+
+---
+
+### T70 — Footer Wordmark Spacing Tune ✅
+**Files modified:** `components/layout/PublicFooter.tsx`, `AGENT_PROGRESS.md`
+**Summary:** Refined the shared footer watermark so the `REMLO` background fill no longer presses against the viewport edges and sits lower on mobile. Reduced the contrast slightly, tightened the tracking, and added responsive horizontal padding so the treatment reads more like a soft editorial backdrop than a centered watermark.
+**Next task:** Review the updated footer balance on desktop and mobile, then decide whether to keep it this restrained or push it bolder.
+
+---
+
+### T71 — Public Route Access Fix ✅
+**Files modified:** `middleware.ts`, `AGENT_PROGRESS.md`
+**Summary:** Fixed middleware so logged-out visitors can open the full public/footer route set without being redirected to `/login`. Added the remaining standalone public pages (`/about`, `/careers`, `/changelog`, `/contact`) and the `/legal/*` section to the public allowlist, which also makes the login page's Terms and Privacy links resolve correctly for unauthenticated users.
+**Next task:** Re-verify public navigation flows while logged out after the next deployment.
