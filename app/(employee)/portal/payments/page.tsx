@@ -8,6 +8,7 @@ import { TxStatus } from '@/components/wallet/TxStatus'
 import { MemoDecoder } from '@/components/payroll/MemoDecoder'
 import { cn } from '@/lib/utils'
 import { TEMPO_EXPLORER_URL } from '@/lib/constants'
+import { byteaMemoToHex } from '@/lib/memo'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -65,7 +66,8 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
   const [expanded, setExpanded] = React.useState(false)
   const run = Array.isArray(payment.payroll_run) ? payment.payroll_run[0] : payment.payroll_run
   const settlementMs = run?.settlement_time_ms
-  const hasMemo = Boolean(payment.memo_bytes)
+  const memoHex = byteaMemoToHex(payment.memo_bytes)
+  const hasMemo = Boolean(memoHex)
 
   return (
     <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
@@ -151,10 +153,10 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
               )}
 
               {/* Memo decoder */}
-              {hasMemo && payment.memo_bytes && (
+              {hasMemo && memoHex && (
                 <div className="space-y-1">
                   <p className="text-xs text-[var(--text-muted)]">Payment memo</p>
-                  <MemoDecoder memoHex={payment.memo_bytes as `0x${string}`} />
+                  <MemoDecoder memoHex={memoHex} />
                 </div>
               )}
 
