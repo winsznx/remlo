@@ -1,0 +1,61 @@
+---
+title: Architecture
+description: The Remlo stack across Tempo, Supabase, Bridge, Privy, and MPP.
+---
+
+# Architecture
+
+Remlo is a Tempo settlement layer with a Next.js control plane. The on-chain contracts hold treasury balances, execute payroll atomically, stream salary, and route yield. Supabase stores application state, Bridge handles fiat ingress and card and bank rails, Privy owns user identity and wallet creation, and `mppx` monetizes machine access to the payroll surface.
+
+## Stack
+
+| Layer | Technology |
+| --- | --- |
+| Chain | Tempo L1, chain ID `42431`, Simplex BFT, 0.5s finality |
+| Token standard | TIP-20 stablecoins with 6 decimals and ISO 20022 payroll memos |
+| Compliance | TIP-403 Policy Registry on every payout path |
+| Machine payments | MPP with `mppx`, HTTP 402, PathUSD settlement, session vouchers, SSE support |
+| Fiat rails | Stripe Bridge API for virtual accounts, cards, and ACH, SEPA, SPEI, and PIX off-ramp |
+| Wallets | Privy embedded wallets plus external wallet login |
+| Frontend | Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui |
+| Database | Supabase PostgreSQL with RLS-ready tables and realtime subscriptions |
+| State | Zustand and TanStack Query |
+
+## System flow
+
+### Employer path
+
+1. A company admin signs in with Privy and creates an employer record through `POST /api/employers`.
+2. Team records are created in Supabase and linked to KYC and payout state.
+3. Treasury deposits are accounted for on-chain in `PayrollTreasury`.
+4. Payroll preparation validates treasury balance, checks TIP-403 status, encodes memos, and writes draft run data.
+5. Payroll execution submits `PayrollBatcher.executeBatchPayroll()` and updates `payroll_runs` and `payment_items`.
+
+### Employee path
+
+1. An invited employee accepts `/invite/[token]` and claims the employee record.
+2. Privy creates or links a wallet. The employee never has to manage raw Tempo keys.
+3. Bridge KYC and bank details complete the fiat side of the account.
+4. The employee portal reads balance, payments, card state, and settings from Supabase, Tempo, and Bridge-backed data.
+5. Salary advance and bank off-ramp routes are exposed through MPP when the employee or an automation wants machine-accessible flows.
+
+### Agent path
+
+1. An AI client opens an MPP session or pays a single HTTP 402 charge.
+2. Remlo verifies the payment through `mppx`.
+3. The handler reads or writes data against Tempo contracts, Bridge, or Supabase.
+4. Session endpoints issue cumulative vouchers instead of requiring a new on-chain payment on every action.
+
+## Data boundaries
+
+| Boundary | What lives there |
+| --- | --- |
+| Supabase | Employers, employees, payroll runs, payment items, compliance events, MPP sessions |
+| Tempo contracts | Treasury balances, payroll execution, employee counts, streamed salary, yield state |
+| Bridge | Customer records, KYC links, virtual accounts, card accounts, fiat transfers |
+| Privy | User identity, embedded wallet provisioning, linked wallet accounts |
+
+## Current repository scope
+
+The master file reserves additional surfaces such as admin routes, AI helper routes, extra employee pages, and some employer settings routes. This repository does not yet ship all of those pages. The route reference in this docs set separates live routes from reserved routes so the deployment story stays accurate.
+

@@ -1,0 +1,37 @@
+---
+title: Introduction
+description: Remlo is a Tempo-native payroll stack for employers, employees, auditors, and autonomous agents.
+---
+
+# Remlo
+
+Remlo is borderless enterprise payroll on Tempo L1. Employers fund a payroll treasury, run compliant batch payouts, stream salary in real time, issue employee cards through Bridge, and expose the same workflows to software agents through MPP.
+
+This documentation set describes the current repository surface and the contract and integration model it depends on. `REMLO_MASTER.md` remains the naming and architecture authority. Where the master reserves routes that are not yet present in this codebase, those routes are called out as reserved instead of being documented as live.
+
+## What ships in this repository
+
+- Marketing and public pages for product, pricing, docs, company, contact, changelog, blog, and legal content
+- Privy-based authentication with employer onboarding, employee invite acceptance, and KYC handoff
+- Employer dashboard routes for team management, payroll, treasury, compliance, API access, and live demo flows
+- Employee portal routes for balance, payment history, card usage, bank off-ramp, and account settings
+- Internal REST routes for employer, employee, treasury, payroll, yield, invite, webhook, and demo-agent workflows
+- Twelve MPP-gated endpoints for payroll execution, treasury analysis, compliance, payslips, history, memo decoding, Bridge off-ramp, and salary streaming
+- Tempo smart contracts for treasury accounting, payroll batching, employee registry, streaming salary, and yield routing
+
+## Core operating model
+
+1. Employers register through Privy, create an employer record, and fund a Tempo treasury.
+2. Employee records live in Supabase and carry KYC, wallet, compensation, and Bridge account state.
+3. Payroll preparation builds ISO 20022 payroll memos, runs TIP-403 checks, and returns calldata or executes on-chain depending on the route.
+4. Tempo contracts settle the value path. Bridge handles fiat accounts, cards, and off-ramp rails. Privy handles user identity and embedded wallets.
+5. MPP adds an HTTP 402 business model on top of the same payroll surface so machine clients can pay for reads, writes, sessions, and SSE streams.
+
+## Read this set in order
+
+1. [Architecture](architecture) for the system map
+2. [Quickstart](quickstart) for local setup
+3. [Auth and Access](platform/auth-and-access) for route protection and identity rules
+4. [Web Routes](reference/web-routes) for the full page inventory
+5. [Core REST API](reference/core-rest-api) and [MPP Endpoints](reference/mpp-endpoints) for the HTTP surface
+
