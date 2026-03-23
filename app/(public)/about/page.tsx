@@ -32,6 +32,6 @@ export default function AboutPage() {
           </p>
         </section>
       </div>
-    </div>
+    </article>
   )
 }
