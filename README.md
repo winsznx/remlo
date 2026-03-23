@@ -91,15 +91,24 @@ The script opens an MPP session, queries yield, checks compliance, executes payr
 | `NEXT_PUBLIC_STREAM_VESTING` | Deployed `StreamVesting` address exposed to the frontend. |
 | `NEXT_PUBLIC_YIELD_ROUTER` | Deployed `YieldRouter` address exposed to the frontend. |
 | `NEXT_PUBLIC_APP_URL` | Public app origin used for MPP session callback URLs. |
+| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Optional public WalletConnect project id used by Privy when external wallet connections are enabled. |
 | `SUPABASE_SERVICE_KEY` | Server only. Supabase service role key for API routes and background writes. |
 | `BRIDGE_API_KEY` | Server only. Stripe Bridge API key for fiat rails, card issuance, and off-ramp operations. |
 | `BRIDGE_WEBHOOK_SECRET` | Server only. Bridge RSA webhook verification secret. |
+| `TEMPO_WEBHOOK_SECRET` | Server only. Tempo webhook verification secret for `/api/webhooks/tempo`. |
 | `REMLO_TREASURY_ADDRESS` | Server only. Tempo wallet that receives MPP fees. |
 | `REMLO_AGENT_PRIVATE_KEY` | Server only. Private key for the autonomous demo treasury agent. |
 | `RESEND_API_KEY` | Server only. Resend API key for invite and notification email delivery. |
 | `CLAUDE_API_KEY` | Server only. Anthropic API key for CSV parsing, anomaly detection, and compliance explanations. |
 | `STRIPE_SECRET_KEY` | Server only. Stripe secret key used by multi-rail MPP payment fallback. |
 | `MPP_SECRET_KEY` | Server only. Base64 secret used by `mppx` to sign and verify session state. |
+| `ADMIN_USER_IDS` | Optional server-only comma-separated allowlist for `/admin`. |
+| `DEMO_MPP_CREDENTIAL` | Optional local demo credential for `scripts/demo-agent.ts`. |
+| `DEMO_EMPLOYER_ID` | Optional local override for the demo employer id. |
+| `DEMO_PAYROLL_RUN_ID` | Optional local override for the demo payroll run id. |
+| `DEPLOYER_PRIVATE_KEY` | Local contract deployment key used by `contracts/script/Deploy.s.sol`. |
+
+Existing workspaces must also have `employers.employer_admin_wallet` backfilled with the actual Tempo/Privy wallet that funds `PayrollTreasury`. Treasury, payroll, and yield reads now derive the on-chain employer account id from that wallet rather than hashing the off-chain employer UUID.
 
 ## Built at
 

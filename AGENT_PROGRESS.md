@@ -1049,3 +1049,10 @@ To unblock `pnpm`, first traced the install failure to a stale direct dependency
 
 **Validation:** `pnpm exec tsc --noEmit` passed. `pnpm build` passed.
 **Next task:** Visually verify the live hero in-browser and then commit the Hyperspeed dependency + implementation swap as one focused marketing/frontend change.
+### T85 — On-chain identity + env contract hardening
+- Added canonical employer admin wallet storage to the schema via `employers.employer_admin_wallet` and documented the backfill migration in `scripts/migrations/20260323_add_employer_admin_wallet.sql`.
+- Added `lib/employer-onchain.ts` so treasury, payroll, yield, and MPP routes derive the on-chain employer account id from `keccak256(abi.encodePacked(employerAdminWallet))` instead of hashing the off-chain employer UUID.
+- Updated employer creation and dashboard startup flows to sync the authenticated Privy wallet into the employer record when available, which self-heals older workspaces that were created before this mapping existed.
+- Added `lib/privy-wallet.ts` so employer wallet sync now falls back from `user.wallet` to `linkedAccounts`, matching the employee invite flow and avoiding missed embedded-wallet syncs.
+- Added `.env.local.example` and refreshed the deployment/environment docs so local setup, Vercel configuration, and contract deployment now share one explicit variable list.
+- Added explicit wallet status panels for employers and employees so each side can see the current Privy/session wallet, the stored Remlo wallet, and whether the two are in sync before testing treasury, payroll, or portal flows.
