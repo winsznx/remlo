@@ -14,6 +14,18 @@ export interface PrivyClaims {
   exp?: number
 }
 
+function getAdminUserIds() {
+  return (process.env.ADMIN_USER_IDS ?? '')
+    .split(',')
+    .map((value) => value.trim())
+    .filter(Boolean)
+}
+
+export function isPlatformAdminUserId(userId: string | null | undefined) {
+  if (!userId) return false
+  return getAdminUserIds().includes(userId)
+}
+
 export function decodePrivyToken(token: string): PrivyClaims | null {
   try {
     const [, payload] = token.split('.')
@@ -33,6 +45,13 @@ export function getPrivyClaims(req: NextRequest): PrivyClaims | null {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) return null
   return decodePrivyToken(authHeader.slice(7))
+}
+
+export async function getCallerAdmin(req: NextRequest): Promise<PrivyClaims | null> {
+  const claims = getPrivyClaims(req)
+  if (!claims) return null
+  if (!isPlatformAdminUserId(claims.sub)) return null
+  return claims
 }
 
 /** Resolve the employer record for the authenticated caller. */

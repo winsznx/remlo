@@ -4,6 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { usePrivy } from '@privy-io/react-auth'
 import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import type { Employee } from '@/lib/queries/employees'
+import type { Database } from '@/lib/database.types'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -60,6 +61,79 @@ export interface MppSession {
   status: 'open' | 'closed' | 'expired'
   opened_at: string
   last_action: string | null
+}
+
+export interface EmployerPaymentItem {
+  id: string
+  amount: number
+  memo_bytes: string | null
+  memo_decoded: unknown
+  status: string
+  tx_hash: string | null
+  created_at: string
+  payroll_run: {
+    id: string
+    finalized_at: string | null
+    settlement_time_ms: number | null
+    block_number: number | null
+  } | null
+}
+
+export interface EmployerTeamDetailResponse {
+  employee: Database['public']['Tables']['employees']['Row']
+  payments: EmployerPaymentItem[]
+  complianceEvents: Database['public']['Tables']['compliance_events']['Row'][]
+}
+
+export interface EmployerComplianceSummary {
+  verified: number
+  pending: number
+  actionRequired: number
+  total: number
+}
+
+export interface EmployerComplianceEmployee {
+  id: string
+  name: string
+  email: string
+  kyc_status: string
+  tip403: 'authorized' | 'blocked' | 'pending'
+  lastChecked: string | null
+  wallet_address: string | null
+  country_code: string | null
+  bridge_card_id: string | null
+  bridge_bank_account_id: string | null
+}
+
+export interface EmployerComplianceAuditEntry {
+  id: string
+  employee_name: string
+  event_type: string
+  result: string
+  description: string
+  created_at: string
+  metadata: unknown
+}
+
+export interface EmployerComplianceResponse {
+  summary: EmployerComplianceSummary
+  policy: {
+    policyId: number | null
+    type: string
+    address: string
+    authorizedCount: number
+    description: string
+  }
+  employees: EmployerComplianceEmployee[]
+  auditLog: EmployerComplianceAuditEntry[]
+}
+
+export interface MppReceiptItem {
+  id: string
+  amount: string
+  route: string
+  receiptHash?: string
+  createdAt: string
 }
 
 // ─── Hooks ────────────────────────────────────────────────────────────────
@@ -132,5 +206,39 @@ export function useMppSessions(employerId: string | undefined) {
     queryFn: () => fetchJson(`/api/employers/${employerId}/mpp-sessions`),
     enabled: ready && authenticated && Boolean(employerId),
     refetchInterval: 10_000, // poll every 10s for active sessions
+  })
+}
+
+export function useEmployerTeamDetail(employerId: string | undefined, employeeId: string | undefined) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<EmployerTeamDetailResponse>({
+    queryKey: ['team-detail', employerId, employeeId],
+    queryFn: () => fetchJson(`/api/employers/${employerId}/team/${employeeId}`),
+    enabled: ready && authenticated && Boolean(employerId) && Boolean(employeeId),
+  })
+}
+
+export function useEmployerCompliance(employerId: string | undefined) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<EmployerComplianceResponse>({
+    queryKey: ['employer-compliance', employerId],
+    queryFn: () => fetchJson(`/api/employers/${employerId}/compliance`),
+    enabled: ready && authenticated && Boolean(employerId),
+  })
+}
+
+export function useMppReceipts(employerId: string | undefined) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<{ receipts: MppReceiptItem[] }>({
+    queryKey: ['mpp-receipts', employerId],
+    queryFn: () => fetchJson(`/api/employers/${employerId}/mpp-receipts`),
+    enabled: ready && authenticated && Boolean(employerId),
+    refetchInterval: 10_000,
   })
 }
