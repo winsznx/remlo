@@ -1,0 +1,71 @@
+---
+title: Employer Dashboard
+description: The employer-side product surface across team, payroll, treasury, compliance, API access, and demo flows.
+---
+
+# Employer Dashboard
+
+The employer application lives under `/dashboard`. It combines operational routes for payroll admins with a developer-facing API access section for machine clients.
+
+## Route map
+
+| Route | Purpose | Primary data sources |
+| --- | --- | --- |
+| `/dashboard` | Overview page with treasury, team, yield, and payroll summary cards | Supabase, `YieldRouter`, `payment_items`, `payroll_runs` |
+| `/dashboard/team` | Team roster and CSV import entry point | `employees` |
+| `/dashboard/team/add` | Add-employee flow | `employees`, invite and KYC APIs |
+| `/dashboard/team/[id]` | Individual employee details | `employees`, compliance state |
+| `/dashboard/payroll` | Payroll history surface | `payroll_runs` |
+| `/dashboard/payroll/new` | Payroll creation wizard | `employees`, payroll prep APIs |
+| `/dashboard/payroll/[runId]` | Single payroll run detail | `payroll_runs`, `payment_items` |
+| `/dashboard/treasury` | Treasury balance, deposits, yield, and transaction history | `PayrollTreasury`, `YieldRouter`, `payment_items` |
+| `/dashboard/compliance` | KYC and TIP-403 review surface | `employees`, `compliance_events`, TIP-403 |
+| `/dashboard/api-access` | MPP pricing, receipts, sessions, and agent demo | `mpp_sessions`, MPP routes |
+| `/dashboard/demo` | Demo agent experience | `/api/demo/run-agent` SSE |
+
+## Core employer workflows
+
+### Team onboarding
+
+1. Create an employer record through `POST /api/employers`.
+2. Add employees through `POST /api/employees` or `POST /api/employers/[id]/team`.
+3. Generate employee KYC links through `POST /api/employees/[id]/kyc`.
+4. Track employee onboarding, wallet creation, and KYC state from the team and compliance routes.
+
+### Payroll preparation
+
+`POST /api/employers/[id]/payroll` is the pre-flight route. It does four jobs:
+
+1. Checks employer treasury balance in `PayrollTreasury`
+2. Runs TIP-403 authorization checks for every recipient wallet
+3. Builds 32-byte payroll memos
+4. Persists the draft run and payment items in Supabase
+
+The route returns unsigned calldata so the frontend can hand execution to the user wallet. The machine-paid path is documented separately under [MPP Endpoints](../reference/mpp-endpoints).
+
+### Treasury
+
+`/dashboard/treasury` reads live treasury and yield state, then combines it with transaction history. The page depends on:
+
+- `GET /api/employers/[id]/treasury`
+- `GET /api/yield`
+- transaction queries and realtime invalidation hooks
+
+### API access
+
+The API access section is the operator console for machine clients. It surfaces:
+
+- MPP route pricing
+- Session history
+- Recent receipts
+- The live demo agent terminal
+
+## Reserved employer routes from the master
+
+The master file reserves these employer routes, but the current repository does not ship them yet:
+
+- `/dashboard/treasury/deposit`
+- `/dashboard/cards`
+- `/dashboard/settings`
+- `/dashboard/settings/billing`
+
