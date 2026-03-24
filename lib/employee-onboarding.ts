@@ -26,6 +26,7 @@ export interface CreateEmployeeInviteResult {
   bridgeCustomerId: string | null
   emailSent: boolean
   existing: boolean
+  inviteState: 'claimable' | 'claimed'
 }
 
 interface KycLink {
@@ -145,7 +146,7 @@ export async function createEmployeeInvite(
 
   const { data: existing, error: existingError } = await supabase
     .from('employees')
-    .select('id, email, first_name, last_name, bridge_customer_id')
+    .select('id, email, first_name, last_name, bridge_customer_id, user_id')
     .eq('employer_id', input.employerId)
     .eq('email', normalizedEmail)
     .maybeSingle()
@@ -173,6 +174,7 @@ export async function createEmployeeInvite(
       bridgeCustomerId,
       emailSent: false,
       existing: true,
+      inviteState: existing.user_id ? 'claimed' : 'claimable',
     }
   }
 
@@ -226,5 +228,6 @@ export async function createEmployeeInvite(
     bridgeCustomerId,
     emailSent,
     existing: false,
+    inviteState: 'claimable',
   }
 }

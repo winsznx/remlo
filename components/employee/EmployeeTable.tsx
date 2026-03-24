@@ -22,7 +22,7 @@ import {
 } from '@/components/ui/dropdown-menu'
 import { ComplianceBadge } from '@/components/employee/ComplianceBadge'
 import { WalletStatus } from '@/components/employee/WalletStatus'
-import type { Employee } from '@/lib/queries/employees'
+import type { TeamEmployee } from '@/lib/hooks/useDashboard'
 
 // Country code → emoji flag
 function flagEmoji(countryCode: string | null): string {
@@ -46,20 +46,23 @@ function formatDate(iso: string | null): string {
   return new Intl.DateTimeFormat('en-US', { month: 'short', day: 'numeric', year: 'numeric' }).format(new Date(iso))
 }
 
-function getWalletState(employee: Employee): 'connected' | 'pending' | 'none' {
+function getWalletState(employee: TeamEmployee): 'connected' | 'pending' | 'none' {
   if (employee.wallet_address) return 'connected'
   if (employee.invited_at) return 'pending'
   return 'none'
 }
 
-function getKycStatus(employee: Employee): 'approved' | 'pending' | 'rejected' | 'expired' {
+function getKycStatus(employee: TeamEmployee): 'approved' | 'pending' | 'rejected' | 'expired' {
   const s = employee.kyc_status
   if (s === 'approved' || s === 'rejected' || s === 'expired') return s
   return 'pending'
 }
 
-function getOperationalStatus(employee: Employee): 'active' | 'pending' | 'needs_attention' {
+function getOperationalStatus(employee: TeamEmployee): 'active' | 'pending' | 'needs_attention' {
   if (employee.kyc_status === 'rejected' || employee.kyc_status === 'expired') {
+    return 'needs_attention'
+  }
+  if (employee.payment_status === 'paused') {
     return 'needs_attention'
   }
   if (!employee.wallet_address || employee.kyc_status !== 'approved') {
@@ -69,8 +72,8 @@ function getOperationalStatus(employee: Employee): 'active' | 'pending' | 'needs
 }
 
 interface EmployeeTableProps {
-  data?: Employee[]
-  employees?: Employee[]
+  data?: TeamEmployee[]
+  employees?: TeamEmployee[]
   onSelect?: (id: string) => void
   onEdit?: (id: string) => void
   onView?: (id: string) => void
@@ -125,7 +128,7 @@ export function EmployeeTable({
     [rows, departmentFilter, statusFilter, walletFilter],
   )
 
-  const columns = React.useMemo<ColumnDef<Employee>[]>(
+  const columns = React.useMemo<ColumnDef<TeamEmployee>[]>(
     () => [
       {
         id: 'select',
@@ -266,7 +269,7 @@ export function EmployeeTable({
                 Edit salary
               </DropdownMenuItem>
               <DropdownMenuItem onClick={() => onPausePayments?.(row.original.id)}>
-                Pause payments
+                {row.original.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
               </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem

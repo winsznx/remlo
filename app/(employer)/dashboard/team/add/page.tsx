@@ -44,6 +44,7 @@ type InviteResponse = {
   bridgeCustomerId: string | null
   emailSent: boolean
   existing: boolean
+  inviteState: 'claimable' | 'claimed'
 }
 
 const INITIAL_FORM: FormState = {
@@ -145,7 +146,13 @@ export default function AddEmployeePage() {
       }
 
       setResult(body)
-      toast.success(body.existing ? 'Employee already exists. Invite details refreshed.' : 'Employee invited')
+      toast.success(
+        body.existing
+          ? body.inviteState === 'claimed'
+            ? 'Employee already claimed. Open the existing employee record to continue.'
+            : 'Employee already exists. Invite details refreshed.'
+          : 'Employee invited'
+      )
     } catch (err) {
       setError(err instanceof Error ? err.message : 'Failed to create employee')
     } finally {
@@ -210,10 +217,16 @@ export default function AddEmployeePage() {
               </div>
               <div className="space-y-1">
                 <h2 className="text-xl font-semibold text-[var(--text-primary)]">
-                  {result.existing ? 'Employee already on file' : 'Employee created'}
+                  {result.existing
+                    ? result.inviteState === 'claimed'
+                      ? 'Employee already claimed'
+                      : 'Employee already on file'
+                    : 'Employee created'}
                 </h2>
                 <p className="text-sm text-[var(--text-secondary)]">
-                  {form.firstName} {form.lastName} is now attached to your team profile and ready for onboarding.
+                  {result.inviteState === 'claimed'
+                    ? `${form.firstName} ${form.lastName} already has a claimed employee account for this workspace.`
+                    : `${form.firstName} ${form.lastName} is now attached to your team profile and ready for onboarding.`}
                 </p>
               </div>
             </div>
@@ -222,20 +235,37 @@ export default function AddEmployeePage() {
               <div className="rounded-xl border border-[var(--border-default)] bg-[var(--bg-base)] p-4">
                 <div className="flex items-center gap-2 text-sm font-medium text-[var(--text-primary)]">
                   <Mail className="h-4 w-4 text-[var(--accent)]" />
-                  Invite link
+                  {result.inviteState === 'claimed' ? 'Invite status' : 'Invite link'}
                 </div>
-                <p className="mt-2 break-all text-xs leading-6 text-[var(--text-secondary)]">{result.inviteUrl}</p>
+                {result.inviteState === 'claimed' ? (
+                  <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">
+                    This employee record has already been claimed, so the original invite link is no longer valid.
+                    Sign in with the employee account that accepted it, or create a fresh employee record with a different test email if you want a brand-new employee onboarding flow.
+                  </p>
+                ) : (
+                  <p className="mt-2 break-all text-xs leading-6 text-[var(--text-secondary)]">{result.inviteUrl}</p>
+                )}
                 <div className="mt-3 flex flex-wrap gap-2">
-                  <Button type="button" size="sm" onClick={() => void copyInviteLink()}>
-                    <Copy className="h-4 w-4" />
-                    Copy invite
-                  </Button>
-                  <Button asChild type="button" size="sm" variant="outline">
-                    <Link href={result.inviteUrl} target="_blank" rel="noreferrer">
-                      <ExternalLink className="h-4 w-4" />
-                      Open
-                    </Link>
-                  </Button>
+                  {result.inviteState === 'claimable' ? (
+                    <>
+                      <Button type="button" size="sm" onClick={() => void copyInviteLink()}>
+                        <Copy className="h-4 w-4" />
+                        Copy invite
+                      </Button>
+                      <Button asChild type="button" size="sm" variant="outline">
+                        <Link href={result.inviteUrl} target="_blank" rel="noreferrer">
+                          <ExternalLink className="h-4 w-4" />
+                          Open
+                        </Link>
+                      </Button>
+                    </>
+                  ) : (
+                    <Button asChild type="button" size="sm" variant="outline">
+                      <Link href={`/dashboard/team/${result.employeeId}`}>
+                        Open employee record
+                      </Link>
+                    </Button>
+                  )}
                 </div>
               </div>
 
@@ -271,7 +301,13 @@ export default function AddEmployeePage() {
               <h3 className="text-sm font-semibold text-[var(--text-primary)]">Next steps</h3>
               <ul className="mt-3 space-y-2 text-sm text-[var(--text-secondary)]">
                 <li>Employee record is live in your team directory and can be included in payroll batches.</li>
-                <li>{result.emailSent ? 'Invite email was queued through Resend.' : 'Invite email was not sent automatically in this environment.'}</li>
+                <li>
+                  {result.inviteState === 'claimed'
+                    ? 'This employee already completed invite claim previously, so no fresh invite link is available for reuse.'
+                    : result.emailSent
+                      ? 'Invite email was queued through Resend.'
+                      : 'Invite email was not sent automatically in this environment.'}
+                </li>
                 <li>{result.kycUrl ? 'Bridge KYC can start immediately from the generated link above.' : 'Bridge KYC can be generated later from the employee record once Bridge is configured.'}</li>
               </ul>
             </div>

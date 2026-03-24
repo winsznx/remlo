@@ -30,7 +30,7 @@ const EmployeeTable = React.lazy(() =>
 )
 import { CSVUpload } from '@/components/employee/CSVUpload'
 import { EmptyState } from '@/components/ui/EmptyState'
-import type { Employee } from '@/lib/queries/employees'
+import type { TeamEmployee } from '@/lib/hooks/useDashboard'
 
 // ─── Page ─────────────────────────────────────────────────────────────────────
 
@@ -48,13 +48,13 @@ export default function TeamPage() {
   const { data: teamData, isLoading, refetch } = useTeam(employer?.id)
   const [csvOpen, setCsvOpen] = React.useState(false)
   const [actionLoading, setActionLoading] = React.useState(false)
-  const [salaryEmployee, setSalaryEmployee] = React.useState<Employee | null>(null)
-  const [pauseEmployee, setPauseEmployee] = React.useState<Employee | null>(null)
-  const [removeEmployee, setRemoveEmployee] = React.useState<Employee | null>(null)
+  const [salaryEmployee, setSalaryEmployee] = React.useState<TeamEmployee | null>(null)
+  const [pauseEmployee, setPauseEmployee] = React.useState<TeamEmployee | null>(null)
+  const [removeEmployee, setRemoveEmployee] = React.useState<TeamEmployee | null>(null)
   const [salaryAmount, setSalaryAmount] = React.useState('')
   const [salaryCurrency, setSalaryCurrency] = React.useState('USD')
   const [payFrequency, setPayFrequency] = React.useState('monthly')
-  const employees = (teamData?.employees ?? []) as Employee[]
+  const employees = teamData?.employees ?? []
 
   function handleImported(count: number) {
     setCsvOpen(false)
@@ -122,12 +122,24 @@ export default function TeamPage() {
 
     setActionLoading(true)
     try {
-      await patchEmployee(pauseEmployee.id, { action: 'pausePayments' })
-      toast.success('Manual review flag added and payroll marked for operator review.')
+      const nextAction =
+        pauseEmployee.payment_status === 'paused' ? 'resumePayments' : 'pausePayments'
+      await patchEmployee(pauseEmployee.id, { action: nextAction })
+      toast.success(
+        pauseEmployee.payment_status === 'paused'
+          ? 'Payroll resumed for this employee.'
+          : 'Payroll paused for this employee.'
+      )
       setPauseEmployee(null)
       await refetch()
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to pause employee payroll.')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : pauseEmployee.payment_status === 'paused'
+            ? 'Unable to resume employee payroll.'
+            : 'Unable to pause employee payroll.'
+      )
     } finally {
       setActionLoading(false)
     }
@@ -316,9 +328,13 @@ export default function TeamPage() {
 
       <ConfirmDialog
         open={Boolean(pauseEmployee)}
-        title="Pause payments"
-        description={`Add a manual review hold for ${pauseEmployee ? `${pauseEmployee.first_name ?? ''} ${pauseEmployee.last_name ?? ''}`.trim() || pauseEmployee.email : 'this employee'} so payroll operators can review before the next run.`}
-        confirmLabel="Pause payments"
+        title={pauseEmployee?.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
+        description={
+          pauseEmployee?.payment_status === 'paused'
+            ? `Resume payroll for ${pauseEmployee ? `${pauseEmployee.first_name ?? ''} ${pauseEmployee.last_name ?? ''}`.trim() || pauseEmployee.email : 'this employee'} so they can be included in upcoming runs again.`
+            : `Pause payroll for ${pauseEmployee ? `${pauseEmployee.first_name ?? ''} ${pauseEmployee.last_name ?? ''}`.trim() || pauseEmployee.email : 'this employee'} so they are excluded until you resume payments.`
+        }
+        confirmLabel={pauseEmployee?.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
         loading={actionLoading}
         onCancel={() => setPauseEmployee(null)}
         onConfirm={() => void handlePausePayments()}
