@@ -8,7 +8,7 @@ import { RemloLogo } from '@/components/brand/RemloLogo'
 import { supabase } from '@/lib/supabase'
 import type { Employee } from '@/lib/queries/employees'
 
-type Step = 'loading' | 'invalid' | 'welcome' | 'authenticating' | 'claiming' | 'done'
+type Step = 'loading' | 'invalid' | 'claimed' | 'welcome' | 'authenticating' | 'claiming' | 'done'
 
 export default function InvitePage() {
   const params = useParams<{ token: string }>()
@@ -30,6 +30,18 @@ export default function InvitePage() {
   }, [token])
 
   async function verifyToken(t: string) {
+    const { data: claimedRecord } = await supabase
+      .from('employees')
+      .select('id')
+      .eq('id', t)
+      .not('user_id', 'is', null)
+      .maybeSingle()
+
+    if (claimedRecord) {
+      setStep('claimed')
+      return
+    }
+
     const { data, error } = await supabase
       .from('employees')
       .select('*')
@@ -110,6 +122,20 @@ export default function InvitePage() {
             <div className="h-6 w-48 bg-[var(--bg-subtle)] rounded animate-pulse" />
             <div className="h-4 w-full bg-[var(--bg-subtle)] rounded animate-pulse" />
             <div className="h-4 w-3/4 bg-[var(--bg-subtle)] rounded animate-pulse" />
+          </div>
+        )}
+
+        {step === 'claimed' && (
+          <div className="text-center">
+            <div className="w-12 h-12 rounded-full bg-[var(--bg-subtle)] flex items-center justify-center mx-auto mb-4">
+              <svg className="w-6 h-6 text-[var(--status-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M12 11V7m0 8h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.93 4c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
+              </svg>
+            </div>
+            <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Invite already claimed</h2>
+            <p className="text-sm text-[var(--text-secondary)]">
+              This employee invite has already been claimed. Sign in with the employee account that accepted it, or ask the employer to create a fresh test employee if you need a brand-new onboarding flow.
+            </p>
           </div>
         )}
 

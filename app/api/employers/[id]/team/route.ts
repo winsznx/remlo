@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { getAuthorizedEmployer } from '@/lib/auth'
 import { createEmployeeInvite } from '@/lib/employee-onboarding'
+import { derivePaymentHoldStatus } from '@/lib/payment-holds'
 
 type RouteContext = { params: Promise<{ id: string }> }
 
@@ -26,7 +27,41 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
     return NextResponse.json({ error: error.message }, { status: 500 })
   }
 
-  return NextResponse.json({ employees: data ?? [] })
+  const employees = data ?? []
+  if (employees.length === 0) {
+    return NextResponse.json({ employees: [] })
+  }
+
+  const employeeIds = employees.map((employee) => employee.id)
+  const { data: holdEvents, error: holdEventsError } = await supabase
+    .from('compliance_events')
+    .select('employee_id, event_type, created_at')
+    .eq('employer_id', id)
+    .in('employee_id', employeeIds)
+    .in('event_type', ['payments_paused', 'payments_resumed'])
+    .order('created_at', { ascending: false })
+
+  if (holdEventsError) {
+    return NextResponse.json({ error: holdEventsError.message }, { status: 500 })
+  }
+
+  const latestEventByEmployee = new Map<string, { event_type: string | null }>()
+  for (const event of holdEvents ?? []) {
+    if (event.employee_id && !latestEventByEmployee.has(event.employee_id)) {
+      latestEventByEmployee.set(event.employee_id, { event_type: event.event_type })
+    }
+  }
+
+  return NextResponse.json({
+    employees: employees.map((employee) => ({
+      ...employee,
+      payment_status: derivePaymentHoldStatus(
+        latestEventByEmployee.has(employee.id)
+          ? [latestEventByEmployee.get(employee.id)!]
+          : []
+      ),
+    })),
+  })
 }
 
 /** POST /api/employers/[id]/team — invite a new employee. */

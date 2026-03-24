@@ -5,6 +5,7 @@ import { usePrivy } from '@privy-io/react-auth'
 import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import type { Employee } from '@/lib/queries/employees'
 import type { Database } from '@/lib/database.types'
+import type { PaymentHoldStatus } from '@/lib/payment-holds'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
 
@@ -79,8 +80,12 @@ export interface EmployerPaymentItem {
   } | null
 }
 
+export interface TeamEmployee extends Employee {
+  payment_status: PaymentHoldStatus
+}
+
 export interface EmployerTeamDetailResponse {
-  employee: Database['public']['Tables']['employees']['Row']
+  employee: TeamEmployee
   payments: EmployerPaymentItem[]
   complianceEvents: Database['public']['Tables']['compliance_events']['Row'][]
 }
@@ -179,7 +184,7 @@ export function useTeam(employerId: string | undefined) {
   const { ready, authenticated } = usePrivy()
   const fetchJson = usePrivyAuthedJson()
 
-  return useQuery<{ employees: Employee[] }>({
+  return useQuery<{ employees: TeamEmployee[] }>({
     queryKey: ['team', employerId],
     queryFn: () => fetchJson(`/api/employers/${employerId}/team`),
     enabled: ready && authenticated && Boolean(employerId),

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createServerClient } from '@/lib/supabase-server'
 import { getAuthorizedEmployer, getCallerAdmin } from '@/lib/auth'
+import { derivePaymentHoldStatus } from '@/lib/payment-holds'
 
 type RouteContext = { params: Promise<{ id: string; employeeId: string }> }
 
@@ -21,7 +22,7 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
       .eq('id', employeeId)
       .eq('employer_id', employerId)
       .eq('active', true)
-      .single(),
+      .maybeSingle(),
     supabase
       .from('payment_items')
       .select(`
@@ -60,7 +61,10 @@ export async function GET(req: NextRequest, ctx: RouteContext) {
   }
 
   return NextResponse.json({
-    employee,
+    employee: {
+      ...employee,
+      payment_status: derivePaymentHoldStatus(complianceEvents ?? []),
+    },
     payments: payments ?? [],
     complianceEvents: complianceEvents ?? [],
   })
@@ -75,6 +79,10 @@ type TeamPatchBody =
     }
   | {
       action: 'pausePayments'
+      reason?: string
+    }
+  | {
+      action: 'resumePayments'
       reason?: string
     }
   | {
@@ -99,13 +107,30 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     .select('*')
     .eq('id', employeeId)
     .eq('employer_id', employerId)
-    .single()
+    .maybeSingle()
 
   if (employeeError || !employee) {
     return NextResponse.json({ error: employeeError?.message ?? 'Employee not found' }, { status: 404 })
   }
 
   const body = (await req.json()) as TeamPatchBody
+
+  const getCurrentPaymentStatus = async () => {
+    const { data: paymentEvents, error: paymentEventsError } = await supabase
+      .from('compliance_events')
+      .select('event_type, created_at')
+      .eq('employer_id', employerId)
+      .eq('employee_id', employeeId)
+      .in('event_type', ['payments_paused', 'payments_resumed'])
+      .order('created_at', { ascending: false })
+      .limit(1)
+
+    if (paymentEventsError) {
+      throw new Error(paymentEventsError.message)
+    }
+
+    return derivePaymentHoldStatus(paymentEvents ?? [])
+  }
 
   switch (body.action) {
     case 'updateSalary': {
@@ -132,6 +157,20 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
     }
 
     case 'pausePayments': {
+      let currentPaymentStatus: ReturnType<typeof derivePaymentHoldStatus>
+      try {
+        currentPaymentStatus = await getCurrentPaymentStatus()
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Failed to read payment status' },
+          { status: 500 }
+        )
+      }
+
+      if (currentPaymentStatus === 'paused') {
+        return NextResponse.json({ error: 'Payments are already paused for this employee' }, { status: 409 })
+      }
+
       const { error } = await supabase.from('compliance_events').insert({
         employer_id: employerId,
         employee_id: employeeId,
@@ -149,7 +188,42 @@ export async function PATCH(req: NextRequest, ctx: RouteContext) {
         return NextResponse.json({ error: error.message }, { status: 500 })
       }
 
-      return NextResponse.json({ message: 'Employee payroll placed on manual review hold' })
+      return NextResponse.json({ message: 'Employee payroll paused' })
+    }
+
+    case 'resumePayments': {
+      let currentPaymentStatus: ReturnType<typeof derivePaymentHoldStatus>
+      try {
+        currentPaymentStatus = await getCurrentPaymentStatus()
+      } catch (error) {
+        return NextResponse.json(
+          { error: error instanceof Error ? error.message : 'Failed to read payment status' },
+          { status: 500 }
+        )
+      }
+
+      if (currentPaymentStatus === 'active') {
+        return NextResponse.json({ error: 'Payments are already active for this employee' }, { status: 409 })
+      }
+
+      const { error } = await supabase.from('compliance_events').insert({
+        employer_id: employerId,
+        employee_id: employeeId,
+        wallet_address: employee.wallet_address,
+        event_type: 'payments_resumed',
+        result: 'CLEAR',
+        description: body.reason ?? 'Payroll resumed by employer operator.',
+        metadata: {
+          source: 'dashboard_team',
+          employeeEmail: employee.email,
+        },
+      })
+
+      if (error) {
+        return NextResponse.json({ error: error.message }, { status: 500 })
+      }
+
+      return NextResponse.json({ message: 'Employee payroll resumed' })
     }
 
     case 'removeEmployee': {

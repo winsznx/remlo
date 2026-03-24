@@ -534,11 +534,23 @@ export default function EmployeeDetailPage() {
   async function handlePausePayments() {
     setActionLoading(true)
     try {
-      await patchEmployee({ action: 'pausePayments' })
+      const nextAction =
+        employee.payment_status === 'paused' ? 'resumePayments' : 'pausePayments'
+      await patchEmployee({ action: nextAction })
       setPauseDialogOpen(false)
-      toast.success('Payroll paused and routed to manual review.')
+      toast.success(
+        employee.payment_status === 'paused'
+          ? 'Payroll resumed for this employee.'
+          : 'Payroll paused for this employee.'
+      )
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : 'Unable to pause payments.')
+      toast.error(
+        error instanceof Error
+          ? error.message
+          : employee.payment_status === 'paused'
+            ? 'Unable to resume payments.'
+            : 'Unable to pause payments.'
+      )
     } finally {
       setActionLoading(false)
     }
@@ -651,7 +663,9 @@ export default function EmployeeDetailPage() {
             </DropdownMenuTrigger>
             <DropdownMenuContent align="end">
               <DropdownMenuItem onClick={() => setSalaryDialogOpen(true)}>Edit salary</DropdownMenuItem>
-              <DropdownMenuItem onClick={() => setPauseDialogOpen(true)}>Pause payments</DropdownMenuItem>
+              <DropdownMenuItem onClick={() => setPauseDialogOpen(true)}>
+                {employee.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
+              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem className="text-[var(--status-error)]" onClick={() => setRemoveDialogOpen(true)}>
                 Remove employee
@@ -759,9 +773,13 @@ export default function EmployeeDetailPage() {
 
       <ConfirmDialog
         open={pauseDialogOpen}
-        title="Pause payments"
-        description="This flags the employee for manual review before the next payroll run. Historical payouts remain unchanged."
-        confirmLabel="Pause payments"
+        title={employee.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
+        description={
+          employee.payment_status === 'paused'
+            ? 'This clears the employer hold so the employee can be included in upcoming payroll runs again.'
+            : 'This places an employer hold on payroll for this employee until you resume payments. Historical payouts remain unchanged.'
+        }
+        confirmLabel={employee.payment_status === 'paused' ? 'Resume payments' : 'Pause payments'}
         loading={actionLoading}
         onCancel={() => setPauseDialogOpen(false)}
         onConfirm={() => void handlePausePayments()}
