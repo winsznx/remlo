@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { AlertTriangle, CheckCircle2, CircleDashed, Wallet } from 'lucide-react'
 import { Badge } from '@/components/ui/badge'
+import { Button } from '@/components/ui/button'
 import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 
 interface WalletStatusPanelProps {
@@ -17,6 +18,12 @@ interface WalletStatusPanelProps {
   mismatchCopy: string
   missingSessionCopy: string
   footer?: string
+  actionLabel?: string
+  actionPendingLabel?: string
+  actionPending?: boolean
+  actionDisabled?: boolean
+  onAction?: () => void | Promise<void>
+  diagnostics?: Array<{ label: string; value?: string | null }>
 }
 
 type WalletSyncState = 'synced' | 'missing-stored' | 'mismatch' | 'missing-session' | 'missing-both'
@@ -96,6 +103,12 @@ export function WalletStatusPanel({
   mismatchCopy,
   missingSessionCopy,
   footer,
+  actionLabel,
+  actionPendingLabel,
+  actionPending = false,
+  actionDisabled = false,
+  onAction,
+  diagnostics,
 }: WalletStatusPanelProps) {
   const state = getWalletSyncState(sessionAddress, storedAddress)
   const meta = getStateMeta(state, { syncedCopy, missingStoredCopy, mismatchCopy, missingSessionCopy })
@@ -111,10 +124,22 @@ export function WalletStatusPanel({
           </div>
           <p className="max-w-2xl text-sm leading-6 text-[var(--text-secondary)]">{description}</p>
         </div>
-        <Badge variant={meta.variant} className="gap-1.5">
-          <Icon className="h-3.5 w-3.5" />
-          {meta.label}
-        </Badge>
+        <div className="flex flex-wrap items-center gap-2">
+          {onAction && actionLabel ? (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={onAction}
+              disabled={actionDisabled || actionPending}
+            >
+              {actionPending ? actionPendingLabel ?? 'Working...' : actionLabel}
+            </Button>
+          ) : null}
+          <Badge variant={meta.variant} className="gap-1.5">
+            <Icon className="h-3.5 w-3.5" />
+            {meta.label}
+          </Badge>
+        </div>
       </div>
 
       <div className="mt-5 grid gap-4 md:grid-cols-2">
@@ -146,6 +171,20 @@ export function WalletStatusPanel({
         <p className="mt-2 text-sm leading-6 text-[var(--text-secondary)]">{meta.body}</p>
         {footer ? <p className="mt-2 text-xs leading-5 text-[var(--text-muted)]">{footer}</p> : null}
       </div>
+
+      {diagnostics?.length ? (
+        <div className="mt-5 rounded-2xl border border-[var(--border-default)] bg-[var(--bg-base)] p-4">
+          <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Diagnostic context</p>
+          <div className="mt-3 space-y-3">
+            {diagnostics.map((item) => (
+              <div key={item.label}>
+                <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">{item.label}</p>
+                <p className="mt-1 break-all font-mono text-sm text-[var(--mono)]">{item.value ?? 'Not available'}</p>
+              </div>
+            ))}
+          </div>
+        </div>
+      ) : null}
     </div>
   )
 }
