@@ -5,7 +5,7 @@ description: Bridge and Tempo webhook handling plus the demo agent SSE surface.
 
 # Webhooks and Demo Agent
 
-This repository includes two public webhook routes and one public demo-agent stream route.
+Remlo exposes two public webhook routes for external systems and one public demo-agent stream route for showing the product in motion.
 
 ## Public operational routes
 
@@ -55,7 +55,7 @@ This repository includes two public webhook routes and one public demo-agent str
 
 ## Demo agent route
 
-`POST /api/demo/run-agent` returns `text/event-stream`. The current implementation emits a scripted sequence that mirrors the sixty-second pitch:
+`POST /api/demo/run-agent` returns `text/event-stream`. The current implementation emits a scripted sequence that mirrors the product pitch:
 
 1. Session open
 2. Yield-rate request
