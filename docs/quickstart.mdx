@@ -1,9 +1,18 @@
 ---
 title: Quickstart
-description: Boot the app locally, deploy contracts, and run the demo agent.
+description: Go from clean install to a real employer, employee, treasury, and payroll walkthrough.
 ---
 
 # Quickstart
+
+The fastest useful Remlo test is not just booting the frontend. It is proving the full loop:
+
+1. Sign in as an employer
+2. Sync the employer wallet
+3. Add an employee with a fresh identity
+4. Fund treasury on Tempo testnet
+5. Prepare or submit a payroll run
+6. Claim the invite in a separate browser profile and verify the employee portal
 
 ## Prerequisites
 
@@ -11,19 +20,60 @@ description: Boot the app locally, deploy contracts, and run the demo agent.
 - Node.js 20 or newer
 - Foundry with Tempo support if you plan to build or deploy contracts
 - A populated `.env.local` copied from `.env.local.example`
+- A Supabase project with the current schema and migrations applied
 
-## Run the app locally
+## Local setup
 
 ```bash
 pnpm install
 cp .env.local.example .env.local
-# fill in env vars from operations/environment-variables
+# fill in values from operations/environment-variables
 pnpm dev
 ```
 
-For existing Supabase projects created before the on-chain identity fix, run the SQL in `scripts/migrations/20260323_add_employer_admin_wallet.sql` and backfill each employer row with the Tempo or Privy wallet that actually funds `PayrollTreasury`.
+If your Supabase project predates the employer wallet sync fix, run `scripts/migrations/20260323_add_employer_admin_wallet.sql` and backfill `employers.employer_admin_wallet` before testing treasury or yield.
 
-## Deploy contracts
+## Ten-minute product walkthrough
+
+### 1. Sign in as the employer
+
+- Open `/login`
+- Create or reuse an employer identity
+- Finish company setup through `/register` if needed
+
+### 2. Confirm the employer wallet is synced
+
+- Open `/dashboard/settings`
+- Check **Employer Wallet Status**
+- Make sure the current session wallet and canonical payroll wallet match and the badge shows `Ready`
+
+### 3. Add an employee with a new identity
+
+- Open `/dashboard/team/add`
+- Use a fresh email or phone number that has not already claimed an invite
+- Copy the invite link
+
+### 4. Fund treasury
+
+- Open `/dashboard/treasury`
+- Use the deposit guidance for your environment
+- If you are testing on Tempo testnet, fund the employer wallet and treasury with sandbox assets first
+
+### 5. Prepare payroll
+
+- Open `/dashboard/payroll/new`
+- Choose the employee you just created
+- Review memo, compliance, and treasury checks
+- Submit the payroll run or keep it as a draft depending on your environment
+
+### 6. Claim the employee invite
+
+- Open the invite link in incognito or a separate browser profile
+- Sign in with a different identity from the employer account
+- Let Privy create the wallet automatically if you do not want to connect one manually
+- Confirm the employee lands in `/portal`
+
+## Contract deployment
 
 ```bash
 foundryup -n tempo
@@ -33,18 +83,20 @@ cast rpc tempo_fundAddress <YOUR_ADDRESS> --rpc-url https://rpc.moderato.tempo.x
 forge script script/Deploy.s.sol --broadcast --rpc-url https://rpc.moderato.tempo.xyz
 ```
 
+After a redeploy, update all public contract addresses together before you test payroll, yield, or treasury again.
+
 ## Run the autonomous demo agent
 
 ```bash
 npx ts-node scripts/demo-agent.ts
 ```
 
-The demo agent opens an MPP session, queries yield, checks compliance, executes a payroll run, opens the salary balance stream, and closes the session. In the current script, the expected total is about `$1.33` across twelve machine-paid actions.
+The demo agent opens an MPP session, queries treasury and yield, checks compliance, executes a payroll action, streams balance updates, and closes the session.
 
 ## Recommended verification steps
 
-1. Sign in through `/login`.
-2. Create an employer through `/register` if you are a new admin.
-3. Open `/dashboard/api-access` and confirm the pricing panel matches the MPP table in this docs set.
-4. Open `/dashboard/demo` and run the simulated agent stream.
-5. Visit `/portal` with an employee account and confirm the portal routes resolve cleanly.
+1. `/dashboard/settings` shows `Ready` for the employer wallet.
+2. `/dashboard/treasury` loads without a wallet or yield conflict.
+3. `/dashboard/team` shows the new employee and the correct payment action state.
+4. `/portal/wallet` shows the employee wallet identity after invite claim.
+5. `/dashboard/api-access` and `/dashboard/demo` load if you plan to test MPP flows.

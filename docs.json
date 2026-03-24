@@ -1,24 +1,28 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "willow",
+  "theme": "palm",
   "name": "Remlo",
-  "description": "Borderless enterprise payroll on Tempo L1. Remlo combines Tempo-native payroll contracts, TIP-403 policy checks, Bridge fiat rails, Privy embedded wallets, and MPP-gated machine access in one operating surface.",
+  "description": "Global payroll, treasury, cards, and machine-paid workflows on Tempo.",
   "colors": {
-    "primary": "#34D399",
-    "light": "#86EFAC",
-    "dark": "#059669"
+    "primary": "#22C55E",
+    "light": "#6EE7B7",
+    "dark": "#15803D"
+  },
+  "appearance": {
+    "default": "dark",
+    "strict": false
   },
   "logo": {
     "light": "/docs/logo-light.svg",
     "dark": "/docs/logo-dark.svg",
-    "href": "https://remlo-drab.vercel.app"
+    "href": "https://docs.remlo.xyz"
   },
   "favicon": {
     "light": "/docs/favicon.svg",
     "dark": "/docs/favicon.svg"
   },
   "styling": {
-    "eyebrows": "breadcrumbs",
+    "eyebrows": "section",
     "codeblocks": {
       "theme": {
         "light": "github-light",
@@ -30,18 +34,34 @@
     }
   },
   "navigation": {
-    "dropdowns": [
+    "tabs": [
       {
-        "dropdown": "Overview",
+        "tab": "Docs",
         "icon": "book-open",
-        "description": "What Remlo ships, how it is structured, and how to run it.",
         "groups": [
           {
-            "group": "Start here",
+            "group": "Getting Started",
             "pages": [
               "docs/index",
-              "docs/architecture",
-              "docs/quickstart"
+              "docs/quickstart",
+              "docs/architecture"
+            ]
+          },
+          {
+            "group": "Workspaces",
+            "pages": [
+              "docs/platform/auth-and-access",
+              "docs/platform/employer-dashboard",
+              "docs/platform/employee-portal"
+            ]
+          },
+          {
+            "group": "Protocol and Integrations",
+            "pages": [
+              "docs/protocol/contracts",
+              "docs/protocol/memo-and-compliance",
+              "docs/integrations/bridge",
+              "docs/integrations/privy"
             ]
           },
           {
@@ -54,75 +74,59 @@
         ]
       },
       {
-        "dropdown": "Product",
-        "icon": "layout-dashboard",
-        "description": "User-facing routes, access rules, and product workflows.",
+        "tab": "API Reference",
+        "icon": "square-terminal",
         "groups": [
           {
-            "group": "Access",
-            "pages": [
-              "docs/platform/auth-and-access",
-              "docs/reference/web-routes"
-            ]
-          },
-          {
-            "group": "Applications",
-            "pages": [
-              "docs/platform/employer-dashboard",
-              "docs/platform/employee-portal"
-            ]
-          }
-        ]
-      },
-      {
-        "dropdown": "Protocol",
-        "icon": "blocks",
-        "description": "The Tempo, Bridge, Privy, and compliance layers behind Remlo.",
-        "groups": [
-          {
-            "group": "On-chain",
-            "pages": [
-              "docs/protocol/contracts",
-              "docs/protocol/memo-and-compliance"
-            ]
-          },
-          {
-            "group": "Integrations",
-            "pages": [
-              "docs/integrations/bridge",
-              "docs/integrations/privy"
-            ]
-          }
-        ]
-      },
-      {
-        "dropdown": "Reference",
-        "icon": "terminal",
-        "description": "Internal APIs, MPP endpoints, webhooks, and the demo agent flow.",
-        "groups": [
-          {
-            "group": "HTTP surface",
+            "group": "APIs and Webhooks",
             "pages": [
               "docs/reference/core-rest-api",
               "docs/reference/mpp-endpoints",
               "docs/reference/webhooks-and-demo-agent"
             ]
+          },
+          {
+            "group": "Surface Map",
+            "pages": [
+              "docs/reference/web-routes"
+            ]
           }
         ]
+      }
+    ],
+    "anchors": [
+      {
+        "name": "App",
+        "url": "https://remlo.xyz",
+        "icon": "panel-top-open"
+      },
+      {
+        "name": "Status",
+        "url": "https://remlo.xyz/status",
+        "icon": "activity"
+      },
+      {
+        "name": "Contact",
+        "url": "https://remlo.xyz/contact",
+        "icon": "mail"
       }
     ]
   },
   "navbar": {
     "links": [
       {
-        "label": "App",
-        "href": "https://remlo-drab.vercel.app"
+        "label": "Pricing",
+        "href": "https://remlo.xyz/pricing"
+      },
+      {
+        "label": "Status",
+        "href": "https://remlo.xyz/status"
       }
     ],
     "primary": {
       "type": "button",
-      "label": "Open Remlo",
-      "href": "https://remlo-drab.vercel.app"
+      "label": "Open App",
+      "href": "https://remlo.xyz"
     }
   }
 }
