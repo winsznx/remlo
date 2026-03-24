@@ -5,48 +5,89 @@ description: The Remlo stack across Tempo, Supabase, Bridge, Privy, and MPP.
 
 # Architecture
 
-Remlo is a Tempo settlement layer with a Next.js control plane. The on-chain contracts hold treasury balances, execute payroll atomically, stream salary, and route yield. Supabase stores application state, Bridge handles fiat ingress and card and bank rails, Privy owns user identity and wallet creation, and `mppx` monetizes machine access to the payroll surface.
+Remlo is a multi-surface payroll system built around one canonical employer identity. The web app gives operators and employees clean workflows, while the contracts and APIs keep treasury, settlement, and audit data consistent underneath.
 
-## Stack
+## The stack in one view
 
 | Layer | Technology |
 | --- | --- |
 | Chain | Tempo L1, chain ID `42431`, Simplex BFT, 0.5s finality |
 | Token standard | TIP-20 stablecoins with 6 decimals and ISO 20022 payroll memos |
 | Compliance | TIP-403 Policy Registry on every payout path |
-| Machine payments | MPP with `mppx`, HTTP 402, PathUSD settlement, session vouchers, SSE support |
-| Fiat rails | Stripe Bridge API for virtual accounts, cards, and ACH, SEPA, SPEI, and PIX off-ramp |
+| Machine payments | MPP with `mppx`, HTTP 402, session vouchers, and SSE support |
+| Fiat rails | Stripe Bridge API for virtual accounts, cards, and bank off-ramp |
 | Wallets | Privy embedded wallets plus external wallet login |
 | Frontend | Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui |
-| Database | Supabase PostgreSQL with RLS-ready tables and realtime subscriptions |
-| State | Zustand and TanStack Query |
+| Database | Supabase PostgreSQL with realtime updates and product state |
+| Client state | Zustand and TanStack Query |
 
-## System flow
+## Four product layers
 
-### Employer path
+### 1. Employer workspace
 
-1. A company admin signs in with Privy and creates an employer record through `POST /api/employers`.
-2. Team records are created in Supabase and linked to KYC and payout state.
-3. Treasury deposits are accounted for on-chain in `PayrollTreasury`.
-4. Payroll preparation validates treasury balance, checks TIP-403 status, encodes memos, and writes draft run data.
-5. Payroll execution submits `PayrollBatcher.executeBatchPayroll()` and updates `payroll_runs` and `payment_items`.
+The employer app under `/dashboard` is the control plane for team onboarding, payroll, treasury, compliance, API access, and cards.
 
-### Employee path
+### 2. Employee experience
 
-1. An invited employee accepts `/invite/[token]` and claims the employee record.
-2. Privy creates or links a wallet. The employee never has to manage raw Tempo keys.
-3. Bridge KYC and bank details complete the fiat side of the account.
-4. The employee portal reads balance, payments, card state, and settings from Supabase, Tempo, and Bridge-backed data.
-5. Salary advance and bank off-ramp routes are exposed through MPP when the employee or an automation wants machine-accessible flows.
+The employee app under `/portal` focuses on received money, not treasury operations. It surfaces balances, payment history, cards, bank off-ramp, and wallet identity.
 
-### Agent path
+### 3. Settlement and policy contracts
 
-1. An AI client opens an MPP session or pays a single HTTP 402 charge.
-2. Remlo verifies the payment through `mppx`.
-3. The handler reads or writes data against Tempo contracts, Bridge, or Supabase.
-4. Session endpoints issue cumulative vouchers instead of requiring a new on-chain payment on every action.
+Tempo contracts keep the financial state:
 
-## Data boundaries
+- `PayrollTreasury` tracks available and locked payroll funds
+- `PayrollBatcher` executes multi-recipient payroll
+- `EmployeeRegistry` tracks workforce membership
+- `StreamVesting` handles accrued streaming salary
+- `YieldRouter` reads and rebalances yield allocation
+
+TIP-403 sits across the payout path as a policy gate.
+
+### 4. Fiat, identity, and machine access
+
+- Bridge handles KYC, virtual accounts, cards, and off-ramp
+- Privy handles sign-in and wallet provisioning
+- `mppx` prices machine access to the same payroll and treasury workflows
+
+## Payroll lifecycle
+
+### 1. Identity and workspace creation
+
+- An admin signs in with Privy
+- Remlo creates or resolves the employer record
+- The employer wallet is synced and becomes the canonical on-chain identity for treasury reads
+
+### 2. Employee onboarding
+
+- The employer creates an employee record
+- The employee claims the invite
+- Privy provisions or links a wallet
+- Bridge can be used for KYC and payout rails
+
+### 3. Treasury funding
+
+- The employer funds the Tempo treasury
+- `PayrollTreasury` records what is available versus already locked to payroll
+
+### 4. Payroll preparation
+
+- The app converts salary amounts into token units
+- Memo bytes are generated
+- TIP-403 checks run on recipient wallets
+- Draft payroll runs and payment items are written to Supabase
+
+### 5. Payroll settlement
+
+- `PayrollBatcher.executeBatchPayroll()` is submitted
+- `payment_items` and `payroll_runs` are updated
+- Tempo webhooks confirm or fail the run
+
+### 6. Employee receipt and off-ramp
+
+- Employees see the payment in the portal
+- They can spend, retain, or off-ramp depending on the integrations enabled for the deployment
+
+## Source of truth by layer
 
 | Boundary | What lives there |
 | --- | --- |
@@ -55,7 +96,6 @@ Remlo is a Tempo settlement layer with a Next.js control plane. The on-chain con
 | Bridge | Customer records, KYC links, virtual accounts, card accounts, fiat transfers |
 | Privy | User identity, embedded wallet provisioning, linked wallet accounts |
 
-## Current repository scope
+## The most important design rule
 
-The master file reserves additional surfaces such as admin routes, AI helper routes, extra employee pages, and some employer settings routes. This repository does not yet ship all of those pages. The route reference in this docs set separates live routes from reserved routes so the deployment story stays accurate.
-
+Remlo should never guess an employer’s on-chain identity from an off-chain company id. Treasury, yield, and payroll contract state resolve from the employer’s canonical admin wallet, so wallet sync is part of the core architecture, not a settings nicety.
