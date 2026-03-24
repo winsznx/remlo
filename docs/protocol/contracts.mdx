@@ -1,13 +1,13 @@
 ---
 title: Contracts
-description: Tempo contracts deployed for treasury, payroll batching, employee registry, streaming salary, and yield routing.
+description: Tempo contracts for treasury, payroll settlement, employee registry, salary streaming, and yield routing.
 ---
 
 # Contracts
 
-The current repository points to deployed Moderato testnet addresses in `lib/constants.ts`. Frontend pages use the public addresses, and server-side write routes use the same contracts through `lib/contracts.ts`.
+Remlo settles payroll through a small set of Tempo contracts. The web app and server routes both rely on these addresses being correct, so contract deployment and app configuration always move together.
 
-## Deployed addresses
+## Core contracts
 
 | Contract | Address | Responsibility |
 | --- | --- | --- |
@@ -15,30 +15,29 @@ The current repository points to deployed Moderato testnet addresses in `lib/con
 | `PayrollBatcher` | `0x58E5102BAED1c703dC1052cc7f5E30A96af34Eb8` | Executes atomic multi-recipient payroll batches with memo fields |
 | `EmployeeRegistry` | `0x1fF7E623CFdb6e263Be0D25A9142DD7888F5CBdA` | Tracks employee membership and headcount per employer |
 | `StreamVesting` | `0x71a2BA383d2C8ec15310705A13693F054271531f` | Exposes accrued salary reads and employee claims |
-| `YieldRouter` | `0x41dD786b2e01825437e2F67b51719CBeDcd527b0` | Reads APY, accrued yield, allocation, and rebalances treasury capital |
+| `YieldRouter` | `0x41dD786b2e01825437e2F67b51719CBeDcd527b0` | Reads APY, accrued yield, allocation, and treasury rebalances |
 
-## Read methods used by the app
+## What the app reads
 
-| Contract | Read methods used in app code |
+| Contract | Read methods used in the product |
 | --- | --- |
 | `PayrollTreasury` | `getAvailableBalance`, `getLockedBalance` |
-| `PayrollBatcher` | Execution handled by server or wallet client rather than read access |
 | `EmployeeRegistry` | `getEmployeeCount` |
 | `StreamVesting` | `getAccruedBalance` |
 | `YieldRouter` | `getCurrentAPY`, `getYieldSources`, `getAllocation`, `getAccruedYield`, `yieldConfig` |
-| `TIP403Registry` precompile | `isAuthorized` |
+| `TIP403Registry` | `isAuthorized` |
 
-## Write methods used by the app
+## What the app writes
 
-| Contract | Write methods used in app code |
+| Contract | Write methods used in Remlo |
 | --- | --- |
 | `PayrollBatcher` | `executeBatchPayroll` |
 | `StreamVesting` | `claimAccrued` |
 | `YieldRouter` | `rebalance` |
 
-## Payroll treasury account key
+## Canonical treasury identity
 
-`PayrollTreasury` does not key employer balances by the Supabase `employers.id` UUID.
+`PayrollTreasury` does **not** key employer balances by the Supabase employer UUID.
 
 It keys each account by:
 
@@ -46,9 +45,9 @@ It keys each account by:
 keccak256(abi.encodePacked(employerAdminAddress))
 ```
 
-That means any read or write flow that wants to inspect treasury balances, locked payroll, or gas budget must first resolve the canonical employer admin wallet address used for deposits. Off-chain employer ids are useful application identifiers, but they are not the on-chain treasury account key.
+That is why the employer wallet shown in `/dashboard/settings` matters so much. Treasury, yield, and payroll reads must resolve from the same canonical employer wallet that funds the treasury.
 
-## Tempo constants
+## Tempo network constants
 
 | Constant | Value |
 | --- | --- |

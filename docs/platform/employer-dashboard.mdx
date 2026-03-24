@@ -1,71 +1,62 @@
 ---
 title: Employer Dashboard
-description: The employer-side product surface across team, payroll, treasury, compliance, API access, and demo flows.
+description: The employer-side operating surface for treasury, team management, payroll, compliance, cards, and API access.
 ---
 
 # Employer Dashboard
 
-The employer application lives under `/dashboard`. It combines operational routes for payroll admins with a developer-facing API access section for machine clients.
+The employer application lives under `/dashboard`. It is where finance, ops, and compliance teams manage payroll from funding through settlement.
+
+## Core modules
+
+| Module | What it controls |
+| --- | --- |
+| Overview | Treasury, payroll, headcount, and yield summaries |
+| Team | Employee records, invites, compensation, payment holds, and KYC readiness |
+| Payroll | Drafts, run creation, execution, and run history |
+| Treasury | Available balance, locked payroll, deposits, and yield context |
+| Compliance | KYC state, manual review, and policy-related events |
+| Cards | Employer-managed spend controls for employee card programs |
+| API Access | MPP pricing, sessions, receipts, and the demo agent |
+| Settings | Canonical employer wallet, organization profile, and billing |
 
 ## Route map
 
-| Route | Purpose | Primary data sources |
-| --- | --- | --- |
-| `/dashboard` | Overview page with treasury, team, yield, and payroll summary cards | Supabase, `YieldRouter`, `payment_items`, `payroll_runs` |
-| `/dashboard/team` | Team roster and CSV import entry point | `employees` |
-| `/dashboard/team/add` | Add-employee flow | `employees`, invite and KYC APIs |
-| `/dashboard/team/[id]` | Individual employee details | `employees`, compliance state |
-| `/dashboard/payroll` | Payroll history surface | `payroll_runs` |
-| `/dashboard/payroll/new` | Payroll creation wizard | `employees`, payroll prep APIs |
-| `/dashboard/payroll/[runId]` | Single payroll run detail | `payroll_runs`, `payment_items` |
-| `/dashboard/treasury` | Treasury balance, deposits, yield, and transaction history | `PayrollTreasury`, `YieldRouter`, `payment_items` |
-| `/dashboard/treasury/deposit` | Funding instructions and deposit readiness | `employers`, Bridge virtual-account state, treasury hints |
-| `/dashboard/cards` | Employer-managed employee card program | `employees`, `/api/employees/[id]/card` |
-| `/dashboard/compliance` | KYC and TIP-403 review surface | `employees`, `compliance_events`, TIP-403 |
-| `/dashboard/api-access` | MPP pricing, receipts, sessions, and agent demo | `mpp_sessions`, MPP routes |
-| `/dashboard/settings` | Organization profile and controls | `employers` |
-| `/dashboard/settings/billing` | Subscription, payroll volume, and MPP spend | `employers`, `payroll_runs`, `mpp_sessions` |
-| `/dashboard/demo` | Demo agent experience | `/api/demo/run-agent` SSE |
+| Route | Purpose |
+| --- | --- |
+| `/dashboard` | Employer overview |
+| `/dashboard/team` | Team directory and CSV import entry point |
+| `/dashboard/team/add` | Employee creation and invite flow |
+| `/dashboard/team/[id]` | Employee detail, history, and payment controls |
+| `/dashboard/payroll` | Payroll history |
+| `/dashboard/payroll/new` | Payroll creation wizard |
+| `/dashboard/payroll/[runId]` | Single payroll run detail |
+| `/dashboard/treasury` | Treasury, deposits, and yield |
+| `/dashboard/cards` | Employer card-program management |
+| `/dashboard/compliance` | KYC and policy review |
+| `/dashboard/api-access` | Paid API controls and demo tooling |
+| `/dashboard/settings` | Organization and wallet settings |
 
-## Core employer workflows
+## The four employer loops
 
-### Team onboarding
+### 1. Onboard the team
 
-1. Create an employer record through `POST /api/employers`.
-2. Add employees through `POST /api/employees` or `POST /api/employers/[id]/team`.
-3. Generate employee KYC links through `POST /api/employees/[id]/kyc`.
-4. Track employee onboarding, wallet creation, and KYC state from the team and compliance routes.
+Create employees, issue invites, open KYC flows, and confirm each worker is payout-ready.
 
-### Payroll preparation
+### 2. Keep treasury healthy
 
-`POST /api/employers/[id]/payroll` is the pre-flight route. It does four jobs:
+Confirm the employer wallet is synced, fund treasury, and monitor available versus locked payroll balance.
 
-1. Checks employer treasury balance in `PayrollTreasury`
-2. Runs TIP-403 authorization checks for every recipient wallet
-3. Builds 32-byte payroll memos
-4. Persists the draft run and payment items in Supabase
+### 3. Prepare and submit payroll
 
-The route returns unsigned calldata so the frontend can hand execution to the user wallet. The machine-paid path is documented separately under [MPP Endpoints](../reference/mpp-endpoints).
+Build a payroll run, review memo and compliance checks, then submit the settlement transaction.
 
-### Treasury
+### 4. Monitor outcomes
 
-`/dashboard/treasury` reads live treasury and yield state, then combines it with transaction history. The page depends on:
+Review payment history, holds, compliance events, receipts, and API usage from the same workspace.
 
-- `GET /api/employers/[id]/treasury`
-- `GET /api/yield`
-- transaction queries and realtime invalidation hooks
+## Important operator behaviors
 
-### API access
-
-The API access section is the operator console for machine clients. It surfaces:
-
-- MPP route pricing
-- Session history
-- Recent receipts
-- The live demo agent terminal
-
-## Additional dashboard behavior
-
-- Team management includes CSV import, filters, column visibility, and row actions for salary updates, manual review holds, and removal.
-- Team detail includes overview, payment history, and compliance tabs plus employer actions and card issuance when Bridge prerequisites are satisfied.
-- API Access includes one-time agent key generation, receipt history, session history, and the live demo terminal.
+- Employee payment state is now explicit. After you pause payments, the next action becomes **Resume payments**, not another pause.
+- Treasury, yield, and payroll reads resolve from the employer’s canonical wallet. If the wallet is not synced, these views should be treated as blocked rather than guessed.
+- API Access is not a marketing page. It is the operator console for paid machine workflows.
