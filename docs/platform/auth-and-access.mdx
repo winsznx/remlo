@@ -1,54 +1,66 @@
 ---
 title: Auth and Access
-description: Route protection, role routing, Privy login methods, and the current access model.
+description: How Remlo signs users in, decides their workspace, and protects payroll and treasury actions.
 ---
 
 # Auth and Access
 
-Remlo uses Privy for identity and wallet access, then resolves product roles through Supabase. Middleware decides whether a request is public, auth-related, or protected, then routes the user into the correct area of the app.
+Remlo separates **identity** from **role**.
 
-## Current login surface
+- Privy handles sign-in and wallet creation
+- Supabase determines whether that identity is an employer, employee, or admin
+- Middleware routes the user into the right workspace
 
-The current implementation supports:
+## Supported sign-in methods
 
-- Email through the Privy modal
-- SMS through the Privy modal
-- Wallet connection through the Privy modal
-- A dedicated passkey action on the login screen
+- Email
+- SMS
+- External wallet connection
+- Passkey from the dedicated login action
 
-The Privy config in `lib/privy.ts` sets `email`, `sms`, and `wallet` as modal login methods. The login screen also calls `useLoginWithPasskey()` directly, so passkey remains available even though it is not listed in the modal method array.
+That combination keeps onboarding low-friction for non-crypto users while still supporting wallet-native operators.
 
-## Role routing
+## Who lands where
 
 | User state | Destination |
 | --- | --- |
-| Unauthenticated user hitting a protected route | Redirect to `/login` |
+| Unauthenticated visitor hitting a protected route | `/login` |
 | Employer | `/dashboard` |
 | Employee | `/portal` |
 | Platform admin allowlisted through `ADMIN_USER_IDS` | `/admin` |
 | Authenticated user with no resolved role | `/register` |
 
-## Public routes
+## The role model
 
-The following surfaces bypass authentication in middleware:
+### Employer
+
+An employer is resolved from the Privy user DID that owns the employer record. This user operates treasury, team management, payroll, compliance, and API access.
+
+### Employee
+
+An employee claims an invite, links that identity to the employee record, and then uses `/portal`.
+
+### Admin
+
+Admins are a separate internal allowlist and should not be treated as customer-facing product roles.
+
+## Public versus protected routes
+
+### Public routes
 
 - `/`
-- `/login`
-- `/register`
 - `/pricing`
 - `/docs`
-- `/blog`
 - `/about`
-- `/careers`
-- `/changelog`
 - `/contact`
+- `/login`
+- `/register`
 - `/invite/[token]`
 - `/kyc/[token]`
 - `/legal/*`
-- `/api/webhooks/bridge`
-- `/api/webhooks/tempo`
+- webhook routes
 
-## Protected route families
+### Protected route families
 
 | Prefix | Expected role |
 | --- | --- |
@@ -56,16 +68,18 @@ The following surfaces bypass authentication in middleware:
 | `/portal` | Employee |
 | `/admin` | Platform admin |
 
-## Bearer-token model for internal APIs
+## API authentication
 
-Internal REST routes use an `Authorization: Bearer <privy-jwt>` header. Server helpers in `lib/auth.ts` decode the Privy token, then look up the caller’s employer record in Supabase before returning data or performing writes.
+The first-party REST API expects:
 
-## Auth route inventory
+```http
+Authorization: Bearer <privy-jwt>
+```
 
-| Route | Purpose | Access |
-| --- | --- | --- |
-| `/login` | Mixed web2 and web3 sign-in screen | Public |
-| `/register` | Employer company bootstrap after sign-in | Authenticated user without employer record |
-| `/invite/[token]` | Employee invite acceptance and wallet claim flow | Public token route |
-| `/kyc/[token]` | KYC handoff page | Public token route |
+Server helpers decode the Privy token, resolve the caller’s role, and then authorize employer, employee, or admin actions.
 
+## Testing guidance
+
+- Use one identity for the employer workspace
+- Use a separate email, phone number, or wallet for employee invite testing
+- Do not reuse the employer identity when claiming an employee invite, or you will keep landing in `/dashboard`

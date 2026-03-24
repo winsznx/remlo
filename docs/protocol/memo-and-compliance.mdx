@@ -1,54 +1,53 @@
 ---
 title: Memo and Compliance Model
-description: Payroll memo encoding, TIP-403 checks, and how Remlo records compliance outcomes.
+description: Payroll memo encoding, TIP-403 checks, and the audit trail Remlo keeps around both.
 ---
 
 # Memo and Compliance Model
 
-Remlo uses two pieces of protocol metadata on every serious money movement:
+Every serious payroll movement in Remlo carries two layers of context:
 
-1. A fixed-width payroll memo carried on TIP-20 transfers
-2. A TIP-403 authorization check against the recipient wallet
+1. a payroll memo that links the transfer back to business context
+2. a TIP-403 policy check that determines whether the recipient wallet is authorized
 
 ## Payroll memo fields
 
-The master file defines a fixed 32-byte ISO 20022 payroll memo that carries:
+Remlo uses a fixed-width payroll memo that carries:
 
 | Field | Why it exists |
 | --- | --- |
-| `paic` message type | Marks the transfer as a payroll instruction |
-| Employer id | Ties the transfer back to the employer record |
-| Employee id | Ties the transfer to a single employee record |
-| Pay period | Anchors the transfer to a payroll period |
-| Cost center | Allows department or accounting segmentation |
-| Record hash | Gives the transfer a short integrity link back to the payroll record |
+| `paic` message type | Marks the transfer as payroll-related |
+| Employer id | Links the transfer back to the company workspace |
+| Employee id | Links the transfer to a specific worker |
+| Pay period | Anchors the payout to a payroll cycle |
+| Cost center | Supports accounting and departmental segmentation |
+| Record hash | Provides a compact integrity link back to the payroll record |
 
-In the current repository, `encodeMemo()` is used during payroll preparation and `decodeMemo()` is exposed to both the UI and the MPP memo decoder endpoint.
+The app builds these values during payroll preparation and exposes decoded memo data in both operator and employee surfaces.
 
-## Where memo data shows up
+## Where memo data appears
 
 | Surface | Use |
 | --- | --- |
 | `POST /api/employers/[id]/payroll` | Builds memo values before execution |
-| `/portal/payments` | Displays decoded payroll context to employees |
-| `/api/mpp/memo/decode` | Returns decoded memo fields to auditors or machine clients |
-| `/api/mpp/payslips/[runId]/[employeeId]` | Includes memo context on a single payslip response |
+| `/portal/payments` | Shows payroll context to employees |
+| `/api/mpp/memo/decode` | Returns decoded memo fields for auditors or agents |
+| `/api/mpp/payslips/[runId]/[employeeId]` | Includes memo context in a payslip response |
 
 ## TIP-403 enforcement
 
-TIP-403 is checked in two ways:
+TIP-403 is used in two places:
 
-- Inline during employer payroll preparation to block unauthorized recipients before batch submission
-- Through the public MPP compliance endpoint for auditors, employers, or autonomous agents
+- inline during payroll preparation so unauthorized recipients are blocked before submission
+- through the compliance API so operators, auditors, and agents can check wallets directly
 
 ## Compliance event ledger
 
-The application records compliance outcomes into `compliance_events`. The main event producers are:
+Compliance outcomes are recorded in `compliance_events`.
 
-| Source | Event type examples |
+| Source | Event examples |
 | --- | --- |
-| MPP compliance checks | `mpp_check` |
+| Policy checks | `mpp_check`, `payments_paused`, `payments_resumed` |
 | Bridge KYC updates | `kyc_approved`, `kyc_rejected`, `kyc_pending`, `kyc_expired` |
 
-This is the data source behind `/dashboard/compliance` and the marketplace compliance list MPP endpoint.
-
+This ledger powers `/dashboard/compliance` and gives Remlo a durable audit trail for both automated and manual review decisions.

@@ -1,61 +1,66 @@
 ---
 title: Employee Portal
-description: The employee-side product surface for salary visibility, payment history, card usage, and settings.
+description: The employee-side experience for balances, payment history, cards, off-ramp, and profile settings.
 ---
 
 # Employee Portal
 
-The employee application lives under `/portal`. It is designed for a worker who should be able to receive salary, understand where it came from, and spend or off-ramp funds without touching raw chain tooling.
+The employee application lives under `/portal`. It is designed so a worker can receive payroll, understand what was paid, and move funds without needing to understand the underlying chain stack.
 
-## Live routes
+## What employees can do
 
-| Route | Purpose | Primary data sources |
-| --- | --- | --- |
-| `/portal` | Balance overview, last payment, quick actions, streaming-salary state | `employees`, `payment_items`, employer lookup |
-| `/portal/payments` | Full payment history with decoded memo details | `payment_items`, `payroll_runs`, Tempo explorer links |
-| `/portal/card` | Card display, live transaction history, and bank transfer entry point | Bridge-backed card state, `/api/employees/[id]/card`, `/api/employees/[id]/offramp` |
-| `/portal/card/activate` | Card issuance and activation handoff | `/api/employees/[id]/card` |
-| `/portal/wallet` | Wallet identity and linked account details | `employees`, Privy wallet state |
-| `/portal/settings` | Profile, bank connection entry, notification toggles, security controls | Privy user, employee record, employer lookup |
-| `/portal/settings/offramp` | Bank account and off-ramp preferences | employee off-ramp routes |
+| Area | Outcome |
+| --- | --- |
+| Home | See balance, most recent payroll, and quick actions |
+| Payments | Review payroll history, memo context, and transaction status |
+| Card | View card state and initiate spend-related actions where enabled |
+| Wallet | Confirm which wallet is linked to payroll |
+| Settings | Update profile and off-ramp preferences |
+
+## Route map
+
+| Route | Purpose |
+| --- | --- |
+| `/portal` | Balance overview and quick actions |
+| `/portal/payments` | Payment history with memo details |
+| `/portal/card` | Card visibility and bank transfer entry point |
+| `/portal/card/activate` | Card activation handoff |
+| `/portal/wallet` | Wallet identity and sync state |
+| `/portal/settings` | Profile and account settings |
+| `/portal/settings/offramp` | Bank account and off-ramp preferences |
 
 ## Salary experience
 
-The home portal route distinguishes between standard payroll and streaming payroll:
+Remlo supports two employee payout views:
 
-- Standard payroll shows the most recent paid amount.
-- Streaming payroll shows a live ticker driven by `StreamVesting` state and the employee compensation record.
+- standard payroll, where the employee sees completed payroll transfers
+- streaming payroll, where the employee sees accrued salary that can be claimed
+
+The portal abstracts both into one balance-first interface.
 
 ## Payment history
 
-The payments route exposes:
+Each payment can surface:
 
-- Amount
-- Status
-- Decoded memo context
-- Transaction hash
-- Tempo explorer deep link
-- Settlement time when available
+- amount
+- status
+- decoded memo context
+- transaction hash
+- explorer link
+- settlement timing when available
 
-This is the employee-facing mirror of the payroll record kept in `payment_items` and `payroll_runs`.
+That gives employees an understandable audit trail instead of a raw token transfer list.
 
-## Card and bank off-ramp
+## Cards and bank off-ramp
 
-The current card route combines two concerns:
+Where Bridge is enabled, the portal can expose:
 
-- Card visibility and controls
-- Off-ramp to bank through the Bridge-backed MPP endpoint
+- card status and activation
+- bank off-ramp preferences
+- direct employee off-ramp actions
 
-The employee-facing portal now uses first-party employee routes for off-ramp and card actions:
+Those actions are available through first-party employee routes, while the MPP off-ramp endpoint remains available for automation.
 
-- `GET /api/employees/[id]/card`
-- `POST /api/employees/[id]/card`
-- `POST /api/employees/[id]/offramp`
+## Wallet and identity
 
-The dedicated MPP Bridge endpoint remains available for machine-paid callers and external agents.
-
-## Security and profile
-
-- Profile fields persist through `PATCH /api/employees/[id]`.
-- Passkey linking uses Privy directly from the settings screen.
-- Notification preferences remain browser-local by design in the current build.
+The wallet page is critical during onboarding. It shows whether the employee’s current Privy wallet and stored payroll wallet line up, which helps catch invite-claim or account-mismatch issues early.
