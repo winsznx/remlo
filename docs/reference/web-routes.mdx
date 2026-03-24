@@ -1,11 +1,11 @@
 ---
 title: Web Routes
-description: Complete page inventory for public, auth, employer, and employee routes in the current repository.
+description: Route inventory for the public site, employer workspace, employee portal, and internal admin surfaces.
 ---
 
 # Web Routes
 
-This page is the route inventory for the current repository. Reserved routes from the master that are not yet in the app are listed separately at the bottom.
+This page is the fastest way to understand the product surface by URL family.
 
 ## Public routes
 
@@ -13,14 +13,14 @@ This page is the route inventory for the current repository. Reserved routes fro
 | --- | --- |
 | `/` | Marketing landing page |
 | `/pricing` | Pricing and plan surface |
-| `/docs` | Public docs landing page inside the app shell |
-| `/about` | Company background page |
-| `/blog` | Blog index page |
+| `/docs` | Public docs entry inside the app shell |
+| `/about` | Company background |
+| `/blog` | Blog index |
 | `/careers` | Hiring page |
-| `/changelog` | Product change log page |
+| `/changelog` | Product changes |
 | `/contact` | Contact page |
-| `/press` | Press and media page |
-| `/status` | Product and infrastructure health page |
+| `/press` | Press and media |
+| `/status` | Product and infrastructure health |
 | `/legal/privacy` | Privacy policy |
 | `/legal/terms` | Terms of service |
 | `/legal/cookies` | Cookie policy |
@@ -29,12 +29,12 @@ This page is the route inventory for the current repository. Reserved routes fro
 
 | Route | Purpose |
 | --- | --- |
-| `/login` | Unified sign-in screen for email, SMS, wallet, and passkey |
+| `/login` | Unified sign-in for email, SMS, wallet, and passkey |
 | `/register` | Employer company setup |
 | `/invite/[token]` | Employee invite claim route |
 | `/kyc/[token]` | KYC handoff route |
 
-## Employer routes
+## Employer workspace
 
 | Route | Purpose |
 | --- | --- |
@@ -43,18 +43,18 @@ This page is the route inventory for the current repository. Reserved routes fro
 | `/dashboard/team/add` | Employee creation flow |
 | `/dashboard/team/[id]` | Employee detail page |
 | `/dashboard/payroll` | Payroll history |
-| `/dashboard/payroll/new` | Payroll run creation wizard |
+| `/dashboard/payroll/new` | Payroll creation wizard |
 | `/dashboard/payroll/[runId]` | Single payroll run page |
 | `/dashboard/treasury` | Treasury and yield management |
-| `/dashboard/treasury/deposit` | Dedicated funding instructions and deposit readiness |
+| `/dashboard/treasury/deposit` | Funding instructions and deposit readiness |
 | `/dashboard/cards` | Employer card-program management |
 | `/dashboard/compliance` | KYC and TIP-403 review |
 | `/dashboard/api-access` | MPP pricing, sessions, receipts, and demo tooling |
 | `/dashboard/settings` | Employer organization settings |
-| `/dashboard/settings/billing` | Employer billing and spend view |
+| `/dashboard/settings/billing` | Billing and spend view |
 | `/dashboard/demo` | Demo agent experience |
 
-## Employee routes
+## Employee portal
 
 | Route | Purpose |
 | --- | --- |
@@ -66,11 +66,11 @@ This page is the route inventory for the current repository. Reserved routes fro
 | `/portal/settings` | Employee profile and bank settings |
 | `/portal/settings/offramp` | Employee bank off-ramp management |
 
-## Admin routes
+## Internal admin
 
 | Route | Purpose |
 | --- | --- |
 | `/admin` | Internal operations overview |
-| `/admin/employers` | Internal employer directory |
+| `/admin/employers` | Employer directory |
 | `/admin/compliance` | Cross-employer compliance feed |
-| `/admin/monitoring` | Internal monitoring and webhook health |
+| `/admin/monitoring` | Monitoring and webhook health |

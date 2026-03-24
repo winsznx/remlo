@@ -1,9 +1,17 @@
 ---
 title: Deployment
-description: Deploy the Next.js app, publish the Mintlify docs, and verify the integration surface.
+description: Ship the app, docs, contracts, and integrations without leaving payroll or invites in a half-wired state.
 ---
 
 # Deployment
+
+Remlo has three production surfaces to think about:
+
+- the Next.js application
+- the Mintlify docs site
+- the Tempo contracts and their public addresses
+
+If any one of those drifts, the product can look healthy while critical flows like treasury, invite, or payroll quietly fail.
 
 ## Application deployment
 
@@ -11,59 +19,57 @@ The app is designed for Vercel with `pnpm build` as the production build command
 
 ### App checklist
 
-1. Set every canonical environment variable from [Environment Variables](environment-variables).
-2. Confirm the deployed contract addresses in `lib/constants.ts` and the `NEXT_PUBLIC_*` contract variables match.
-3. Verify Supabase service credentials are present for protected API routes and realtime reads.
-4. Verify Bridge keys and webhook secret are set before enabling employee KYC, card, or off-ramp flows.
-5. Verify `REMLO_AGENT_PRIVATE_KEY` and `MPP_SECRET_KEY` before enabling machine-paid write flows.
-6. Verify each employer row has `employer_admin_wallet` populated with the real Tempo or Privy wallet that funds `PayrollTreasury`.
-
-### Post-deploy checks
-
-| Surface | What to verify |
-| --- | --- |
-| Public site | `/`, `/pricing`, `/docs`, `/about`, `/contact`, `/press`, `/status`, `/legal/terms`, `/legal/privacy` |
-| Auth | `/login`, `/register`, `/invite/[token]`, `/kyc/[token]` |
-| Employer app | `/dashboard`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/treasury/deposit`, `/dashboard/cards`, `/dashboard/settings`, `/dashboard/api-access`, `/dashboard/demo` |
-| Employee app | `/portal`, `/portal/payments`, `/portal/card`, `/portal/card/activate`, `/portal/wallet`, `/portal/settings`, `/portal/settings/offramp` |
-| Admin app | `/admin`, `/admin/employers`, `/admin/compliance`, `/admin/monitoring` |
-| MPP | Confirm 402 challenges and successful receipts on the twelve endpoints |
-| Webhooks | Confirm Bridge and Tempo webhook signatures verify correctly |
-
-## Mintlify deployment
-
-Mintlify uses `docs.json` as the site configuration file. In this repository, `docs.json` stays at the repo root while the MDX pages and docs-only SVG assets live under the `docs/` directory.
-
-### How Mintlify should be wired
-
-1. Connect the repository to Mintlify through the Mintlify GitHub app.
-2. Keep `docs.json` in the repository root. Mintlify reads it as the site blueprint.
-3. Keep the docs pages, reference content, and docs brand assets under `docs/`.
-4. Push changes to the connected branch. Mintlify rebuilds the docs site from the committed MDX files.
-5. Use preview deployments for branch review when you need layout or copy approval before merge.
-
-### What this docs bundle includes
-
-- Product overview and system architecture
-- Full route inventory for public, auth, employer, and employee pages
-- Internal REST API reference
-- Full MPP endpoint reference
-- Webhook and demo-agent reference
-- Contract, Bridge, Privy, and environment documentation
+1. Set every required value from [Environment Variables](environment-variables).
+2. Confirm `NEXT_PUBLIC_APP_URL` points to your live domain, not an old preview URL.
+3. Confirm the deployed contract addresses match every `NEXT_PUBLIC_*` contract variable.
+4. Verify Supabase service credentials are present for protected routes and webhooks.
+5. Verify Bridge keys and webhook secret are set before enabling KYC, cards, or bank off-ramp.
+6. Verify `REMLO_AGENT_PRIVATE_KEY` and `MPP_SECRET_KEY` before enabling machine-paid write flows.
+7. Verify each active employer row has `employer_admin_wallet` populated with the real payroll wallet used for treasury deposits.
 
 ## Contract deployment
 
-The Foundry scripts in `contracts/` target Tempo Moderato. The current deployed addresses baked into `lib/constants.ts` are documented again in [Contracts](../protocol/contracts).
+The Foundry scripts in `contracts/` target Tempo Moderato test infrastructure.
 
-If you redeploy after contract fixes, update all five `NEXT_PUBLIC_*` contract variables in Vercel and any local `.env.local` copies together. Do not rely on the fallback addresses in `lib/constants.ts` after a new deployment.
+After a contract redeploy:
 
-## Suggested release gate
+1. Update the public contract variables in Vercel
+2. Update local `.env.local`
+3. Verify `/dashboard/settings` still shows the employer wallet as `Ready`
+4. Re-test treasury, payroll, and yield against the new addresses
+
+Do not rely on stale fallback addresses after a redeploy. Remlo reads contract state directly from the addresses in its public environment.
+
+## Docs deployment
+
+Mintlify reads `docs.json` from the project root and the MDX pages from `docs/`.
+
+### Docs checklist
+
+1. Connect the project through the Mintlify GitHub app.
+2. Keep `docs.json` at the repo root.
+3. Keep docs content and docs-only brand assets under `docs/`.
+4. Use preview builds for layout or copy review before merge.
+
+## Post-deploy smoke test
+
+| Surface | What to verify |
+| --- | --- |
+| Public site | `/`, `/pricing`, `/about`, `/contact`, `/press`, `/status`, and legal pages |
+| Auth | `/login`, `/register`, `/invite/[token]`, `/kyc/[token]` |
+| Employer | `/dashboard`, `/dashboard/settings`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/api-access` |
+| Employee | `/portal`, `/portal/payments`, `/portal/card`, `/portal/wallet`, `/portal/settings` |
+| Webhooks | Bridge and Tempo signatures verify in the deployed environment |
+| MPP | 402 challenge flow works and receipts are recorded for paid endpoints |
+
+## Release gate
 
 Do not call the deployment complete until all of the following are true:
 
-1. `pnpm build` passes.
-2. `pnpm exec tsc --noEmit` passes.
-3. The public legal pages resolve without an auth redirect.
-4. The login screen links for Terms and Privacy resolve to the correct public pages.
-5. The MPP pricing page matches the backend charges.
-6. The Bridge and Tempo webhooks accept signed requests in the deployed environment.
+1. `pnpm build` passes
+2. `pnpm exec tsc --noEmit` passes
+3. Employer wallet status shows `Ready` in `/dashboard/settings`
+4. Treasury and yield load without identity errors
+5. Invite links resolve on the live domain
+6. The MPP pricing page matches the backend charges
+7. Bridge and Tempo webhooks accept signed requests

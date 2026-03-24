@@ -5,7 +5,9 @@ description: All twelve machine-paid payroll endpoints, their pricing model, and
 
 # MPP Endpoints
 
-MPP is the machine-facing commercial layer on top of Remlo. Each endpoint either charges a one-off HTTP 402 payment or opens a session that uses cumulative vouchers. The handlers are built with `mppx`.
+MPP is the machine-facing commercial layer on top of Remlo. It exists so treasury, compliance, payout, and employee-balance workflows can be sold to agents and external automations without inventing a separate backend just for bots.
+
+Each endpoint either charges a one-off HTTP 402 payment or opens a session that uses cumulative vouchers. The handlers are built with `mppx`.
 
 ## Full endpoint table
 
@@ -23,6 +25,16 @@ MPP is the machine-facing commercial layer on top of Remlo. Each endpoint either
 | 10 | `POST` | `/api/mpp/treasury/optimize` | `$0.10` | Session | Employer agent | `PayrollTreasury`, `YieldRouter` |
 | 11 | `GET` | `/api/mpp/marketplace/compliance-list/[employerId]` | `$0.50` | Single charge | Employer or auditor | `compliance_events` |
 | 12 | `POST` | `/api/mpp/agent/session/treasury` | `$0.02` | Session | AI agent | Treasury, yield, registry contracts |
+
+## When to use MPP instead of the core API
+
+Use MPP when:
+
+- a non-human caller should pay for access
+- the flow is repeated enough that sessions are better than one charge per step
+- you want a commercial interface for treasury, payroll, balance streaming, or off-ramp
+
+Use the [Core REST API](core-rest-api) when the caller is an authenticated product user acting inside the web app.
 
 ## Session endpoints
 
