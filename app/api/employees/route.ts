@@ -39,6 +39,7 @@ export async function POST(req: NextRequest) {
       employerId,
       companyName: employer.company_name,
       email,
+      appUrl: req.nextUrl.origin,
       firstName: body.firstName,
       lastName: body.lastName,
       jobTitle: body.jobTitle,
