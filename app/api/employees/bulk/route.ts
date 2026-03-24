@@ -140,6 +140,7 @@ export async function POST(req: NextRequest) {
         employerId: caller.id,
         companyName: caller.company_name,
         email: employee.email,
+        appUrl: req.nextUrl.origin,
         firstName: employee.firstName,
         lastName: employee.lastName,
         jobTitle: employee.jobTitle,

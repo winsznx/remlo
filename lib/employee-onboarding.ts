@@ -8,6 +8,7 @@ export interface CreateEmployeeInviteInput {
   employerId: string
   companyName: string
   email: string
+  appUrl?: string
   firstName?: string
   lastName?: string
   jobTitle?: string
@@ -35,23 +36,24 @@ interface BridgeCustomer {
   id: string
 }
 
-function getAppUrl() {
-  return (process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo.app').replace(/\/$/, '')
+function getAppUrl(appUrlOverride?: string) {
+  return (appUrlOverride ?? process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo.xyz').replace(/\/$/, '')
 }
 
-export function getEmployeeInviteUrl(employeeId: string) {
-  return `${getAppUrl()}/invite/${employeeId}`
+export function getEmployeeInviteUrl(employeeId: string, appUrlOverride?: string) {
+  return `${getAppUrl(appUrlOverride)}/invite/${employeeId}`
 }
 
 export async function ensureEmployeeKycLink(
-  employee: Pick<EmployeeRow, 'id' | 'email' | 'first_name' | 'last_name' | 'bridge_customer_id'>
+  employee: Pick<EmployeeRow, 'id' | 'email' | 'first_name' | 'last_name' | 'bridge_customer_id'>,
+  appUrlOverride?: string
 ): Promise<{ kycUrl: string; customerId: string } | null> {
   if (!process.env.BRIDGE_API_KEY) {
     return null
   }
 
   const supabase = createServerClient()
-  const redirectUri = `${getAppUrl()}/kyc/${employee.id}?status=complete`
+  const redirectUri = `${getAppUrl(appUrlOverride)}/kyc/${employee.id}?status=complete`
 
   if (employee.bridge_customer_id) {
     const link = await bridgeRequest<KycLink>('/kyc_links', {
@@ -101,11 +103,12 @@ export async function sendEmployeeInviteEmail(opts: {
   firstName?: string
   companyName: string
   employeeId: string
+  appUrl?: string
 }) {
   const apiKey = process.env.RESEND_API_KEY
   if (!apiKey) return false
 
-  const inviteUrl = getEmployeeInviteUrl(opts.employeeId)
+  const inviteUrl = getEmployeeInviteUrl(opts.employeeId, opts.appUrl)
   const firstName = opts.firstName || 'there'
 
   try {
@@ -156,7 +159,7 @@ export async function createEmployeeInvite(
     let bridgeCustomerId = existing.bridge_customer_id
 
     try {
-      const kyc = await ensureEmployeeKycLink(existing)
+      const kyc = await ensureEmployeeKycLink(existing, input.appUrl)
       kycUrl = kyc?.kycUrl ?? null
       bridgeCustomerId = kyc?.customerId ?? bridgeCustomerId
     } catch {
@@ -165,7 +168,7 @@ export async function createEmployeeInvite(
 
     return {
       employeeId: existing.id,
-      inviteUrl: getEmployeeInviteUrl(existing.id),
+      inviteUrl: getEmployeeInviteUrl(existing.id, input.appUrl),
       kycUrl,
       bridgeCustomerId,
       emailSent: false,
@@ -201,7 +204,7 @@ export async function createEmployeeInvite(
   let bridgeCustomerId = created.bridge_customer_id
 
   try {
-    const kyc = await ensureEmployeeKycLink(created)
+    const kyc = await ensureEmployeeKycLink(created, input.appUrl)
     kycUrl = kyc?.kycUrl ?? null
     bridgeCustomerId = kyc?.customerId ?? bridgeCustomerId
   } catch {
@@ -213,11 +216,12 @@ export async function createEmployeeInvite(
     firstName: input.firstName,
     companyName: input.companyName,
     employeeId: created.id,
+    appUrl: input.appUrl,
   })
 
   return {
     employeeId: created.id,
-    inviteUrl: getEmployeeInviteUrl(created.id),
+    inviteUrl: getEmployeeInviteUrl(created.id, input.appUrl),
     kycUrl,
     bridgeCustomerId,
     emailSent,
