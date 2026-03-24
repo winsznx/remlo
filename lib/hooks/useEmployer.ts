@@ -3,6 +3,7 @@
 import * as React from 'react'
 import { usePrivy } from '@privy-io/react-auth'
 import { useQuery } from '@tanstack/react-query'
+import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import { supabase } from '@/lib/supabase'
 import type { Database } from '@/lib/database.types'
 
@@ -10,18 +11,14 @@ type Employer = Database['public']['Tables']['employers']['Row']
 
 export function useEmployer() {
   const { user, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
 
   return useQuery<Employer | null>({
     queryKey: ['employer', user?.id],
     queryFn: async () => {
       if (!user?.id) return null
-      const { data } = await supabase
-        .from('employers')
-        .select('*')
-        .eq('owner_user_id', user.id)
-        .eq('active', true)
-        .maybeSingle()
-      return data ?? null
+      const response = await fetchJson<{ employer: Employer | null }>('/api/employers')
+      return response.employer
     },
     enabled: authenticated && Boolean(user?.id),
     staleTime: 60_000,

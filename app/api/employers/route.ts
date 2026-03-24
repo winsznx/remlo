@@ -16,6 +16,33 @@ function decodePrivyToken(token: string): { sub: string } | null {
   }
 }
 
+export async function GET(req: NextRequest) {
+  const authHeader = req.headers.get('authorization')
+  if (!authHeader?.startsWith('Bearer ')) {
+    return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
+  }
+
+  const token = authHeader.slice(7)
+  const decoded = decodePrivyToken(token)
+  if (!decoded) {
+    return NextResponse.json({ error: 'Invalid or expired token' }, { status: 401 })
+  }
+
+  const supabase = createServerClient()
+  const { data, error } = await supabase
+    .from('employers')
+    .select('*')
+    .eq('owner_user_id', decoded.sub)
+    .eq('active', true)
+    .maybeSingle()
+
+  if (error) {
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+
+  return NextResponse.json({ employer: data ?? null })
+}
+
 export async function POST(req: NextRequest) {
   const authHeader = req.headers.get('authorization')
   if (!authHeader?.startsWith('Bearer ')) {

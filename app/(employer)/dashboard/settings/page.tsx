@@ -1,14 +1,18 @@
 'use client'
 
+import * as React from 'react'
 import Link from 'next/link'
 import { usePrivy } from '@privy-io/react-auth'
+import { useQueryClient } from '@tanstack/react-query'
 import { Building2, CreditCard, Key, Landmark, ShieldCheck } from 'lucide-react'
+import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { SectionHeader } from '@/components/ui/SectionHeader'
 import { FundingReadinessCard } from '@/components/treasury/FundingReadinessCard'
 import { WalletStatusPanel } from '@/components/wallet/WalletStatusPanel'
 import { useEmployer } from '@/lib/hooks/useEmployer'
 import { usePayrollRuns, useTreasury } from '@/lib/hooks/useDashboard'
+import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import { getPrimaryPrivyEthereumWallet } from '@/lib/privy-wallet'
 
 function InfoCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
@@ -25,12 +29,56 @@ function InfoCard({ label, value, icon }: { label: string; value: string; icon: 
 
 export default function EmployerSettingsPage() {
   const { user } = usePrivy()
-  const { data: employer } = useEmployer()
+  const queryClient = useQueryClient()
+  const fetchJson = usePrivyAuthedJson()
+  const { data: employer, refetch: refetchEmployer } = useEmployer()
   const { data: treasury } = useTreasury(employer?.id)
   const { data: payrollRuns } = usePayrollRuns(employer?.id, 1, 25)
   const sessionWallet = getPrimaryPrivyEthereumWallet(user)
+  const [isSyncingWallet, setIsSyncingWallet] = React.useState(false)
 
   const payrollVolume = payrollRuns?.runs.reduce((sum, run) => sum + run.total_amount, 0) ?? 0
+
+  async function handleWalletSync() {
+    if (!sessionWallet) {
+      toast.error('No wallet was found in your current Privy session.')
+      return
+    }
+
+    if (!employer?.company_name) {
+      toast.error('Employer workspace has not loaded yet.')
+      return
+    }
+
+    setIsSyncingWallet(true)
+
+    try {
+      await fetchJson<{ employerId: string }>('/api/employers', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          companyName: employer.company_name,
+          companySize: employer.company_size ?? undefined,
+          employerAdminWallet: sessionWallet,
+        }),
+      })
+
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ['employer', user?.id] }),
+        queryClient.invalidateQueries({ queryKey: ['treasury', employer.id] }),
+        queryClient.invalidateQueries({ queryKey: ['yield'] }),
+        refetchEmployer(),
+      ])
+
+      toast.success('Employer wallet synced.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Failed to sync employer wallet.')
+    } finally {
+      setIsSyncingWallet(false)
+    }
+  }
 
   return (
     <div className="space-y-6">
@@ -107,6 +155,16 @@ export default function EmployerSettingsPage() {
         mismatchCopy="The wallet saved in Remlo does not match the wallet in your current session. Treasury and payroll reads use the saved wallet, so confirm this difference is intentional before funding or testing payroll."
         missingSessionCopy="Remlo has a saved employer wallet, but your current session did not surface a Privy wallet. This can happen if you signed in with a different method or need to reconnect."
         footer="If you plan to test payroll from a different hot wallet intentionally, update the saved employer wallet so the treasury identity and signing wallet stay aligned."
+        actionLabel="Sync wallet now"
+        actionPendingLabel="Syncing wallet..."
+        actionPending={isSyncingWallet}
+        actionDisabled={!sessionWallet || isSyncingWallet}
+        onAction={handleWalletSync}
+        diagnostics={[
+          { label: 'Employer record ID', value: employer?.id ?? 'Not resolved' },
+          { label: 'Employer owner user ID', value: employer?.owner_user_id ?? 'Not resolved' },
+          { label: 'Current Privy user ID', value: user?.id ?? 'Not surfaced' },
+        ]}
       />
     </div>
   )
