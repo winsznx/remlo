@@ -381,7 +381,6 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
 
       setTxHash(result.tx_hash)
       setBatchStatus('success')
-      onComplete?.()
     } catch (err) {
       setExecError(err instanceof Error ? err.message : 'Execution failed')
       setBatchStatus('error')
