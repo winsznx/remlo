@@ -129,9 +129,9 @@ function Step1({
                 </div>
                 <span className="font-mono text-sm text-[var(--text-secondary)] shrink-0">
                   {emp.salary_amount != null
-                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: emp.salary_currency ?? 'USD', maximumFractionDigits: 0 }).format(emp.salary_amount / 12)
+                    ? new Intl.NumberFormat('en-US', { style: 'currency', currency: emp.salary_currency ?? 'USD', maximumFractionDigits: 0 }).format(emp.salary_amount)
                     : '—'}
-                  /mo
+                  /{emp.pay_frequency ?? 'mo'}
                 </span>
               </div>
             )
@@ -310,7 +310,7 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
     setItems(
       selectedEmployees.map((e) => ({
         employee: e,
-        amount: e.salary_amount != null ? Math.round((e.salary_amount / 12) * 100) / 100 : 0,
+        amount: e.salary_amount != null ? Math.round(e.salary_amount * 100) / 100 : 0,
       })),
     )
     setStep(1)
