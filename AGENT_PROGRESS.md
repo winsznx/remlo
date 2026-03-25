@@ -1278,3 +1278,19 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 
 ### fix: employee detail page — React error #310 ✅
 `React.useEffect` initialising salary form state was placed after two conditional early returns (`isLoading`, `isError`). This violates Rules of Hooks and triggers React minified error #310. Moved `useEffect` above both guards; switched dependency to the whole `data` object with an internal `if (!data) return` guard. — `bec1fa9`
+
+---
+
+## Compensation display fixes (2026-03-25)
+
+### fix: employee detail page — inverted compensation display ✅
+
+**Root cause:** `salary_amount` is stored as the per-period amount the employer enters (e.g. $10,000/monthly). The employee detail page had the logic backwards:
+- "Annual salary" showed `salary_amount` raw → displayed $10,000 instead of $120,000
+- "Per payroll cycle" divided by 12/26/52 → displayed $833 instead of $10,000
+
+**Fix:** Swapped the two panels. "Per payroll cycle" now shows `salary_amount` directly. "Annual salary" derives the figure by multiplying by the cycle count (× 12 monthly, × 26 biweekly, × 52 weekly).
+
+**File:** `app/(employer)/dashboard/team/[id]/page.tsx` — commit `6ac6b66`
+
+**Note:** Same root assumption as the payroll wizard `/12` bug (`d039161`) — both treated `salary_amount` as annual when it is per-period.
