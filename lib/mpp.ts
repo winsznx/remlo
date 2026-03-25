@@ -6,7 +6,7 @@ import { Mppx, tempo } from 'mppx/nextjs'
  * Import `mppx` and call `mppx.charge({ amount: '0.01' })` in route handlers.
  */
 export const mppx = Mppx.create({
-  realm: 'www.remlo.xyz',
+  realm: 'remlo.xyz',
   methods: [
     tempo({
       chainId: 4217, // Tempo mainnet — indexed by MPPscan
