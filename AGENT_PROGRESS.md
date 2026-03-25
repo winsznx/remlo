@@ -1364,3 +1364,21 @@ Used `npx mppx account create --account remlo-test` + `npx mppx account fund --a
 **Root cause:** `/opengraph-image` and `/twitter-image` routes were not in `PUBLIC_PREFIXES`. The middleware auth guard 307-redirected them to `/login`. Social crawlers (iMessage, Telegram, Discord, Slack, Twitter) don't follow auth redirects — they'd receive a 307, bail, and show no preview image.
 
 **Fix:** Added `/opengraph-image` and `/twitter-image` to `PUBLIC_PREFIXES` in `middleware.ts`. Both routes now return the generated PNG directly to unauthenticated crawlers.
+
+---
+
+## MPP mainnet switch + realm fix (2026-03-25)
+
+### fix: switched from testnet to Tempo mainnet for MPPscan indexing ✅
+
+**Root cause:** MPPscan only indexes mainnet (chainId 4217) transactions. Our endpoint was configured for Tempo Moderato testnet (chainId 42431, pathUSD). MPPscan confirmed they don't index testnet.
+
+**Fix:** Updated `lib/mpp.ts` — removed `testnet: true`, set `chainId: 4217`, changed currency to USDC.e (`0x20C000000000000000000000b9537d11c60E8b50`) which is what AgentCash holds and mppx's mainnet default. Also added `currency` explicitly to global tempo() config so session routes don't require it at each call site. — commits `b4efc61`, `7fdab6e`
+
+### fix: mppx realm auto-detection producing wrong hostname ✅
+
+**Root cause:** `Mppx.create()` without explicit `realm` auto-detects from `HOSTNAME` / `VERCEL_URL`. On the fork deployment this produced `remlo-7yiafddxi-solidworkssas-projects.vercel.app` instead of `www.remlo.xyz`. MPPscan attributes transactions by realm, so all 4 test payments were indexed against the wrong server — counter stayed at 0.
+
+**Fix:** Added `realm: 'www.remlo.xyz'` to `Mppx.create()` in `lib/mpp.ts`. Identified from shafu's PR https://github.com/tempoxyz/docs/pull/200 documenting the exact same issue in containerized/Vercel environments. — commit `8533884`
+
+**Verified:** 4 mainnet payments landed on-chain (USDC.e, chainId 4217), MPP event `0x57bc7354...` emitted per tx, treasury received funds. Counter expected to tick once realm fix is deployed and next payment is made.
