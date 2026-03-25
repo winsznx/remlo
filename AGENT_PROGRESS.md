@@ -1121,3 +1121,64 @@ All 6 tables created: `employers`, `employees`, `payroll_runs`, `payment_items`,
 - Employee does not need to use the same email given to employer — invite is UUID-keyed
 
 **Commits:** 4 commits (47e0a53, 0fce144, 5adf274, f01b829)
+
+---
+
+## Session: Contract Redeploy + E2E Transaction Audit — COMPLETED (2026-03-25)
+
+### Contract Redeploy ✅
+
+**Problem:** Contracts were originally deployed by wallet `0x63a47e8ee63be77743b7c555decf05a573d0b735`. The current `REMLO_AGENT_PRIVATE_KEY` resolves to `0xC9231C08460F63794F0bd9C6AF6D2b6D76aCEDb5` — a different address. `PayrollBatcher.onlyAuthorizedAgent` only passes for `owner` or entries in `authorizedAgents`. The agent wallet was neither, so every `executeBatchPayroll` call from the server would revert with "not authorized agent".
+
+**Fix:** Redeployed all 5 contracts using `REMLO_AGENT_PRIVATE_KEY` as the deployer. This makes the agent wallet the owner and auto-authorizes it in `PayrollBatcher`.
+
+**New deployed addresses (Tempo Moderato testnet, 2026-03-25):**
+- `PayrollTreasury`: `0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5`
+- `PayrollBatcher`: `0x90657d3F18abaB8B1b105779601644dF7ce4ee65`
+- `EmployeeRegistry`: `0xe7DdA49d250e014769F5d2C840146626Bf153BC4`
+- `StreamVesting`: `0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021`
+- `YieldRouter`: `0x78B0548c7bb5B51135BBC87382f131d85abf1061`
+
+**Files updated:** `.env.local` (all 5 `NEXT_PUBLIC_*` contract vars + `REMLO_TREASURY_ADDRESS`), `lib/constants.ts` (fallback hardcoded addresses)
+
+**ABI verification:** All 5 TS ABI files checked against compiled artifacts — 100% match (no code changes since last compile).
+
+---
+
+### E2E Transaction Flow Audit ✅
+
+**Full flow traced:**
+1. Employer registers → `employer_admin_wallet` saved from Privy embedded wallet via `POST /api/employers`
+2. Employer deposits pathUSD → `PayrollTreasury.deposit()` directly (no auth required, any wallet) ✓
+3. Payroll wizard → `POST /api/employers/[id]/payroll` → validates treasury balance, TIP-403 compliance, builds unsigned `executeBatchPayroll` calldata, persists `payroll_runs` + `payment_items` ✓
+4. `PayrollWizard` calls `useSendTransaction(calldata)` (Privy, employer's wallet) → **BROKEN** ← see below
+5. `POST /api/employers/[id]/payroll/[runId]/submit` records txHash ← never reached
+
+**MPP agent path** (`POST /api/mpp/payroll/execute`) → agent key signs directly → ✓ works
+
+---
+
+### Employer-Signed Payroll Path → Fixed ✅
+
+**Problem was:** `PayrollWizard` used Privy's `useSendTransaction` to send `executeBatchPayroll` from the employer wallet. Only `REMLO_AGENT_PRIVATE_KEY` is in `authorizedAgents` → reverted with "not authorized agent".
+
+**Fix (Option A):**
+- Created `app/api/employers/[id]/payroll/[runId]/execute/route.ts` — `getAuthorizedEmployer` auth, fetches payment items + employee wallets, calls `getServerWalletClient(REMLO_AGENT_PRIVATE_KEY).writeContract(executeBatchPayroll)`, updates `payroll_runs.status = 'processing'` + `tx_hash`
+- Updated `PayrollWizard` — removed `useSendTransaction` and `TEMPO_CHAIN_ID` imports, replaced the sign→submit two-step with a single `POST .../execute` call; `signing` status transitions directly into `submitting` → `confirming` → `success`
+
+**Result:** Employer approves in UI, agent signs on-chain. No wallet popup for payroll execution. `npx tsc --noEmit` clean.
+
+---
+
+### Private Key Audit Summary ✅
+
+| Key | Role | Status |
+|-----|------|--------|
+| `REMLO_AGENT_PRIVATE_KEY` | Signs on-chain txns (payroll execute, yield rebalance) | ✓ Server-only, owner of deployed contracts |
+| `SUPABASE_SERVICE_KEY` | Service-role DB access, bypasses RLS | ✓ Server-only |
+| `MPP_SECRET_KEY` | HMAC for MPP challenge signing | ✓ Self-generated, server-only |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Browser reads (public/authed-via-privy data only) | ✓ Intentionally public |
+| `BRIDGE_API_KEY` | Bridge.xyz fiat offramp | Empty — offramp 402s |
+| `RESEND_API_KEY` | Invite emails | Empty — emails skipped silently |
+| `CLAUDE_API_KEY` | AI parse/anomaly/compliance endpoints | Empty — AI routes 500 |
+| `STRIPE_SECRET_KEY` | MPP Stripe dual-rail | Empty — Stripe rail skipped, Tempo rail works |
