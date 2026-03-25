@@ -9,13 +9,13 @@ type Action = 'balance' | 'yield' | 'rebalance' | 'headcount'
 
 /**
  * POST /api/mpp/agent/session/treasury
- * MPP-12 — $0.02 session charge
+ * MPP-12 — $0.02 charge
  * AI agent treasury management endpoint.
  * Handles 4 actions: balance, yield, rebalance, headcount.
  *
  * Body: { action: Action, employerId: string, allocation?: number[], params?: { targetAllocation?: number[] } }
  */
-export const POST = mppx.session({ amount: '0.02', unitType: 'session' })(async (req: Request) => {
+export const POST = mppx.charge({ amount: '0.02' })(async (req: Request) => {
   const body = await req.json() as {
     action: Action
     employerId: string
