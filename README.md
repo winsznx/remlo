@@ -43,11 +43,11 @@ Remlo is a Tempo settlement layer wrapped in a Next.js control plane. On-chain c
 
 | Contract | Description | Moderato testnet address |
 |----------|-------------|--------------------------|
-| `PayrollTreasury` | Employer treasury ledger for payroll balances, locked funds, and gas budget sponsorship. | `0x93dfCcd80895147EfC1c191013cD935f18a79859` |
-| `PayrollBatcher` | Atomic batch executor that sends TIP-20 payroll transfers with memo fields in one run. | `0x58E5102BAED1c703dC1052cc7f5E30A96af34Eb8` |
-| `EmployeeRegistry` | Employee wallet registry anchored to employer identity and TIP-403 policy approval. | `0x1fF7E623CFdb6e263Be0D25A9142DD7888F5CBdA` |
-| `StreamVesting` | Per-second salary streaming contract with accrued balance reads and claims. | `0x71a2BA383d2C8ec15310705A13693F054271531f` |
-| `YieldRouter` | Yield allocation layer for idle treasury capital and employer/employee yield splits. | `0x41dD786b2e01825437e2F67b51719CBeDcd527b0` |
+| `PayrollTreasury` | Employer treasury ledger for payroll balances, locked funds, and gas budget sponsorship. | `0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5` |
+| `PayrollBatcher` | Atomic batch executor that sends TIP-20 payroll transfers with memo fields in one run. | `0x90657d3F18abaB8B1b105779601644dF7ce4ee65` |
+| `EmployeeRegistry` | Employee wallet registry anchored to employer identity and TIP-403 policy approval. | `0xe7DdA49d250e014769F5d2C840146626Bf153BC4` |
+| `StreamVesting` | Per-second salary streaming contract with accrued balance reads and claims. | `0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021` |
+| `YieldRouter` | Yield allocation layer for idle treasury capital and employer/employee yield splits. | `0x78B0548c7bb5B51135BBC87382f131d85abf1061` |
 
 ## Local development
 
