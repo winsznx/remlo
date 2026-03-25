@@ -16,13 +16,13 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo-drab.vercel.app'),
-  title: 'Remlo — Payroll for the onchain era',
+  title: 'Payroll for the onchain era | Remlo',
   description:
-    'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+    'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
   openGraph: {
-    title: 'Remlo — Payroll for the onchain era',
+    title: 'Payroll for the onchain era | Remlo',
     description:
-      'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+      'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
     url: '/',
     siteName: 'Remlo',
     type: 'website',
@@ -31,15 +31,15 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Remlo — Borderless enterprise payroll on Tempo L1',
+        alt: 'Remlo — AI payroll infrastructure on Tempo with MPP, Bridge, and embedded wallets',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Remlo — Payroll for the onchain era',
+    title: 'Payroll for the onchain era | Remlo',
     description:
-      'AI-native payroll infrastructure on Tempo. Pay anyone, anywhere, in seconds.',
+      'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
     images: ['/twitter-image'],
   },
 }
