@@ -5,8 +5,18 @@ import { usePrivy } from '@privy-io/react-auth'
 import { useRouter, useParams } from 'next/navigation'
 import { motion } from 'framer-motion'
 import { RemloLogo } from '@/components/brand/RemloLogo'
-import { supabase } from '@/lib/supabase'
-import type { Employee } from '@/lib/queries/employees'
+
+interface InviteInfo {
+  employeeId: string
+  email: string
+  firstName: string | null
+  lastName: string | null
+  jobTitle: string | null
+  department: string | null
+  salaryAmount: number | null
+  salaryCurrency: string | null
+  payFrequency: string | null
+}
 
 type Step = 'loading' | 'invalid' | 'claimed' | 'welcome' | 'authenticating' | 'claiming' | 'done'
 
@@ -14,79 +24,70 @@ export default function InvitePage() {
   const params = useParams<{ token: string }>()
   const token = params.token
   const router = useRouter()
-  const { login, ready, authenticated, user } = usePrivy()
+  const { login, ready, authenticated, user, getAccessToken } = usePrivy()
 
   const [step, setStep] = React.useState<Step>('loading')
-  const [employee, setEmployee] = React.useState<Employee | null>(null)
+  const [invite, setInvite] = React.useState<InviteInfo | null>(null)
   const [error, setError] = React.useState<string | null>(null)
 
-  // 1. Verify token on mount
+  // 1. Verify token via server route (bypasses RLS correctly)
   React.useEffect(() => {
-    if (!token) {
-      setStep('invalid')
-      return
-    }
+    if (!token) { setStep('invalid'); return }
     void verifyToken(token)
   }, [token])
 
   async function verifyToken(t: string) {
-    const { data: claimedRecord } = await supabase
-      .from('employees')
-      .select('id')
-      .eq('id', t)
-      .not('user_id', 'is', null)
-      .maybeSingle()
-
-    if (claimedRecord) {
-      setStep('claimed')
-      return
-    }
-
-    const { data, error } = await supabase
-      .from('employees')
-      .select('*')
-      .eq('id', t)
-      .is('user_id', null) // not yet claimed
-      .single()
-
-    if (error || !data) {
+    try {
+      const res = await fetch(`/api/invite/${t}`)
+      if (res.status === 409) { setStep('claimed'); return }
+      if (!res.ok) { setStep('invalid'); return }
+      const data = (await res.json()) as InviteInfo
+      setInvite(data)
+      setStep('welcome')
+    } catch {
       setStep('invalid')
-      return
     }
-    setEmployee(data)
-    setStep('welcome')
   }
 
-  // 2. Watch for Privy auth completion
+  // 2. After Privy auth completes, claim the invite
   React.useEffect(() => {
-    if (step === 'authenticating' && ready && authenticated && user && employee) {
+    if (step === 'authenticating' && ready && authenticated && user && invite) {
       void claimInvite()
     }
-  }, [step, ready, authenticated, user, employee])
+  }, [step, ready, authenticated, user, invite])
 
   async function claimInvite() {
-    if (!user || !employee) return
+    if (!user || !invite) return
     setStep('claiming')
 
     try {
+      const accessToken = await getAccessToken()
+      if (!accessToken) throw new Error('Could not get access token')
+
       const walletAddress =
         user.wallet?.address ??
         user.linkedAccounts.find((a) => a.type === 'wallet')?.address ??
         null
 
-      const { error: updateError } = await supabase
-        .from('employees')
-        .update({
-          user_id: user.id,
-          wallet_address: walletAddress,
-          onboarded_at: new Date().toISOString(),
-        })
-        .eq('id', employee.id)
+      const res = await fetch(`/api/invite/${token}/claim`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${accessToken}`,
+        },
+        body: JSON.stringify({ walletAddress }),
+      })
 
-      if (updateError) {
-        setError(updateError.message)
+      if (res.status === 403) {
+        const body = (await res.json()) as { error?: string }
+        setError(body.error ?? 'This account cannot claim employee invites.')
         setStep('welcome')
         return
+      }
+
+      if (!res.ok) {
+        const body = (await res.json()) as { error?: string }
+        throw new Error(body.error ?? 'Failed to claim invite')
       }
 
       setStep('done')
@@ -110,7 +111,6 @@ export default function InvitePage() {
         transition={{ duration: 0.35 }}
         className="w-full max-w-md"
       >
-        {/* Logo */}
         <RemloLogo
           className="mb-10"
           markClassName="h-7 w-7"
@@ -128,14 +128,20 @@ export default function InvitePage() {
         {step === 'claimed' && (
           <div className="text-center">
             <div className="w-12 h-12 rounded-full bg-[var(--bg-subtle)] flex items-center justify-center mx-auto mb-4">
-              <svg className="w-6 h-6 text-[var(--status-warning)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+              <svg className="w-6 h-6 text-[var(--status-pending)]" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
                 <path strokeLinecap="round" strokeLinejoin="round" d="M12 11V7m0 8h.01M4.93 19h14.14c1.54 0 2.5-1.67 1.73-3L13.93 4c-.77-1.33-2.69-1.33-3.46 0L3.2 16c-.77 1.33.19 3 1.73 3z" />
               </svg>
             </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Invite already claimed</h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              This employee invite has already been claimed. Sign in with the employee account that accepted it, or ask the employer to create a fresh test employee if you need a brand-new onboarding flow.
+              This invite has already been accepted. Sign in to access your employee portal.
             </p>
+            <button
+              onClick={() => router.push('/login')}
+              className="mt-6 w-full h-11 rounded-lg bg-[var(--accent)] text-[var(--accent-foreground)] text-sm font-semibold hover:opacity-90 transition-opacity"
+            >
+              Sign in
+            </button>
           </div>
         )}
 
@@ -148,12 +154,12 @@ export default function InvitePage() {
             </div>
             <h2 className="text-xl font-bold text-[var(--text-primary)] mb-2">Invalid invite link</h2>
             <p className="text-sm text-[var(--text-secondary)]">
-              This link may have already been used or has expired. Contact your employer for a new invite.
+              This link may have expired or already been used. Contact your employer for a new invite.
             </p>
           </div>
         )}
 
-        {(step === 'welcome' || step === 'authenticating') && employee && (
+        {(step === 'welcome' || step === 'authenticating') && invite && (
           <>
             <h2 className="text-2xl font-bold text-[var(--text-primary)] tracking-tight mb-2">
               You&apos;ve been invited to Remlo
@@ -164,33 +170,33 @@ export default function InvitePage() {
 
             <div className="p-4 rounded-xl bg-[var(--bg-surface)] border border-[var(--border-default)] mb-6">
               <div className="grid grid-cols-2 gap-4 text-sm">
-                {employee.email && (
+                {invite.email && (
                   <div>
                     <div className="text-[var(--text-muted)] text-xs mb-0.5">Email</div>
-                    <div className="text-[var(--text-primary)] font-medium">{employee.email}</div>
+                    <div className="text-[var(--text-primary)] font-medium">{invite.email}</div>
                   </div>
                 )}
-                {employee.job_title && (
+                {invite.jobTitle && (
                   <div>
                     <div className="text-[var(--text-muted)] text-xs mb-0.5">Role</div>
-                    <div className="text-[var(--text-primary)] font-medium">{employee.job_title}</div>
+                    <div className="text-[var(--text-primary)] font-medium">{invite.jobTitle}</div>
                   </div>
                 )}
-                {employee.salary_amount && (
+                {invite.salaryAmount && (
                   <div>
                     <div className="text-[var(--text-muted)] text-xs mb-0.5">Salary</div>
                     <div className="number-lg text-[var(--text-primary)]">
-                      ${employee.salary_amount.toLocaleString()}{' '}
+                      ${invite.salaryAmount.toLocaleString()}{' '}
                       <span className="text-[var(--text-muted)] font-normal text-xs">
-                        {employee.salary_currency}/{employee.pay_frequency}
+                        {invite.salaryCurrency}/{invite.payFrequency}
                       </span>
                     </div>
                   </div>
                 )}
-                {employee.department && (
+                {invite.department && (
                   <div>
                     <div className="text-[var(--text-muted)] text-xs mb-0.5">Department</div>
-                    <div className="text-[var(--text-primary)] font-medium">{employee.department}</div>
+                    <div className="text-[var(--text-primary)] font-medium">{invite.department}</div>
                   </div>
                 )}
               </div>
