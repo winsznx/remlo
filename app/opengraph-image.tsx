@@ -2,201 +2,117 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Remlo — AI payroll infrastructure on Tempo with MPP, Bridge, and embedded wallets'
-export const size = {
-  width: 1200,
-  height: 630,
-}
-
+export const alt = 'Remlo — Payroll for the AI era'
+export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
-function RemloPreviewImage() {
-  return (
-    <div
-      style={{
-        width: '100%',
-        height: '100%',
-        display: 'flex',
-        position: 'relative',
-        overflow: 'hidden',
-        background: '#08101D',
-        color: 'white',
-        fontFamily: 'Inter, Arial, sans-serif',
-      }}
-    >
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
-          background:
-            'radial-gradient(circle at 18% 22%, rgba(52,211,153,0.22) 0%, rgba(52,211,153,0) 34%), radial-gradient(circle at 82% 18%, rgba(59,130,246,0.14) 0%, rgba(59,130,246,0) 30%), linear-gradient(180deg, #0B1220 0%, #08101D 100%)',
-        }}
-      />
+const LOGO_SRC =
+  'data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTEyIiBoZWlnaHQ9IjUxMiIgdmlld0JveD0iMCAwIDMyIDMyIiBmaWxsPSJub25lIiB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciPgogIDxyZWN0IHg9IjEiIHk9IjEiIHdpZHRoPSIzMCIgaGVpZ2h0PSIzMCIgcng9IjEwIiBmaWxsPSIjMEIxMjIwIi8+CiAgPHJlY3QgeD0iMS41IiB5PSIxLjUiIHdpZHRoPSIyOSIgaGVpZ2h0PSIyOSIgcng9IjkuNSIgc3Ryb2tlPSIjMUUyOTNCIi8+CiAgPGNpcmNsZSBjeD0iMjQuNSIgY3k9IjguNSIgcj0iNyIgZmlsbD0iIzM0RDM5OSIgZmlsbC1vcGFjaXR5PSIwLjE0Ii8+CiAgPGNpcmNsZSBjeD0iMTAiIGN5PSIyNC41IiByPSI2LjUiIGZpbGw9IiMwNTk2NjkiIGZpbGwtb3BhY2l0eT0iMC4yIi8+CiAgPHBhdGggZD0iTTEwIDguNzVWMjMuMjUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIzLjI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiLz4KICA8cGF0aCBkPSJNMTAgOC43NUgxNy4yNUMxOS41OTYyIDguNzUgMjEuNSAxMC42NTM4IDIxLjUgMTNDMjEuNSAxNS4zNDYyIDE5LjU5NjIgMTcuMjUgMTcuMjUgMTcuMjVIMTAiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIzLjI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cGF0aCBkPSJNMTYuMjUgMTcuMjVMMjIuMjUgMjMuMjUiIHN0cm9rZT0iI0ZGRkZGRiIgc3Ryb2tlLXdpZHRoPSIzLjI1IiBzdHJva2UtbGluZWNhcD0icm91bmQiIHN0cm9rZS1saW5lam9pbj0icm91bmQiLz4KICA8cmVjdCB4PSIyMC4yNSIgeT0iOCIgd2lkdGg9IjQiIGhlaWdodD0iMS41IiByeD0iMC43NSIgZmlsbD0iIzM0RDM5OSIvPgogIDxyZWN0IHg9IjIxIiB5PSIxMC43NSIgd2lkdGg9IjMuMjUiIGhlaWdodD0iMS41IiByeD0iMC43NSIgZmlsbD0iIzM0RDM5OSIgZmlsbC1vcGFjaXR5PSIwLjYiLz4KPC9zdmc+Cg=='
 
+export default function OpenGraphImage() {
+  return new ImageResponse(
+    (
       <div
         style={{
-          position: 'absolute',
-          left: 70,
-          right: 70,
-          top: 54,
-          bottom: 54,
-          borderRadius: 32,
-          border: '1px solid rgba(148,163,184,0.14)',
-          background: 'rgba(9,16,30,0.72)',
-          boxShadow: 'inset 0 1px 0 rgba(255,255,255,0.04)',
-        }}
-      />
-
-      <div
-        style={{
-          position: 'absolute',
-          inset: 0,
+          width: '100%',
+          height: '100%',
           display: 'flex',
-          padding: '72px 84px',
-          flexDirection: 'column',
-          justifyContent: 'space-between',
+          position: 'relative',
+          background: '#05080F',
+          overflow: 'hidden',
+          fontFamily: 'Inter, Arial, sans-serif',
+          color: 'white',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: 18 }}>
-          <div
-            style={{
-              width: 62,
-              height: 62,
-              borderRadius: 18,
-              background: '#0B1220',
-              border: '1px solid rgba(148,163,184,0.18)',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              position: 'relative',
-              overflow: 'hidden',
-            }}
-          >
-            <div
-              style={{
-                position: 'absolute',
-                width: 28,
-                height: 28,
-                right: 4,
-                top: 3,
-                borderRadius: 999,
-                background: 'rgba(52,211,153,0.18)',
-              }}
-            />
-            <div
-              style={{
-                position: 'absolute',
-                width: 24,
-                height: 24,
-                left: 5,
-                bottom: 5,
-                borderRadius: 999,
-                background: 'rgba(5,150,105,0.20)',
-              }}
-            />
-            <div
-              style={{
-                display: 'flex',
-                fontSize: 34,
-                fontWeight: 800,
-                lineHeight: 1,
-                letterSpacing: '-0.04em',
-                color: '#FFFFFF',
-              }}
-            >
-              R
-            </div>
-          </div>
+        {/* Ambient glow behind logo */}
+        <div
+          style={{
+            position: 'absolute',
+            inset: 0,
+            background:
+              'radial-gradient(circle at 78% 50%, rgba(52,211,153,0.14) 0%, transparent 45%)',
+          }}
+        />
 
-          <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-            <div style={{ display: 'flex', fontSize: 34, fontWeight: 700, letterSpacing: '-0.04em' }}>
-              Remlo
-            </div>
-            <div
-              style={{
-                width: 12,
-                height: 12,
-                borderRadius: 999,
-                background: '#34D399',
-                boxShadow: '0 0 18px rgba(52,211,153,0.55)',
-              }}
-            />
-          </div>
-        </div>
-
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
+        {/* Left — text content */}
+        <div
+          style={{
+            position: 'absolute',
+            left: 72,
+            top: 0,
+            bottom: 0,
+            width: 640,
+            display: 'flex',
+            flexDirection: 'column',
+            justifyContent: 'center',
+            gap: 20,
+          }}
+        >
           <div
             style={{
               display: 'flex',
-              fontSize: 16,
+              fontSize: 13,
+              letterSpacing: '0.22em',
               textTransform: 'uppercase',
-              letterSpacing: '0.24em',
               color: '#34D399',
+              fontWeight: 500,
             }}
           >
-            Enterprise payroll on Tempo L1
+            Tempo × MPP
           </div>
           <div
             style={{
               display: 'flex',
-              flexWrap: 'wrap',
-              fontSize: 64,
-              fontWeight: 700,
-              lineHeight: 1.05,
-              letterSpacing: '-0.04em',
+              flexDirection: 'column',
+              fontSize: 82,
+              fontWeight: 800,
+              lineHeight: 1.0,
+              letterSpacing: '-0.05em',
               color: '#F8FAFC',
             }}
           >
-            Pay anyone,&nbsp;
-            <span style={{ color: '#34D399' }}>anywhere</span>
-            , in seconds.
+            <span style={{ display: 'flex' }}>Payroll for</span>
+            <span style={{ display: 'flex' }}>
+              the&nbsp;
+              <span style={{ color: '#34D399' }}>AI era.</span>
+            </span>
           </div>
           <div
             style={{
               display: 'flex',
-              fontSize: 24,
-              lineHeight: 1.4,
-              color: '#94A3B8',
-              maxWidth: 780,
+              fontSize: 20,
+              color: '#475569',
+              letterSpacing: '-0.01em',
+              marginTop: 4,
             }}
           >
-            Enterprise payroll infrastructure as MPP-native API endpoints. AI agents
-            trigger compliant batch payments, compliance screening, yield queries, and
-            salary streaming via HTTP 402.
+            remlo.xyz
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 14 }}>
-          {[
-            { value: '0.4s', label: 'settlement' },
-            { value: '$0.01', label: 'per txn' },
-            { value: '47+', label: 'countries' },
-            { value: 'MPP', label: 'HTTP 402' },
-          ].map((stat) => (
-            <div
-              key={stat.label}
-              style={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 4,
-                padding: '14px 18px',
-                borderRadius: 16,
-                background: 'rgba(15,23,42,0.70)',
-                border: '1px solid rgba(148,163,184,0.12)',
-              }}
-            >
-              <div style={{ display: 'flex', fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em' }}>
-                {stat.value}
-              </div>
-              <div style={{ display: 'flex', fontSize: 14, color: '#94A3B8' }}>{stat.label}</div>
-            </div>
-          ))}
+        {/* Right — actual logo */}
+        <div
+          style={{
+            position: 'absolute',
+            right: 96,
+            top: 0,
+            bottom: 0,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+          }}
+        >
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={LOGO_SRC}
+            width={190}
+            height={190}
+            alt="Remlo"
+            style={{ borderRadius: 40 }}
+          />
         </div>
       </div>
-    </div>
+    ),
+    size
   )
-}
-
-export default function OpenGraphImage() {
-  return new ImageResponse(<RemloPreviewImage />, size)
 }
