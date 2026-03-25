@@ -1320,3 +1320,13 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 **Also updated — `app/(employer)/dashboard/treasury/deposit/page.tsx`:**
 - `OnChainDepositWidget` is the primary card on the deposit page
 - `DepositPanel` (bank / manual crypto) demoted to "Other funding methods" section below
+
+---
+
+## Payroll wizard silent redirect fix (2026-03-25)
+
+### fix: payroll wizard navigates away before user sees success screen ✅
+
+**Root cause:** `onComplete?.()` was called immediately after `setBatchStatus('success')` on line 384 of `PayrollWizard.tsx`. `onComplete` is `() => router.push('/dashboard/payroll')`, so the wizard navigated away before React could paint the success step — the user never saw the 🎉 confirmation banner, tx hash, or employee count.
+
+**Fix:** Removed the `onComplete?.()` call from the execute handler. Navigation now only happens when the user explicitly clicks the "Back to Dashboard" button rendered in the post-success action block. — commit `7ef4018`
