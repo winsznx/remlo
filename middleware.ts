@@ -22,6 +22,8 @@ const PUBLIC_PREFIXES = [
   '/legal/',
   '/_next/',
   '/api/webhooks/', // Bridge + Tempo webhooks must be unauthenticated
+  '/api/openapi.json', // OpenAPI discovery doc must be publicly accessible for MPPscan
+  '/.well-known/', // x402 payment discovery
 ]
 
 function isPublic(pathname: string): boolean {
