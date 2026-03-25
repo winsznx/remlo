@@ -1262,3 +1262,19 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 **Commits:** `fd74f59` (create /claim route), `3b50f57` (remove dead handler)
 
 **Doc note:** AGENT_PROGRESS line 1102 previously implied both handlers lived in the same file — corrected to reflect the proper two-file split.
+
+---
+
+## Session fixes (2026-03-25) — UI/UX sweep
+
+### fix: payroll wizard /12 divisor ✅
+`salary_amount` is stored as per-period amount but wizard divided by 12 at display (step 1) and amount init (step 2), showing $833 instead of $10,000 for a monthly employee. Removed both `/ 12` calls; display now shows actual `salary_amount` with `pay_frequency` label. — `d039161`
+
+### fix: sign out no-op on refresh ✅
+`void logout()` was fire-and-forget with no redirect. Privy clears its JS state but the `privy-token` cookie kept middleware satisfied on refresh, sending the user back to their dashboard. Both `EmployerHeader` and `EmployeeTopNav` now `await logout()` then `router.push('/login')`. — `db9df7a`
+
+### fix: employee portal — no desktop navigation ✅
+`BottomTabNav` is `md:hidden` so desktop had zero navigation links. Added inline nav links (Home / Payments / Card / Settings) directly in `EmployeeTopNav` header for `md+` screens. Mobile retains bottom tab bar. — `db9df7a`
+
+### fix: employee detail page — React error #310 ✅
+`React.useEffect` initialising salary form state was placed after two conditional early returns (`isLoading`, `isError`). This violates Rules of Hooks and triggers React minified error #310. Moved `useEffect` above both guards; switched dependency to the whole `data` object with an internal `if (!data) return` guard. — `bec1fa9`
