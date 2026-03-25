@@ -1076,3 +1076,48 @@ To unblock `pnpm`, first traced the install failure to a stale direct dependency
 - Rewrote the workspace and API pages (`docs/platform/*.mdx`, `docs/reference/core-rest-api.mdx`, `docs/reference/web-routes.mdx`) to explain Remlo in terms of employer jobs, employee jobs, and route families. Added clearer descriptions of invite reuse, payment pause/resume behavior, and when to use the core API versus MPP.
 - Reframed the protocol and integration pages (`docs/protocol/*.mdx`, `docs/integrations/*.mdx`, parts of `docs/reference/mpp-endpoints.mdx` and `docs/reference/webhooks-and-demo-agent.mdx`) so they explain why Bridge, Privy, payroll memos, TIP-403, and the canonical employer wallet matter to the product, not just where those details happen to exist in code.
 - Sanity-checked `docs.json` as valid JSON and removed the stale `remlo-drab.vercel.app` references from the docs bundle. A full Mintlify preview still needs visual review in the hosted docs environment.
+
+---
+
+## Session: Auth + Invite Flow Hardening — COMPLETED (2026-03-24)
+
+### Environment Setup ✅
+**Files modified:** `.env.local`
+- Wired real Supabase project (`cqtgzprtzhykdumvigck.supabase.co`) replacing all placeholders
+- Generated agent wallet (`0xC9231C08460F63794F0bd9C6AF6D2b6D76aCEDb5`) for Tempo Moderato testnet
+- Generated real `MPP_SECRET_KEY` (self-generated HMAC secret, no account required — just randomness)
+- Set `REMLO_TREASURY_ADDRESS` to deployed PayrollTreasury address
+- Ran `scripts/schema.sql` in Supabase SQL editor — 6 tables + RLS policies live
+
+### Database Schema Live ✅
+All 6 tables created: `employers`, `employees`, `payroll_runs`, `payment_items`, `compliance_events`, `mpp_sessions`
+
+---
+
+### Invite Link Fix + Auth Hardening ✅
+
+**Root cause of "invalid invite link":** The invite page used the anon Supabase browser client to query `employees` where `user_id IS NULL`. RLS has no policy that allows anon reads of unclaimed rows — `employees_self_select` only fires when `auth.uid()` matches, which never happens since we use Privy (not Supabase Auth). Zero rows returned → "invalid". The claim `UPDATE` was also blocked by the same RLS gap.
+
+**Files created:**
+- `app/api/invite/[token]/route.ts` — `GET` returns safe invite display fields via service role (bypasses RLS). `POST /claim` verifies Privy Bearer token, checks the caller is not already an employer, writes `user_id` / `wallet_address` / `onboarded_at` using service role idempotency guard (`.is('user_id', null)`)
+- `app/api/me/employee/route.ts` — `GET` returns authenticated employee record via `getCallerEmployee()`
+- `app/api/me/payments/route.ts` — `GET` returns payment history for authenticated employee
+- `app/api/employers/[id]/name/route.ts` — public `GET` returning only `company_name` for employee portal use
+
+**Files modified:**
+- `app/(auth)/invite/[token]/page.tsx` — removed all direct Supabase calls; verify via `GET /api/invite/[token]`, claim via `POST /api/invite/[token]/claim` with Privy access token
+- `lib/hooks/useEmployee.ts` — `useEmployee` now calls `GET /api/me/employee` instead of anon Supabase; `useEmployeePayments` now calls `GET /api/me/payments`; `useEmployerForEmployee` calls `GET /api/employers/[id]/name`
+- `app/(employer)/dashboard/team/add/page.tsx` — fixed misleading "Invite details refreshed" toast copy
+
+**Security improvements:**
+- Employer DID cannot claim an employee invite (403 with explanation)
+- Invite claim is idempotent — `.is('user_id', null)` guard prevents double-claim race
+- No sensitive employee data exposed in the public GET route (employer_id, wallet_address withheld)
+
+**Identity model (confirmed correct, no changes needed):**
+- Privy DID is the stable anchor regardless of login method (email / wallet / Google / SMS)
+- Multiple linked accounts on same DID → same employer/employee record → same dashboard
+- Embedded wallet auto-provisioned by Privy per DID — employees never need to manage keys
+- Employee does not need to use the same email given to employer — invite is UUID-keyed
+
+**Commits:** 4 commits (47e0a53, 0fce144, 5adf274, f01b829)
