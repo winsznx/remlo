@@ -1225,3 +1225,25 @@ Initial run had 2 warnings:
 
 ### Architecture Note
 The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's inside the Next.js App Router and can use `process.env` at runtime (for future dynamic metadata). The root-level redirect keeps it accessible at the conventional path agents expect.
+
+---
+
+## Bug Fixes (2026-03-25)
+
+### fix: Invite link showing "Invalid invite link" ✅
+
+**Root cause:** `GET /api/invite/[token]` was not in `PUBLIC_PREFIXES` in middleware. An employee hitting the invite link has no Privy session yet — the API call to validate the token was getting 307'd to `/login`, which the frontend interpreted as an invalid/expired invite.
+
+**Fix:** Added `/api/invite/` to `PUBLIC_PREFIXES` in `middleware.ts`.
+
+**File:** `middleware.ts` — commit `34d77be`
+
+---
+
+### fix: README contract addresses stale ✅
+
+**Root cause:** README still listed the original pre-2026-03-25 deployment addresses after contracts were redeployed with the agent wallet as owner.
+
+**Fix:** Updated all 5 contract addresses in the README table to match `.env.local` / `lib/constants.ts`.
+
+**File:** `README.md` — commit `cc3215a`
