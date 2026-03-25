@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Remlo — Borderless enterprise payroll on Tempo L1'
+export const alt = 'Remlo — AI payroll infrastructure on Tempo with MPP, Bridge, and embedded wallets'
 export const size = {
   width: 1200,
   height: 630,
@@ -124,26 +124,26 @@ function RemloPreviewImage() {
           </div>
         </div>
 
-        <div style={{ display: 'flex', flexDirection: 'column', gap: 22, maxWidth: 820 }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 16, maxWidth: 820 }}>
           <div
             style={{
               display: 'flex',
-              fontSize: 18,
+              fontSize: 16,
               textTransform: 'uppercase',
               letterSpacing: '0.24em',
               color: '#34D399',
             }}
           >
-            Payroll for the onchain era
+            Enterprise payroll on Tempo L1
           </div>
           <div
             style={{
               display: 'flex',
               flexWrap: 'wrap',
-              fontSize: 72,
+              fontSize: 64,
               fontWeight: 700,
-              lineHeight: 1.02,
-              letterSpacing: '-0.05em',
+              lineHeight: 1.05,
+              letterSpacing: '-0.04em',
               color: '#F8FAFC',
             }}
           >
@@ -154,40 +154,41 @@ function RemloPreviewImage() {
           <div
             style={{
               display: 'flex',
-              fontSize: 28,
-              lineHeight: 1.45,
+              fontSize: 24,
+              lineHeight: 1.4,
               color: '#94A3B8',
               maxWidth: 780,
             }}
           >
-            Borderless enterprise payroll on Tempo L1. AI agents execute compliant batch
-            payments via MPP, employees receive in 0.4s, and spend via Visa.
+            Enterprise payroll infrastructure as MPP-native API endpoints. AI agents
+            trigger compliant batch payments, compliance screening, yield queries, and
+            salary streaming via HTTP 402.
           </div>
         </div>
 
-        <div style={{ display: 'flex', gap: 18 }}>
+        <div style={{ display: 'flex', gap: 14 }}>
           {[
-            { value: '0.4s', label: 'settlement time' },
-            { value: '$0.01', label: 'per transaction' },
-            { value: '47+', label: 'countries supported' },
+            { value: '0.4s', label: 'settlement' },
+            { value: '$0.01', label: 'per txn' },
+            { value: '47+', label: 'countries' },
+            { value: 'MPP', label: 'HTTP 402' },
           ].map((stat) => (
             <div
               key={stat.label}
               style={{
-                minWidth: 180,
                 display: 'flex',
                 flexDirection: 'column',
-                gap: 8,
-                padding: '18px 20px',
-                borderRadius: 20,
+                gap: 4,
+                padding: '14px 18px',
+                borderRadius: 16,
                 background: 'rgba(15,23,42,0.70)',
                 border: '1px solid rgba(148,163,184,0.12)',
               }}
             >
-              <div style={{ display: 'flex', fontSize: 34, fontWeight: 700, letterSpacing: '-0.04em' }}>
+              <div style={{ display: 'flex', fontSize: 28, fontWeight: 700, letterSpacing: '-0.04em' }}>
                 {stat.value}
               </div>
-              <div style={{ display: 'flex', fontSize: 16, color: '#94A3B8' }}>{stat.label}</div>
+              <div style={{ display: 'flex', fontSize: 14, color: '#94A3B8' }}>{stat.label}</div>
             </div>
           ))}
         </div>
