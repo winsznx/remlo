@@ -18,6 +18,7 @@ const PUBLIC_PATHS = [
 
 const PUBLIC_PREFIXES = [
   '/invite/',
+  '/api/invite/', // invite token validation must be unauthenticated — employee hasn't logged in yet
   '/kyc/',
   '/legal/',
   '/_next/',
