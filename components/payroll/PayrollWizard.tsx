@@ -1,13 +1,12 @@
 'use client'
 
 import * as React from 'react'
-import { usePrivy, useSendTransaction } from '@privy-io/react-auth'
+import { usePrivy } from '@privy-io/react-auth'
 import { motion, AnimatePresence } from 'framer-motion'
 import { Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BatchProgress, type BatchStatus } from '@/components/payroll/BatchProgress'
 import { GasSponsored } from '@/components/wallet/GasSponsored'
-import { TEMPO_CHAIN_ID } from '@/lib/constants'
 import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
 import { cn } from '@/lib/utils'
 import type { Employee } from '@/lib/queries/employees'
@@ -286,7 +285,6 @@ interface PayrollWizardProps {
 
 export function PayrollWizard({ employees, employerId, onComplete }: PayrollWizardProps) {
   const { authenticated, getAccessToken } = usePrivy()
-  const { sendTransaction } = useSendTransaction()
   const authedFetch = usePrivyAuthedFetch()
   const [step, setStep] = React.useState(0)
   const [selected, setSelected] = React.useState<Set<string>>(new Set())
@@ -358,38 +356,30 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
       }
 
       const prepared = (await calldataRes.json()) as {
-        calldata: `0x${string}`
-        to: `0x${string}`
         payrollRunId: string | null
       }
-
-      setBatchStatus('submitting')
-
-      const receipt = await sendTransaction({
-        to: prepared.to,
-        data: prepared.calldata,
-        chainId: TEMPO_CHAIN_ID,
-        value: '0x0',
-      })
-
-      setBatchStatus('confirming')
 
       if (!prepared.payrollRunId) {
         throw new Error('Payroll run was prepared without a persisted run ID.')
       }
 
-      const submitRes = await authedFetch(`/api/employers/${employerId}/payroll/${prepared.payrollRunId}/submit`, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ txHash: receipt.transactionHash }),
-      })
+      setBatchStatus('submitting')
 
-      if (!submitRes.ok) {
-        const data = await submitRes.json().catch(() => ({}))
-        throw new Error(data.error ?? 'Payroll was submitted on-chain, but Remlo failed to persist the transaction hash.')
+      const executeRes = await authedFetch(
+        `/api/employers/${employerId}/payroll/${prepared.payrollRunId}/execute`,
+        { method: 'POST' },
+      )
+
+      if (!executeRes.ok) {
+        const data = await executeRes.json().catch(() => ({}))
+        throw new Error(data.error ?? 'Failed to execute payroll on-chain.')
       }
 
-      setTxHash(receipt.transactionHash)
+      const result = (await executeRes.json()) as { tx_hash: string }
+
+      setBatchStatus('confirming')
+
+      setTxHash(result.tx_hash)
       setBatchStatus('success')
       onComplete?.()
     } catch (err) {
