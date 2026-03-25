@@ -1,5 +1,26 @@
 import { NextRequest, NextResponse } from 'next/server'
 
+// ─── Bot / social crawler detection ───────────────────────────────────────────
+
+const BOT_UA_PATTERNS = [
+  'Twitterbot',
+  'facebookexternalhit',
+  'LinkedInBot',
+  'Slackbot',
+  'TelegramBot',
+  'Discordbot',
+  'WhatsApp',
+  'Googlebot',
+  'bingbot',
+  'Applebot',
+  'Pinterestbot',
+]
+
+function isBotRequest(request: NextRequest): boolean {
+  const ua = request.headers.get('user-agent') ?? ''
+  return BOT_UA_PATTERNS.some((pattern) => ua.includes(pattern))
+}
+
 // ─── Public path classification ───────────────────────────────────────────────
 
 const PUBLIC_PATHS = [
@@ -140,6 +161,12 @@ function roleHome(role: Role): string {
 
 export async function middleware(request: NextRequest) {
   const { pathname } = request.nextUrl
+
+  // Social crawlers / bots must pass through ALL routes without auth redirects
+  // so they can fetch OG meta tags for link previews on every URL.
+  if (isBotRequest(request)) {
+    return NextResponse.next()
+  }
 
   // Pass all public paths through immediately — no auth check whatsoever.
   // This MUST be first. Includes /login, /register, /_next/, /api/webhooks/, etc.
