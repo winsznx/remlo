@@ -1350,3 +1350,17 @@ Fix: set both `testnet: true` **and** `chainId: 42431` explicitly so the challen
 ### status: agentcash v0.13.1 pre-flight bug blocks live call 🚫
 
 `accounts` correctly shows $1.97 on Tempo (bridged from Base). `fetch` pre-flight balance check returns $0 for MPP on Tempo — different code path, known v0.13.1 bug. The endpoints themselves are correct (402 gate fires, challenge JWT is valid). Blocked on agentcash CLI fix.
+
+### workaround: mppx CLI testnet account — live MPP call confirmed ✅
+
+Used `npx mppx account create --account remlo-test` + `npx mppx account fund --account remlo-test` (built-in testnet faucet, Tempo Moderato chainId 42431) then called `https://www.remlo.xyz/api/mpp/treasury/yield-rates`. Payment confirmed on-chain — treasury balance increased by $0.01 per call. Two test transactions went through. MPPscan counter still at 0 (possible testnet indexing gap or receipt-based tracking — asked MPPscan team in group).
+
+---
+
+## OG image / link preview fix (2026-03-25)
+
+### fix: opengraph-image and twitter-image blocked by middleware ✅
+
+**Root cause:** `/opengraph-image` and `/twitter-image` routes were not in `PUBLIC_PREFIXES`. The middleware auth guard 307-redirected them to `/login`. Social crawlers (iMessage, Telegram, Discord, Slack, Twitter) don't follow auth redirects — they'd receive a 307, bail, and show no preview image.
+
+**Fix:** Added `/opengraph-image` and `/twitter-image` to `PUBLIC_PREFIXES` in `middleware.ts`. Both routes now return the generated PNG directly to unauthenticated crawlers.

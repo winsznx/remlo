@@ -26,6 +26,8 @@ const PUBLIC_PREFIXES = [
   '/api/openapi.json', // OpenAPI discovery doc must be publicly accessible for MPPscan
   '/.well-known/', // x402 payment discovery
   '/api/mpp/', // MPP endpoints are pay-per-call — payment header is the auth
+  '/opengraph-image', // OG image must be public for social link previews
+  '/twitter-image', // Twitter card image must be public for social link previews
 ]
 
 function isPublic(pathname: string): boolean {
