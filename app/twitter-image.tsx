@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Remlo — Borderless enterprise payroll on Tempo L1'
+export const alt = 'Remlo — AI payroll infrastructure on Tempo with MPP, Bridge, and embedded wallets'
 export const size = {
   width: 1200,
   height: 630,
@@ -84,26 +84,26 @@ export default function TwitterImage() {
             </div>
           </div>
 
-          <div style={{ display: 'flex', flexDirection: 'column', gap: 18, maxWidth: 860 }}>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 14, maxWidth: 860 }}>
             <div
               style={{
                 display: 'flex',
-                fontSize: 18,
+                fontSize: 16,
                 textTransform: 'uppercase',
                 letterSpacing: '0.22em',
                 color: '#34D399',
               }}
             >
-              Borderless enterprise payroll
+              Enterprise payroll on Tempo L1
             </div>
             <div
               style={{
                 display: 'flex',
                 flexWrap: 'wrap',
-                fontSize: 68,
+                fontSize: 60,
                 fontWeight: 700,
-                lineHeight: 1.02,
-                letterSpacing: '-0.05em',
+                lineHeight: 1.05,
+                letterSpacing: '-0.04em',
               }}
             >
               AI payroll on Tempo with MPP, Bridge, and embedded wallets.
@@ -111,28 +111,28 @@ export default function TwitterImage() {
             <div
               style={{
                 display: 'flex',
-                fontSize: 28,
+                fontSize: 24,
                 lineHeight: 1.4,
                 color: '#94A3B8',
                 maxWidth: 880,
               }}
             >
-              Batch payroll, streaming salary, compliant transfers, and global employee spending
-              in one operating surface.
+              Enterprise payroll infrastructure as MPP-native API endpoints.
+              Batch payments, compliance screening, yield queries, and salary streaming via HTTP 402.
             </div>
           </div>
 
-          <div style={{ display: 'flex', gap: 18 }}>
-            {['TIP-20 memos', 'TIP-403 screening', 'MPP 402 payments'].map((item) => (
+          <div style={{ display: 'flex', gap: 14 }}>
+            {['0.4s settlement', '$0.01 per txn', 'MPP HTTP 402', '47+ countries'].map((item) => (
               <div
                 key={item}
                 style={{
                   display: 'flex',
-                  padding: '14px 18px',
+                  padding: '12px 16px',
                   borderRadius: 999,
                   background: 'rgba(15,23,42,0.72)',
                   border: '1px solid rgba(148,163,184,0.12)',
-                  fontSize: 18,
+                  fontSize: 16,
                   color: '#E2E8F0',
                 }}
               >
