@@ -1330,3 +1330,23 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 **Root cause:** `onComplete?.()` was called immediately after `setBatchStatus('success')` on line 384 of `PayrollWizard.tsx`. `onComplete` is `() => router.push('/dashboard/payroll')`, so the wizard navigated away before React could paint the success step — the user never saw the 🎉 confirmation banner, tx hash, or employee count.
 
 **Fix:** Removed the `onComplete?.()` call from the execute handler. Navigation now only happens when the user explicitly clicks the "Back to Dashboard" button rendered in the post-success action block. — commit `7ef4018`
+
+---
+
+## MPP endpoint testing (2026-03-25)
+
+### fix: /api/mpp/ routes blocked by middleware ✅
+
+All MPP routes were 307-redirecting to `/login` because `/api/mpp/` was missing from `PUBLIC_PREFIXES`. MPP endpoints are pay-per-call — the payment header is the auth, not a Privy session. Added `/api/mpp/` to `PUBLIC_PREFIXES`. — commit `9827822`
+
+### fix: mppx advertising wrong chainId (4217 mainnet instead of 42431 testnet) ✅
+
+The `tempo()` call in `lib/mpp.ts` had no `chainId` or `testnet` flag. The mppx library defaults to Tempo mainnet (chainId 4217). Two separate issues:
+- `testnet: true` fixes credential verification path only
+- The 402 challenge JWT `methodDetails.chainId` still came from `Client.getResolver` falling back to `Object.keys(rpcUrl)[0]` = "4217"
+
+Fix: set both `testnet: true` **and** `chainId: 42431` explicitly so the challenge JWT advertises the right chain to the calling agent. Verified via decoding the `www-authenticate: Payment request="..."` JWT — now shows `"chainId": 42431`. — commit `529a256`
+
+### status: agentcash v0.13.1 pre-flight bug blocks live call 🚫
+
+`accounts` correctly shows $1.97 on Tempo (bridged from Base). `fetch` pre-flight balance check returns $0 for MPP on Tempo — different code path, known v0.13.1 bug. The endpoints themselves are correct (402 gate fires, challenge JWT is valid). Blocked on agentcash CLI fix.
