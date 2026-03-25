@@ -1294,3 +1294,29 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 **File:** `app/(employer)/dashboard/team/[id]/page.tsx` — commit `6ac6b66`
 
 **Note:** Same root assumption as the payroll wizard `/12` bug (`d039161`) — both treated `salary_amount` as annual when it is per-period.
+
+---
+
+## On-chain deposit UI (2026-03-25)
+
+### fix: build OnChainDepositWidget — employer can now deposit pathUSD into treasury ✅
+
+**Root cause:** `DepositPanel` was purely informational (showed bank details / a wallet address to send to). It never called `PayrollTreasury.deposit()`. The contract only credits balances via its own `deposit(uint256 amount, bytes32 memo)` function — a plain ERC-20 transfer to the contract address does nothing. The employer had 150k pathUSD in their wallet but `getAvailableBalance(employerAccountId)` returned 0, causing "Insufficient treasury balance" on payroll execution.
+
+**Fix — new component `components/treasury/OnChainDepositWidget.tsx`:**
+- Uses `useWallets()` (Privy) to find the employer's embedded wallet (matched against `employer_admin_wallet`)
+- Reads the wallet's live pathUSD balance via `publicClient.readContract`
+- Two-step on-chain flow driven by `encodeFunctionData` + `walletClient.sendTransaction`:
+  1. `pathUSD.approve(PAYROLL_TREASURY_ADDRESS, amountWei)` — grants the treasury contract spending rights
+  2. `PayrollTreasury.deposit(amountWei, bytes32(0))` — credits the employer's on-chain account (keyed by `keccak256(abi.encodePacked(msg.sender))`)
+- Waits for each receipt with `publicClient.waitForTransactionReceipt` before proceeding
+- Shows per-step progress with tx hashes linking to Tempo Explorer
+- On success, invalidates `['treasury']` query so `TreasuryCard` balance refreshes
+- Insufficient-balance guard, error display, and ability to deposit again
+
+**Also fixed — `lib/privy.ts`:**
+- Changed `tempoChain` from a plain `as const` object to `defineChain(...)` (viem). This produces a properly-typed `Chain` for use with `createWalletClient`, eliminating TS errors in the widget.
+
+**Also updated — `app/(employer)/dashboard/treasury/deposit/page.tsx`:**
+- `OnChainDepositWidget` is the primary card on the deposit page
+- `DepositPanel` (bank / manual crypto) demoted to "Other funding methods" section below
