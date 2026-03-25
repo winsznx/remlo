@@ -25,6 +25,7 @@ const PUBLIC_PREFIXES = [
   '/api/webhooks/', // Bridge + Tempo webhooks must be unauthenticated
   '/api/openapi.json', // OpenAPI discovery doc must be publicly accessible for MPPscan
   '/.well-known/', // x402 payment discovery
+  '/api/mpp/', // MPP endpoints are pay-per-call — payment header is the auth
 ]
 
 function isPublic(pathname: string): boolean {
