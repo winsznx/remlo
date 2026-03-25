@@ -456,6 +456,14 @@ export default function EmployeeDetailPage() {
   const [actionLoading, setActionLoading] = React.useState(false)
   const [issuingCard, setIssuingCard] = React.useState(false)
 
+  // Must be before early returns — hooks cannot be called after conditional returns
+  React.useEffect(() => {
+    if (!data) return
+    setSalaryAmount(data.employee.salary_amount != null ? String(data.employee.salary_amount) : '')
+    setSalaryCurrency(data.employee.salary_currency ?? 'USD')
+    setPayFrequency(data.employee.pay_frequency ?? 'monthly')
+  }, [data])
+
   if (isLoading) {
     return <div className="h-80 animate-pulse rounded-2xl bg-[var(--bg-subtle)]" />
   }
@@ -479,12 +487,6 @@ export default function EmployeeDetailPage() {
   const { employee, payments, complianceEvents } = data
   const isPlatformAdmin = adminOverview.isSuccess
   const canIssueCard = Boolean(cardData?.canIssue)
-
-  React.useEffect(() => {
-    setSalaryAmount(employee.salary_amount != null ? String(employee.salary_amount) : '')
-    setSalaryCurrency(employee.salary_currency ?? 'USD')
-    setPayFrequency(employee.pay_frequency ?? 'monthly')
-  }, [employee.pay_frequency, employee.salary_amount, employee.salary_currency])
 
   async function patchEmployee(body: Record<string, unknown>) {
     const response = await authedFetch(`/api/employers/${employer?.id}/team/${params.id}`, {
