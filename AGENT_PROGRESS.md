@@ -1382,3 +1382,68 @@ Used `npx mppx account create --account remlo-test` + `npx mppx account fund --a
 **Fix:** Added `realm: 'www.remlo.xyz'` to `Mppx.create()` in `lib/mpp.ts`. Identified from shafu's PR https://github.com/tempoxyz/docs/pull/200 documenting the exact same issue in containerized/Vercel environments. — commit `8533884`
 
 **Verified:** 4 mainnet payments landed on-chain (USDC.e, chainId 4217), MPP event `0x57bc7354...` emitted per tx, treasury received funds. Counter expected to tick once realm fix is deployed and next payment is made.
+
+### fix: realm www.remlo.xyz still wrong — must be remlo.xyz (no www) ✅
+
+**Root cause:** Shafu confirmed MPPscan query logic: `r.realm = domain(o.origin)` where origin is `https://remlo.xyz`. The `domain()` function strips scheme and produces `remlo.xyz` (no www). Our realm `www.remlo.xyz` didn't match — `server_hashes` CTE returned nothing, counter stayed at 0.
+
+**Fix:** Changed `realm: 'www.remlo.xyz'` → `realm: 'remlo.xyz'` in `lib/mpp.ts`. — commit `4a9b063`
+
+**Next step:** Deploy and make a new AgentCash call. Payment with realm=`remlo.xyz` should match domain of origin `https://remlo.xyz` and appear on MPPscan counter.
+
+---
+
+## MPP End-to-End Audit + All Fixes (2026-03-25)
+
+Full audit of mppx config, tempo defaults, and MPPscan indexing logic against mppx@0.4.7 source.
+
+### Bug 1 — CRITICAL: `lib/mpp-multirail.ts` no realm ✅
+**Root cause:** `Mppx.create()` without `realm` falls back to env probe order: `FLY_APP_NAME` → `HOSTNAME` → `MPP_REALM` → `VERCEL_URL`. On Vercel, `VERCEL_URL` fires → preview URL → `payroll/execute` ($1.00) and `bridge/offramp` ($0.25) payments attributed to wrong domain, never showed on MPPscan.
+**Fix:** Added `realm: 'remlo.xyz'` to `mppxMultiRail` in `lib/mpp-multirail.ts`.
+
+### Bug 2 — HIGH: `lib/mpp-multirail.ts` testnet pathUSD on mainnet chainId ✅
+**Root cause:** `currency: '0x20C0000000000000000000000000000000000000'` is testnet pathUSD. No `chainId` set → mppx defaults to mainnet (4217). Mainnet + testnet token = mismatch, payments fail or use wrong token.
+**Fix:** Added `chainId: 4217` and changed currency to USDC.e `0x20C000000000000000000000b9537d11c60E8b50`.
+
+### Bug 3 — HIGH: `app/.well-known/x402/route.ts` wrong currency + wrong OpenAPI pointer ✅
+**Root cause:** Discovery endpoint advertised testnet pathUSD and `openapi: '/openapi.json'` (404) instead of `/api/openapi.json`.
+**Fix:** Updated currency to USDC.e, updated openapi pointer to `/api/openapi.json`.
+
+### Bug 4 — MEDIUM: OpenAPI `x-guidance` said "PathUSD on Tempo L1" ✅
+**Root cause:** Stale copy from testnet era. AI agents reading the spec would try to pay with pathUSD.
+**Fix:** Updated `x-guidance` and `bridge/offramp` description to USDC.e on Tempo mainnet (chainId 4217).
+
+### Bug 5 — MEDIUM: `treasury/optimize` + `agent/session/treasury` used `mppx.session()` ✅
+**Root cause:** Session endpoints require a pre-opened on-chain payment channel with deposit. AgentCash and all standard MPP clients return "No action in context and no deposit configured" — endpoints were unreachable.
+**Fix:** Converted both to `mppx.charge()` — standard per-call payments, fully compatible with AgentCash.
+
+**Commit:** `215f685` — all 5 bugs in one commit.
+
+---
+
+## MPPscan live verification + OpenAPI tag grouping (2026-03-25)
+
+### MPPscan counter confirmed live ✅
+
+After realm fix deployment, made 40 AgentCash calls across endpoints:
+- `treasury/yield-rates` ($0.01 each)
+- `compliance/check` ($0.05 each, various wallet addresses)
+- `employee/{id}/history` ($0.05 each, emp-001 through emp-011)
+
+**MPPscan result:** Transactions: 40, Volume: US$1.34, Agents: 1 — confirmed working.
+
+Shafu confirmed from MPPscan backend: 6 transactions existed under correct `remlo.xyz` hash from before but were invisible due to `memo_server_hash` mismatch from initial registration. He patched on their end. All subsequent transactions appear in real-time.
+
+### fix: OpenAPI endpoint tags for MPPscan grouping ✅
+
+**Root cause:** All 12 endpoints showing as "No Tag (12)" on MPPscan server page. Shafu confirmed tags can be added via OpenAPI spec.
+
+**Fix:** Added top-level `tags` array and per-operation `tags` field grouping all 12 endpoints into 6 sections:
+- **Treasury** — yield-rates, optimize
+- **Payroll** — execute, payslips
+- **Employee** — balance/stream, history, advance
+- **Compliance** — check, compliance-list
+- **Agent** — session/treasury, memo/decode
+- **Bridge** — offramp
+
+**Commit:** `bf3bc38`
