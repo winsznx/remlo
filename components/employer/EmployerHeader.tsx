@@ -1,7 +1,7 @@
 'use client'
 
 import * as React from 'react'
-import { usePathname } from 'next/navigation'
+import { usePathname, useRouter } from 'next/navigation'
 import { usePrivy } from '@privy-io/react-auth'
 
 function getPageTitle(pathname: string) {
@@ -29,7 +29,14 @@ interface EmployerHeaderProps {
 export function EmployerHeader({ onMobileMenuOpen }: EmployerHeaderProps) {
   const pathname = usePathname()
   const { user, logout } = usePrivy()
+  const router = useRouter()
   const [userMenuOpen, setUserMenuOpen] = React.useState(false)
+
+  async function handleLogout() {
+    setUserMenuOpen(false)
+    await logout()
+    router.push('/login')
+  }
   const menuRef = React.useRef<HTMLDivElement>(null)
 
   const pageTitle = getPageTitle(pathname)
@@ -117,7 +124,7 @@ export function EmployerHeader({ onMobileMenuOpen }: EmployerHeaderProps) {
                 <p className="text-xs text-[var(--text-muted)] mt-0.5">Employer account</p>
               </div>
               <button
-                onClick={() => { setUserMenuOpen(false); void logout() }}
+                onClick={() => { void handleLogout() }}
                 className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--status-error)] hover:bg-[var(--bg-subtle)] transition-colors"
               >
                 <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">

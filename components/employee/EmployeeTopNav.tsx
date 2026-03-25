@@ -1,8 +1,17 @@
 'use client'
 
 import * as React from 'react'
+import Link from 'next/link'
+import { useRouter, usePathname } from 'next/navigation'
 import { usePrivy } from '@privy-io/react-auth'
 import { RemloLogo } from '@/components/brand/RemloLogo'
+
+const NAV_LINKS = [
+  { href: '/portal', label: 'Home', exact: true },
+  { href: '/portal/payments', label: 'Payments', exact: false },
+  { href: '/portal/card', label: 'Card', exact: false },
+  { href: '/portal/settings', label: 'Settings', exact: false },
+]
 
 interface EmployeeTopNavProps {
   title?: string
@@ -10,8 +19,20 @@ interface EmployeeTopNavProps {
 
 export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
   const { user, logout } = usePrivy()
+  const router = useRouter()
+  const pathname = usePathname()
   const [menuOpen, setMenuOpen] = React.useState(false)
   const menuRef = React.useRef<HTMLDivElement>(null)
+
+  async function handleLogout() {
+    setMenuOpen(false)
+    await logout()
+    router.push('/login')
+  }
+
+  function isActive(href: string, exact: boolean) {
+    return exact ? pathname === href : pathname.startsWith(href)
+  }
 
   const userInitials = [user?.email?.address?.[0], user?.email?.address?.[1]]
     .filter(Boolean)
@@ -36,9 +57,26 @@ export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
         labelClassName="text-[var(--text-primary)] text-sm"
       />
 
-      {/* Page title — center */}
+      {/* Desktop nav links */}
+      <nav className="hidden md:flex items-center gap-1 ml-6">
+        {NAV_LINKS.map((link) => (
+          <Link
+            key={link.href}
+            href={link.href}
+            className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              isActive(link.href, link.exact)
+                ? 'bg-[var(--bg-subtle)] text-[var(--text-primary)]'
+                : 'text-[var(--text-muted)] hover:text-[var(--text-primary)] hover:bg-[var(--bg-subtle)]'
+            }`}
+          >
+            {link.label}
+          </Link>
+        ))}
+      </nav>
+
+      {/* Page title — center (mobile only) */}
       {title && (
-        <span className="absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-[var(--text-primary)]">
+        <span className="md:hidden absolute left-1/2 -translate-x-1/2 text-sm font-semibold text-[var(--text-primary)]">
           {title}
         </span>
       )}
@@ -60,7 +98,7 @@ export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
               </p>
             </div>
             <button
-              onClick={() => { setMenuOpen(false); void logout() }}
+              onClick={() => { void handleLogout() }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--status-error)] hover:bg-[var(--bg-subtle)] transition-colors"
             >
               <svg viewBox="0 0 20 20" fill="currentColor" className="w-4 h-4">
