@@ -1182,3 +1182,46 @@ All 6 tables created: `employers`, `employees`, `payroll_runs`, `payment_items`,
 | `RESEND_API_KEY` | Invite emails | Empty — emails skipped silently |
 | `CLAUDE_API_KEY` | AI parse/anomaly/compliance endpoints | Empty — AI routes 500 |
 | `STRIPE_SECRET_KEY` | MPP Stripe dual-rail | Empty — Stripe rail skipped, Tempo rail works |
+
+---
+
+## OpenAPI Discovery + MPPscan Registration (2026-03-25) ✅
+
+### Goal
+Create a publicly accessible OpenAPI 3.1.0 discovery document for MPPscan registration so AgentCash agents can autonomously discover and pay for all 12 MPP endpoints.
+
+### Files Created / Modified
+
+**`app/api/openapi.json/route.ts`** (new)
+- OpenAPI 3.1.0 spec served at `GET /api/openapi.json` — no auth, `Cache-Control: public, max-age=3600`, CORS `*`
+- All 12 MPP endpoints with accurate `x-payment-info` (protocols: mpp, price, pricingMode: fixed)
+- Full `requestBody` schemas for POST endpoints, `parameters` for GET endpoints with path/query params
+- `info.x-guidance` agent-friendly description (per AgentCash spec)
+- `x-discovery.ownershipProofs` with `dns: remlo.xyz`
+- `responses.402` declared on every endpoint with `WWW-Authenticate` header description
+
+**`app/.well-known/x402/route.ts`** (new)
+- MPP/x402 payment method discovery at `GET /.well-known/x402`
+- Advertises `scheme: mpp`, `network: tempo`, pathUSD token, treasury recipient address
+
+**`next.config.ts`** (updated)
+- Added redirect: `GET /openapi.json` → `GET /api/openapi.json` (permanent: false)
+
+**`middleware.ts`** (updated)
+- Added `/api/openapi.json` and `/.well-known/` to `PUBLIC_PREFIXES` so both are unauthenticated
+
+### Validator Results
+
+```
+npx @agentcash/discovery@latest discover "http://localhost:3001"
+
+Routes: 12 — all priced correctly
+Warnings: 0
+```
+
+Initial run had 2 warnings:
+- `WELLKNOWN_NOT_FOUND` (info) → fixed by creating `/.well-known/x402`
+- `L3_INPUT_SCHEMA_MISSING` (warn) on `GET /api/mpp/treasury/yield-rates` → fixed by adding optional `?token` query param to spec
+
+### Architecture Note
+The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's inside the Next.js App Router and can use `process.env` at runtime (for future dynamic metadata). The root-level redirect keeps it accessible at the conventional path agents expect.
