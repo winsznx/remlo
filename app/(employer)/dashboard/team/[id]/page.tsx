@@ -164,11 +164,11 @@ function OverviewTab({
         <h3 className="text-sm font-semibold text-[var(--text-primary)]">Compensation</h3>
         <div className="mt-5 grid gap-4 sm:grid-cols-2">
           <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-base)] p-4">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Annual salary</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Per payroll cycle</p>
             <div className="mt-2 flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-[var(--accent)]" />
               <p className="text-xl font-semibold text-[var(--text-primary)]">
-                {formatCurrency(employee.salary_amount, employee.salary_currency)}
+                {employee.salary_amount == null ? '—' : formatCurrency(employee.salary_amount, employee.salary_currency)}
               </p>
             </div>
           </div>
@@ -177,16 +177,16 @@ function OverviewTab({
             <p className="mt-2 text-xl font-semibold text-[var(--text-primary)]">{formatFrequency(employee.pay_frequency)}</p>
           </div>
           <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-base)] p-4 sm:col-span-2">
-            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Per payroll cycle</p>
+            <p className="text-xs uppercase tracking-[0.14em] text-[var(--text-muted)]">Annual salary</p>
             <p className="mt-2 text-sm text-[var(--text-secondary)]">
               {employee.salary_amount == null
                 ? 'Compensation metadata has not been attached yet.'
                 : employee.pay_frequency === 'monthly'
-                  ? formatCurrency(employee.salary_amount / 12, employee.salary_currency)
+                  ? formatCurrency(employee.salary_amount * 12, employee.salary_currency)
                   : employee.pay_frequency === 'biweekly'
-                    ? formatCurrency(employee.salary_amount / 26, employee.salary_currency)
+                    ? formatCurrency(employee.salary_amount * 26, employee.salary_currency)
                     : employee.pay_frequency === 'weekly'
-                      ? formatCurrency(employee.salary_amount / 52, employee.salary_currency)
+                      ? formatCurrency(employee.salary_amount * 52, employee.salary_currency)
                       : 'Accrues every second via StreamVesting'}
             </p>
           </div>
