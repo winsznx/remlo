@@ -8,7 +8,8 @@ import { Mppx, tempo } from 'mppx/nextjs'
 export const mppx = Mppx.create({
   methods: [
     tempo({
-      testnet: true, // Tempo Moderato (chainId 42431) — omitting this defaults to mainnet (4217)
+      testnet: true,
+      chainId: 42431, // Tempo Moderato — must be explicit so the 402 challenge JWT advertises the right chain
       currency: '0x20C0000000000000000000000000000000000000', // pathUSD
       recipient: process.env.REMLO_TREASURY_ADDRESS as `0x${string}`,
     }),
