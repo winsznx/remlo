@@ -149,8 +149,8 @@ export default function AddEmployeePage() {
       toast.success(
         body.existing
           ? body.inviteState === 'claimed'
-            ? 'Employee already claimed. Open the existing employee record to continue.'
-            : 'Employee already exists. Invite details refreshed.'
+            ? 'Employee already onboarded. Open their record to view details.'
+            : 'Employee already on file. Invite link is still valid.'
           : 'Employee invited'
       )
     } catch (err) {
