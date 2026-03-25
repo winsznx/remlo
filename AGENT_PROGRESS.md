@@ -1099,7 +1099,8 @@ All 6 tables created: `employers`, `employees`, `payroll_runs`, `payment_items`,
 **Root cause of "invalid invite link":** The invite page used the anon Supabase browser client to query `employees` where `user_id IS NULL`. RLS has no policy that allows anon reads of unclaimed rows — `employees_self_select` only fires when `auth.uid()` matches, which never happens since we use Privy (not Supabase Auth). Zero rows returned → "invalid". The claim `UPDATE` was also blocked by the same RLS gap.
 
 **Files created:**
-- `app/api/invite/[token]/route.ts` — `GET` returns safe invite display fields via service role (bypasses RLS). `POST /claim` verifies Privy Bearer token, checks the caller is not already an employer, writes `user_id` / `wallet_address` / `onboarded_at` using service role idempotency guard (`.is('user_id', null)`)
+- `app/api/invite/[token]/route.ts` — `GET` only. Returns safe invite display fields via service role (bypasses RLS).
+- `app/api/invite/[token]/claim/route.ts` — `POST` only. Verifies Privy Bearer token, checks caller is not already an employer, writes `user_id` / `wallet_address` / `onboarded_at` using service role idempotency guard (`.is('user_id', null)`)
 - `app/api/me/employee/route.ts` — `GET` returns authenticated employee record via `getCallerEmployee()`
 - `app/api/me/payments/route.ts` — `GET` returns payment history for authenticated employee
 - `app/api/employers/[id]/name/route.ts` — public `GET` returning only `company_name` for employee portal use
@@ -1247,3 +1248,17 @@ The discovery doc lives at `/api/openapi.json` (not `/openapi.json`) so it's ins
 **Fix:** Updated all 5 contract addresses in the README table to match `.env.local` / `lib/constants.ts`.
 
 **File:** `README.md` — commit `cc3215a`
+
+---
+
+## Invite Flow Bug Fixes (2026-03-25)
+
+### fix: /api/invite/[token]/claim route missing ✅
+
+**Root cause:** `app/api/invite/[token]/route.ts` originally had both a `GET` and a dead `POST` handler. The page called `POST /api/invite/[token]/claim` but that path never existed — Next.js returned an HTML 404, causing `"Unexpected token '<'"` JSON parse error on the invite page.
+
+**Fix:** Created `app/api/invite/[token]/claim/route.ts` with the claim POST logic. Removed the dead `POST` export from the GET-only route file and cleaned up the unused `getPrivyClaims` import there.
+
+**Commits:** `fd74f59` (create /claim route), `3b50f57` (remove dead handler)
+
+**Doc note:** AGENT_PROGRESS line 1102 previously implied both handlers lived in the same file — corrected to reflect the proper two-file split.
