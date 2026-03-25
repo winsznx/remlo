@@ -19,12 +19,21 @@ const spec = {
     ],
   },
   servers: [{ url: 'https://remlo.xyz' }],
+  tags: [
+    { name: 'Treasury', description: 'Yield rates, optimization, and treasury management' },
+    { name: 'Payroll', description: 'Payroll execution and payslip retrieval' },
+    { name: 'Employee', description: 'Employee salary streams, advances, and history' },
+    { name: 'Compliance', description: 'Wallet compliance screening and cleared-list queries' },
+    { name: 'Agent', description: 'AI agent workflows — multi-action treasury and memo decoding' },
+    { name: 'Bridge', description: 'Fiat off-ramp via Bridge protocol' },
+  ],
   paths: {
     '/api/mpp/treasury/yield-rates': {
       get: {
         summary: 'Get current treasury yield rates',
         description: 'Returns current APY and allocation breakdown for the Remlo treasury.',
         operationId: 'getTreasuryYieldRates',
+        tags: ['Treasury'],
         parameters: [
           {
             name: 'token',
@@ -75,6 +84,7 @@ const spec = {
         summary: 'Execute a payroll run on-chain',
         description: 'Triggers batch payroll execution for a prepared payroll run. Agent wallet signs the on-chain transaction.',
         operationId: 'executePayroll',
+        tags: ['Payroll'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -131,6 +141,7 @@ const spec = {
         summary: 'Claim accrued salary advance',
         description: 'Allows an employee to claim their currently accrued salary stream balance as an on-demand advance.',
         operationId: 'claimSalaryAdvance',
+        tags: ['Employee'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -185,6 +196,7 @@ const spec = {
         summary: 'Run compliance screening on a wallet',
         description: 'Screens a wallet address against configured compliance policies (OFAC, custom blocklists).',
         operationId: 'checkCompliance',
+        tags: ['Compliance'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -243,6 +255,7 @@ const spec = {
         summary: 'Stream real-time accruing salary balance',
         description: 'Server-Sent Events stream of an employee\'s real-time accruing salary balance, ticking every second.',
         operationId: 'streamEmployeeBalance',
+        tags: ['Employee'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -302,6 +315,7 @@ const spec = {
         summary: 'Fetch a specific payslip',
         description: 'Retrieves the payslip for an employee in a specific payroll run.',
         operationId: 'getPayslip',
+        tags: ['Payroll'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -368,6 +382,7 @@ const spec = {
         summary: 'Decode a 32-byte payroll memo',
         description: 'Decodes a 0x-prefixed 32-byte hex memo into structured payroll fields.',
         operationId: 'decodeMemo',
+        tags: ['Agent'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -424,6 +439,7 @@ const spec = {
         summary: 'Get employee payment history',
         description: 'Returns paginated payment history for an employee.',
         operationId: 'getEmployeeHistory',
+        tags: ['Employee'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -491,6 +507,7 @@ const spec = {
         summary: 'Initiate fiat off-ramp transfer',
         description: 'Converts USDC.e balance to fiat and initiates a bank transfer via the Bridge protocol.',
         operationId: 'bridgeOfframp',
+        tags: ['Bridge'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -554,6 +571,7 @@ const spec = {
         summary: 'Get AI-powered treasury optimization recommendations',
         description: 'Analyzes current treasury state and returns rebalancing recommendations to maximize yield.',
         operationId: 'optimizeTreasury',
+        tags: ['Treasury'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -635,6 +653,7 @@ const spec = {
         summary: 'Fetch employer compliance-cleared wallet list',
         description: 'Returns the list of compliance-cleared wallet addresses for an employer, suitable for marketplace use.',
         operationId: 'getComplianceList',
+        tags: ['Compliance'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
@@ -701,6 +720,7 @@ const spec = {
         summary: 'Multi-action treasury management',
         description: 'Perform treasury management actions (balance, yield, rebalance, headcount) per call. Designed for AI agent workflows requiring treasury reads/writes.',
         operationId: 'agentSessionTreasury',
+        tags: ['Agent'],
         'x-payment-info': {
           protocols: ['mpp'],
           pricingMode: 'fixed',
