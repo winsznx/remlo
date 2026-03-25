@@ -8,7 +8,7 @@ const spec = {
     description:
       'Enterprise payroll infrastructure as MPP-native API endpoints. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402.',
     'x-guidance':
-      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Start by querying yield rates (GET /api/mpp/treasury/yield-rates, $0.01) to check treasury state. Use POST /api/mpp/agent/session/treasury ($0.02/action) for multi-action treasury management via session. Execute payroll via POST /api/mpp/payroll/execute ($1.00). All endpoints use PathUSD on Tempo L1. No API keys required beyond MPP payment credential.',
+      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Start by querying yield rates (GET /api/mpp/treasury/yield-rates, $0.01) to check treasury state. Use POST /api/mpp/agent/session/treasury ($0.02/action) for multi-action treasury management. Execute payroll via POST /api/mpp/payroll/execute ($1.00). All endpoints use USDC.e (Stargate USDC, 0x20C000000000000000000000b9537d11c60E8b50) on Tempo mainnet (chainId 4217). No API keys required beyond MPP payment credential.',
   },
   'x-discovery': {
     ownershipProofs: [
@@ -489,7 +489,7 @@ const spec = {
     '/api/mpp/bridge/offramp': {
       post: {
         summary: 'Initiate fiat off-ramp transfer',
-        description: 'Converts PathUSD balance to fiat and initiates a bank transfer via the Bridge protocol.',
+        description: 'Converts USDC.e balance to fiat and initiates a bank transfer via the Bridge protocol.',
         operationId: 'bridgeOfframp',
         'x-payment-info': {
           protocols: ['mpp'],
@@ -698,8 +698,8 @@ const spec = {
     },
     '/api/mpp/agent/session/treasury': {
       post: {
-        summary: 'Multi-action treasury session',
-        description: 'Perform treasury management actions (balance, yield, rebalance, headcount) in a single session. Designed for AI agent workflows requiring multiple treasury reads/writes.',
+        summary: 'Multi-action treasury management',
+        description: 'Perform treasury management actions (balance, yield, rebalance, headcount) per call. Designed for AI agent workflows requiring treasury reads/writes.',
         operationId: 'agentSessionTreasury',
         'x-payment-info': {
           protocols: ['mpp'],

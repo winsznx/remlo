@@ -5,13 +5,13 @@ import { getEmployerOnchainIdentity, getEmployerOnchainIdentityError } from '@/l
 
 /**
  * POST /api/mpp/treasury/optimize
- * MPP-10 — $0.10 session charge
+ * MPP-10 — $0.10 charge
  * Analyzes employer treasury and yield positions, returns optimization recommendations.
  * Accepts an optional natural-language question and returns a richer optimization summary.
  *
  * Body: { employerId: string, question?: string }
  */
-export const POST = mppx.session({ amount: '0.10', unitType: 'session' })(async (req: Request) => {
+export const POST = mppx.charge({ amount: '0.10' })(async (req: Request) => {
   const { employerId, question } = await req.json() as { employerId: string; question?: string }
 
   if (!employerId) {
