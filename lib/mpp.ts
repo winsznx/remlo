@@ -8,7 +8,8 @@ import { Mppx, tempo } from 'mppx/nextjs'
 export const mppx = Mppx.create({
   methods: [
     tempo({
-      chainId: 4217, // Tempo mainnet — USDC.e default, indexed by MPPscan
+      chainId: 4217, // Tempo mainnet — indexed by MPPscan
+      currency: '0x20C000000000000000000000b9537d11c60E8b50', // USDC.e (Stargate USDC)
       recipient: process.env.REMLO_TREASURY_ADDRESS as `0x${string}`,
     }),
   ],
