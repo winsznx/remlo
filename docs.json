@@ -14,9 +14,13 @@
   },
   "logo": {
     "dark": "/docs/logo-dark.svg",
+    "light": "/docs/logo-light.svg",
     "href": "https://docs.remlo.xyz"
   },
-  "favicon": "/docs/favicon.svg",
+  "favicon": {
+    "dark": "/docs/favicon.svg",
+    "light": "/docs/favicon.svg"
+  },
   "navigation": {
     "tabs": [
       {

@@ -6,7 +6,7 @@ export const metadata = { title: 'Press | Remlo' }
 const PRESS_ITEMS = [
   {
     label: 'Company boilerplate',
-    detail: 'Remlo is borderless enterprise payroll on Tempo L1 with Bridge fiat rails, embedded wallets, and machine-paid APIs.',
+    detail: 'Remlo is borderless enterprise payroll on Tempo L1 with Bridge fiat rails, embedded wallets, and machine payment APIs (MPP).',
   },
   {
     label: 'Key proof points',
