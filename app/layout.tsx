@@ -15,7 +15,7 @@ const ibmPlexMono = IBM_Plex_Mono({
 })
 
 export const metadata: Metadata = {
-  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo-drab.vercel.app'),
+  metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo.xyz'),
   title: 'Payroll for the onchain era | Remlo',
   description:
     'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',

@@ -1075,7 +1075,7 @@ To unblock `pnpm`, first traced the install failure to a stale direct dependency
 - Rewrote the operational pages (`docs/operations/environment-variables.mdx`, `docs/operations/deployment.mdx`) around real deployment decisions: live app URL, contract address rotation, webhook wiring, employer wallet sync, and the post-deploy smoke-test gate. These pages now read like operator runbooks instead of spec mirrors.
 - Rewrote the workspace and API pages (`docs/platform/*.mdx`, `docs/reference/core-rest-api.mdx`, `docs/reference/web-routes.mdx`) to explain Remlo in terms of employer jobs, employee jobs, and route families. Added clearer descriptions of invite reuse, payment pause/resume behavior, and when to use the core API versus MPP.
 - Reframed the protocol and integration pages (`docs/protocol/*.mdx`, `docs/integrations/*.mdx`, parts of `docs/reference/mpp-endpoints.mdx` and `docs/reference/webhooks-and-demo-agent.mdx`) so they explain why Bridge, Privy, payroll memos, TIP-403, and the canonical employer wallet matter to the product, not just where those details happen to exist in code.
-- Sanity-checked `docs.json` as valid JSON and removed the stale `remlo-drab.vercel.app` references from the docs bundle. A full Mintlify preview still needs visual review in the hosted docs environment.
+- Sanity-checked `docs.json` as valid JSON and removed the stale `remlo.xyz` references from the docs bundle. A full Mintlify preview still needs visual review in the hosted docs environment.
 
 ---
 
