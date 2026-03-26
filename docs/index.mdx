@@ -1,66 +1,22 @@
 ---
-title: Introduction
-description: Remlo runs employer payroll, employee payouts, treasury, and machine-paid workflows on Tempo.
+title: "Introduction"
+description: "Welcome to Remlo: borderless enterprise payroll on Tempo L1."
 ---
 
-# Remlo
+Remlo is borderless enterprise payroll on Tempo L1. Employers fund a treasury, run compliant batch payouts, stream salary in real time, issue employee cards through Bridge, and expose the same workflows to software agents through MPP.
 
-Remlo is a payroll operating system for globally distributed teams that want one place to fund treasury, onboard workers, settle payroll on-chain, manage spend controls, and expose the same workflows to software agents.
+## App Surfaces
 
-It blends five layers into one product:
+Remlo provides ready-to-use application surfaces for managing all aspects of the payroll lifecycle:
+- **Employer Dashboard**: A comprehensive UI for employers to fund their treasury, run batch payroll, manage team compliance, and monitor yield.
+- **Employee Portal**: A dedicated workspace for employees to track their salary, manage their connected wallets, and activate their Visa cards.
 
-| Layer | What it gives you |
-| --- | --- |
-| Employer workspace | Team onboarding, payroll runs, treasury visibility, compliance controls, cards, and billing |
-| Employee portal | Balance, payment history, wallet identity, cards, and bank off-ramp |
-| Tempo contracts | Treasury accounting, payroll settlement, salary streaming, employee registry, and yield routing |
-| Bridge and Privy | Fiat rails, cards, KYC, identity, and wallet creation |
-| Machine-paid APIs | HTTP 402 and session-based access to payroll and treasury workflows |
+## Protocol Layer
 
-## What teams use Remlo for
+Under the hood, Remlo is powered by a set of robust smart contracts deployed on Tempo L1. This protocol layer ensures that all transactions are secure, compliant, and transparent. Every transfer is automatically screened against TIP-403 compliance policies, and payouts are executed efficiently using the Payroll Batcher and TIP-20 memos.
 
-### Employer operations
+Because the underlying layer is entirely on-chain, you can integrate Remlo's capabilities directly into your own applications or allow your AI agents to interact with the MPP endpoints natively.
 
-- Fund one on-chain payroll treasury instead of managing one payout at a time
-- Invite employees without forcing them to handle raw wallet setup
-- Run compliant batch payroll with memo-backed audit context
-- Track treasury, locked payroll, and yield from one operator console
+## Next Steps
 
-### Employee experience
-
-- Accept an invite and claim a wallet in minutes
-- See every payment with status, memo context, and explorer proof
-- Spend with a card or off-ramp to bank rails where Bridge is enabled
-
-### Machine access
-
-- Price treasury and payroll workflows for agents and internal automation
-- Open sessions for repeated reads instead of paying per request
-- Reuse the same product data model across UI, APIs, and assistants
-
-## How Remlo works
-
-1. An employer signs in, creates a workspace, and syncs a canonical payroll wallet.
-2. Employees are invited, claimed, and linked to wallets, KYC state, and payout settings.
-3. Treasury is funded on Tempo and tracked through `PayrollTreasury`.
-4. Payroll preparation builds memos, runs policy checks, and creates a draft run.
-5. Settlement executes through `PayrollBatcher`, while yield and streaming salary remain readable from the same employer identity.
-6. Employees see payouts in `/portal`, and agents can access the same surface through paid endpoints.
-
-## Read these docs by job to be done
-
-| If you need to… | Start here |
-| --- | --- |
-| Understand the product and system model | [Architecture](architecture) |
-| Boot the app and run a full walkthrough | [Quickstart](quickstart) |
-| Understand who lands in `/dashboard` versus `/portal` | [Auth and Access](platform/auth-and-access) |
-| Learn the employer workflow | [Employer Dashboard](platform/employer-dashboard) |
-| Learn the employee experience | [Employee Portal](platform/employee-portal) |
-| Integrate directly with the app backend | [Core REST API](reference/core-rest-api) |
-| Build paid automation on top of Remlo | [MPP Endpoints](reference/mpp-endpoints) |
-
-## The three concepts worth knowing first
-
-- Remlo currently runs on Tempo test infrastructure, so treasury, payroll, and card flows should be treated as sandbox workflows unless your deployment says otherwise.
-- Treasury, yield, and payroll contract state resolve from the canonical employer wallet, not from an off-chain company id.
-- Invite links are onboarding paths, not permanent access URLs. Once an employee record is claimed, the original invite should no longer be reused.
+Ready to get started? Head over to the [Quickstart](/docs/quickstart) to see how you can run payroll or integrate Remlo's APIs today.
