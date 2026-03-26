@@ -1,59 +1,18 @@
 ---
-title: Contracts
-description: Tempo contracts for treasury, payroll settlement, employee registry, salary streaming, and yield routing.
+title: "Contracts"
+description: "Core smart contracts powering Remlo on the Tempo Moderato testnet."
 ---
 
-# Contracts
+Remlo's execution layer relies on a set of audited smart contracts deployed on the Tempo network. All operations, from holding employer funds to distributing payroll, are handled via these contracts.
 
-Remlo settles payroll through a small set of Tempo contracts. The web app and server routes both rely on these addresses being correct, so contract deployment and app configuration always move together.
+### Moderato Testnet Deployments
 
-## Core contracts
+| Contract | Address | Purpose |
+|----------|---------|---------|
+| **PayrollTreasury** | `0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5` | Holds employer stablecoin balances and funds gas logic. All payroll runs pull from this vault. |
+| **PayrollBatcher** | `0x90657d3F18abaB8B1b105779601644dF7ce4ee65` | Executes parallel stablecoin transfers to multiple employee wallets in a single transaction. |
+| **EmployeeRegistry** | `0xe7DdA49d250e014769F5d2C840146626Bf153BC4` | Maps employee wallets to their employers and verifies TIP-403 compliance policies during registration. |
+| **StreamVesting** | `0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021` | Manages real-time salary streaming, allowing employees to claim accrued balances before payday. |
+| **YieldRouter** | `0x78B0548c7bb5B51135BBC87382f131d85abf1061` | Optimizes idle treasury funds across DeFi protocols, generating yield for employers and employees. |
 
-| Contract | Address | Responsibility |
-| --- | --- | --- |
-| `PayrollTreasury` | `0x93dfCcd80895147EfC1c191013cD935f18a79859` | Tracks employer available balance, locked payroll balance, and treasury accounting |
-| `PayrollBatcher` | `0x58E5102BAED1c703dC1052cc7f5E30A96af34Eb8` | Executes atomic multi-recipient payroll batches with memo fields |
-| `EmployeeRegistry` | `0x1fF7E623CFdb6e263Be0D25A9142DD7888F5CBdA` | Tracks employee membership and headcount per employer |
-| `StreamVesting` | `0x71a2BA383d2C8ec15310705A13693F054271531f` | Exposes accrued salary reads and employee claims |
-| `YieldRouter` | `0x41dD786b2e01825437e2F67b51719CBeDcd527b0` | Reads APY, accrued yield, allocation, and treasury rebalances |
-
-## What the app reads
-
-| Contract | Read methods used in the product |
-| --- | --- |
-| `PayrollTreasury` | `getAvailableBalance`, `getLockedBalance` |
-| `EmployeeRegistry` | `getEmployeeCount` |
-| `StreamVesting` | `getAccruedBalance` |
-| `YieldRouter` | `getCurrentAPY`, `getYieldSources`, `getAllocation`, `getAccruedYield`, `yieldConfig` |
-| `TIP403Registry` | `isAuthorized` |
-
-## What the app writes
-
-| Contract | Write methods used in Remlo |
-| --- | --- |
-| `PayrollBatcher` | `executeBatchPayroll` |
-| `StreamVesting` | `claimAccrued` |
-| `YieldRouter` | `rebalance` |
-
-## Canonical treasury identity
-
-`PayrollTreasury` does **not** key employer balances by the Supabase employer UUID.
-
-It keys each account by:
-
-```solidity
-keccak256(abi.encodePacked(employerAdminAddress))
-```
-
-That is why the employer wallet shown in `/dashboard/settings` matters so much. Treasury, yield, and payroll reads must resolve from the same canonical employer wallet that funds the treasury.
-
-## Tempo network constants
-
-| Constant | Value |
-| --- | --- |
-| Chain ID | `42431` |
-| RPC | `https://rpc.moderato.tempo.xyz` |
-| Explorer | `https://explore.tempo.xyz` |
-| Sponsor URL | `https://sponsor.moderato.tempo.xyz` |
-| PathUSD | `0x20c0000000000000000000000000000000000000` |
-| TIP-403 Registry | `0x403c000000000000000000000000000000000000` |
+When interacting with the system programmatically, ensure you are referencing the correct contract addresses and the network is explicitly set to Tempo Moderato (Chain ID: `42431`).
