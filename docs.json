@@ -1,6 +1,7 @@
 {
   "$schema": "https://mintlify.com/docs.json",
   "name": "Remlo",
+  "theme": "mint",
   "description": "Borderless enterprise payroll on Tempo L1.",
   "colors": {
     "primary": "#059669",
