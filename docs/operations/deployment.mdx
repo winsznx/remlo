@@ -1,75 +1,46 @@
 ---
-title: Deployment
-description: Ship the app, docs, contracts, and integrations without leaving payroll or invites in a half-wired state.
+title: "Application Deployment"
+description: "Deploying the Remlo Frontend and API layer."
 ---
 
-# Deployment
+Deploying the Remlo application requires configuring the Next.js runtime, connecting to the managed Supabase instance, and securing the API routes that power the MPP execution layer. Remlo is optimized for deployment on Vercel, which natively supports the Next.js App Router and Edge Functions used heavily throughout the codebase.
 
-Remlo has three production surfaces to think about:
+```mermaid
+sequenceDiagram
+    participant Dev as Developer
+    participant Git as GitHub Actions
+    participant Vercel as Vercel Edge
+    participant DB as Supabase
+    
+    Dev->>Git: Push to main branch
+    Git->>Git: Run `npm run type-check`
+    Git->>Vercel: Trigger deployment hook
+    Vercel->>Vercel: Build Next.js App Router
+    Vercel->>DB: Apply database migrations (if any)
+    Vercel->>Vercel: Expose `/api/mpp/*` routes
+```
 
-- the Next.js application
-- the Mintlify docs site
-- the Tempo contracts and their public addresses
+### Deployment Prerequisites
 
-If any one of those drifts, the product can look healthy while critical flows like treasury, invite, or payroll quietly fail.
+Before deploying the Remlo application to production, you must ensure that several external services are properly provisioned and configured:
+1. **Supabase Database**: Provision a managed PostgreSQL instance on Supabase. Apply the full SQL schema found in the `REMLO_MASTER.md` to ensure all necessary tables (`employers`, `employees`, `payroll_runs`, etc.) exist with their corresponding Row Level Security (RLS) policies.
+2. **Bridge API Ecosystem**: A live Bridge production API key is required to handle fiat on/off-ramping. Configure the webhook secrets to listen for state changes from Bridge regarding KYB and transfer settlements.
+3. **Privy Application ID**: You must create a production application in the Privy console. This secures the embedded wallet infrastructure for the Employee Portal and manages corporate logins for the Employer Dashboard.
 
-## Application deployment
+### Vercel Configuration
 
-The app is designed for Vercel with `pnpm build` as the production build command.
+The provided `vercel.json` and `next.config.ts` are pre-optimized for serverless environments. 
 
-### App checklist
+To deploy using the Vercel CLI:
+```bash
+npx vercel link
+npx vercel pull --environment=production
+npx vercel build --prod
+npx vercel deploy --prebuilt --prod
+```
 
-1. Set every required value from [Environment Variables](environment-variables).
-2. Confirm `NEXT_PUBLIC_APP_URL` points to your live domain, not an old preview URL.
-3. Confirm the deployed contract addresses match every `NEXT_PUBLIC_*` contract variable.
-4. Verify Supabase service credentials are present for protected routes and webhooks.
-5. Verify Bridge keys and webhook secret are set before enabling KYC, cards, or bank off-ramp.
-6. Verify `REMLO_AGENT_PRIVATE_KEY` and `MPP_SECRET_KEY` before enabling machine-paid write flows.
-7. Verify each active employer row has `employer_admin_wallet` populated with the real payroll wallet used for treasury deposits.
+### Post-Deployment Verification
 
-## Contract deployment
-
-The Foundry scripts in `contracts/` target Tempo Moderato test infrastructure.
-
-After a contract redeploy:
-
-1. Update the public contract variables in Vercel
-2. Update local `.env.local`
-3. Verify `/dashboard/settings` still shows the employer wallet as `Ready`
-4. Re-test treasury, payroll, and yield against the new addresses
-
-Do not rely on stale fallback addresses after a redeploy. Remlo reads contract state directly from the addresses in its public environment.
-
-## Docs deployment
-
-Mintlify reads `docs.json` from the project root and the MDX pages from `docs/`.
-
-### Docs checklist
-
-1. Connect the project through the Mintlify GitHub app.
-2. Keep `docs.json` at the repo root.
-3. Keep docs content and docs-only brand assets under `docs/`.
-4. Use preview builds for layout or copy review before merge.
-
-## Post-deploy smoke test
-
-| Surface | What to verify |
-| --- | --- |
-| Public site | `/`, `/pricing`, `/about`, `/contact`, `/press`, `/status`, and legal pages |
-| Auth | `/login`, `/register`, `/invite/[token]`, `/kyc/[token]` |
-| Employer | `/dashboard`, `/dashboard/settings`, `/dashboard/team`, `/dashboard/payroll/new`, `/dashboard/treasury`, `/dashboard/api-access` |
-| Employee | `/portal`, `/portal/payments`, `/portal/card`, `/portal/wallet`, `/portal/settings` |
-| Webhooks | Bridge and Tempo signatures verify in the deployed environment |
-| MPP | 402 challenge flow works and receipts are recorded for paid endpoints |
-
-## Release gate
-
-Do not call the deployment complete until all of the following are true:
-
-1. `pnpm build` passes
-2. `pnpm exec tsc --noEmit` passes
-3. Employer wallet status shows `Ready` in `/dashboard/settings`
-4. Treasury and yield load without identity errors
-5. Invite links resolve on the live domain
-6. The MPP pricing page matches the backend charges
-7. Bridge and Tempo webhooks accept signed requests
+Once the application is live, you must verify the operational integrity of the MPP execution layer:
+- Call the production `GET /api/mpp/treasury/yield-rates` endpoint via `npx agentcash` to ensure the server correctly authenticates the L402 wrapper and queries the Tempo Moderato testnet without timing out.
+- Navigate to the Employer Dashboard and confirm that the Privy authentication modal successfully mounts and provisions a test session.

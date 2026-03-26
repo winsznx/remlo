@@ -1,0 +1,24 @@
+---
+title: "AgentCash"
+description: "An agent-side wallet for executing autonomous workflows."
+---
+
+AgentCash is an agent-side wallet and standard CLI for negotiating and paying L402 HTTP constraints. **It is not a server integration you build into Remlo**—instead, AgentCash is the spending account, and Remlo is what it spends on.
+
+If you are a developer spinning up an AI agent script that interacts with Remlo's MPP endpoints, you wrap those requests using the AgentCash module. AgentCash creates a dedicated wallet key for your script, tracks the gas and session budgets, intercepts any HTTP 402 Payment Required block, completes the cryptographic L402 challenge, signs it, and repeats the original request—all automatically behind the scenes.
+
+## Provisioning
+
+To grant your agent direct access to the Remlo treasury session logic or endpoint network, use the CLI locally:
+
+```bash
+npx agentcash add https://remlo.xyz
+```
+
+This binds an identity specifically to Remlo's operational bounds. To execute a test run against the `Agent/Session/Treasury` context, verifying the configuration:
+
+```bash
+npx agentcash try https://remlo.xyz
+```
+
+You can view verified interactions inside the open registry via the [MPPscan Explorer](https://mppscan.net) tied to the agent wallet identifier.

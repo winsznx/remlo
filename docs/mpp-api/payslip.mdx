@@ -1,0 +1,46 @@
+---
+title: "Payslip Generation"
+description: "Generate compliant payroll documentation."
+---
+
+Provides detailed cryptographic proof and a human-readable payload representing a specific employee's payment item from a specific payroll batch. 
+
+**Endpoint**
+`GET /api/mpp/payslips/[runId]/[employeeId]`
+
+**Pricing**
+$0.02 per call — Low computational overhead serving pre-calculated ledger entries. 
+
+**Payment type**
+Single charge — Usually triggered sequentially via an agent generating monthly compliance reports for an employer.
+
+**Request**
+```json
+// Dynamic Route Parameters: 
+// runId (Payroll Run UUID)
+// employeeId (Employee UUID)
+{}
+```
+
+**Response**
+```json
+{
+  "runId": "run-uuid",
+  "employeeInfo": {
+    "wallet": "0xEmployeeWallet",
+    "countryCode": "US"
+  },
+  "grossAmount": "6100.00",
+  "netAmount": "5000.00",
+  "txHash": "0x123abc...",
+  "status": "confirmed"
+}
+```
+
+**Example**
+```bash
+npx agentcash get https://remlo.xyz/api/mpp/payslips/batch-123/emp-456
+```
+
+**Notes**
+Used intrinsically by the Employee Portal to render PDF payslips for tax compliance. The agent can use this payload to build custom `.docx` or `.pdf` templates locally.

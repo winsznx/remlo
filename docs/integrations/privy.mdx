@@ -1,51 +1,14 @@
 ---
-title: Privy Integration
-description: Identity, embedded wallets, supported sign-in methods, and how Remlo keeps users out of raw wallet setup.
+title: "Privy Integration"
+description: "Wallet authentication and employee onboarding."
 ---
 
-# Privy Integration
+Remlo utilizes Privy to drastically reduce friction associated with self-custody wallet creation and management across the userbase.
 
-Privy is the identity and wallet layer for Remlo. It keeps wallet creation out of the critical path so employers and employees can use the product without first becoming chain power users.
+### Employer Context
+Employers create their company structures using seamless social links or email login processes. Privy abstracts the complex custodial signing logic underneath the dashboard hood, allowing administrators to push payroll boundaries securely without risking compromised seed phrases.
 
-## Current chain configuration
+### Employee Context
+New employees invited into the Remlo ecosystem do not need to install browser extensions or rely on hardware wallets to receive their payroll. Claiming their profile and finishing KYC through the employee portal provisions an embedded software wallet through Privy securely tied to their credentials.
 
-| Property | Value |
-| --- | --- |
-| Chain name | Tempo Moderato |
-| Chain ID | `42431` |
-| Currency | USD, 6 decimals |
-| RPC | `https://rpc.moderato.tempo.xyz` |
-| Explorer | `https://explore.tempo.xyz` |
-
-## Supported sign-in methods
-
-| Mechanism | Status |
-| --- | --- |
-| Email | Enabled |
-| SMS | Enabled |
-| External wallet | Enabled |
-| Passkey | Enabled from the login screen action |
-| Google | Disabled |
-| Twitter | Disabled |
-| Discord | Disabled |
-| Farcaster | Disabled |
-
-## Embedded wallet behavior
-
-`embeddedWallets.createOnLogin` is set to `users-without-wallets`, which means:
-
-1. a new employer can start without bringing a wallet
-2. an employee can claim an invite without any chain-specific setup
-3. a self-custodied wallet can still be linked later
-
-## How role resolution works
-
-- Privy proves identity
-- Supabase decides whether that identity is an employer, employee, or admin
-- middleware routes the user into `/dashboard`, `/portal`, or `/admin`
-
-Wallet identity is therefore necessary, but not sufficient, to determine workspace access.
-
-## WalletConnect
-
-WalletConnect can be enabled when `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` is present. That makes external-wallet login available without changing the embedded-wallet onboarding path.
+All signatures involving streaming claims or off-ramping executes natively within the embedded footprint.

@@ -1,77 +1,29 @@
 ---
-title: Environment Variables
-description: What to set in Vercel, Supabase, Privy, Bridge, and Tempo before Remlo goes live.
+title: "Environment Variables"
+description: "The complete server and application runtime configurations."
 ---
 
-# Environment Variables
+Configure your Remlo integration across network execution, external ecosystem access, and cryptographic boundaries. **Never expose server-only variables to the client.**
 
-Most Remlo deployments only touch three buckets:
-
-1. Public client configuration the browser needs at runtime
-2. Server secrets for treasury writes, webhooks, KYC, and email
-3. Optional local-development overrides
-
-The full current set also lives in `.env.local.example`.
-
-## Public app configuration
-
-These values are safe to expose to the browser. They define where the app points and which deployed contracts it should read from.
-
-| Variable | Scope | Purpose |
-| --- | --- | --- |
-| `NEXT_PUBLIC_APP_URL` | Public | Canonical app origin used in redirects, invites, and callbacks |
-| `NEXT_PUBLIC_TEMPO_RPC` | Public | Tempo RPC URL for contract reads and client-side calls |
-| `NEXT_PUBLIC_TEMPO_CHAIN_ID` | Public | Tempo chain id. Current test value: `42431` |
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Public | Privy application identifier |
-| `NEXT_PUBLIC_SUPABASE_URL` | Public | Supabase project URL |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public | Browser-safe Supabase key |
-| `NEXT_PUBLIC_PAYROLL_TREASURY` | Public | `PayrollTreasury` address |
-| `NEXT_PUBLIC_PAYROLL_BATCHER` | Public | `PayrollBatcher` address |
-| `NEXT_PUBLIC_EMPLOYEE_REGISTRY` | Public | `EmployeeRegistry` address |
-| `NEXT_PUBLIC_STREAM_VESTING` | Public | `StreamVesting` address |
-| `NEXT_PUBLIC_YIELD_ROUTER` | Public | `YieldRouter` address |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Public, optional | Enables WalletConnect in the Privy config |
-
-## Server-side secrets
-
-These should live only in Vercel, local server environments, or your secret manager.
-
-| Variable | Scope | Purpose |
-| --- | --- | --- |
-| `SUPABASE_SERVICE_KEY` | Server only | Protected Supabase writes and server-side data access |
-| `BRIDGE_API_KEY` | Server only | Bridge API authentication |
-| `BRIDGE_WEBHOOK_SECRET` | Server only | Bridge webhook verification |
-| `TEMPO_WEBHOOK_SECRET` | Server only | Tempo webhook verification |
-| `REMLO_TREASURY_ADDRESS` | Server only | Wallet that receives MPP fees |
-| `REMLO_AGENT_PRIVATE_KEY` | Server only | Server-side key for treasury and payroll agent actions |
-| `MPP_SECRET_KEY` | Server only | Session signing key for `mppx` |
-| `RESEND_API_KEY` | Server only | Invite email delivery |
-| `CLAUDE_API_KEY` | Server only | AI-assisted route access |
-| `STRIPE_SECRET_KEY` | Server only | Stripe fallback for composed payment routes |
-| `ADMIN_USER_IDS` | Server only, optional | Comma-separated internal admin allowlist |
-
-## Local development and operator overrides
-
-| Variable | Use |
-| --- | --- |
-| `DEMO_MPP_CREDENTIAL` | Injects a credential into `scripts/demo-agent.ts` |
-| `DEMO_EMPLOYER_ID` | Pins the demo script to a known employer |
-| `DEMO_PAYROLL_RUN_ID` | Pins the demo script to a known payroll run |
-| `DEPLOYER_PRIVATE_KEY` | Foundry deployment key for `contracts/script/Deploy.s.sol` |
-
-## Deployment rules
-
-- `NEXT_PUBLIC_APP_URL` must match the live product origin. If it is stale, invite links and callback flows break.
-- When you redeploy contracts, rotate all five public contract addresses together.
-- `REMLO_AGENT_PRIVATE_KEY` belongs on the server only. Do not expose it to client environments.
-- Webhook secrets belong on the server only. The browser should never see Bridge or Tempo secrets.
-- Older employer rows must have `employer_admin_wallet` populated with the real wallet used to fund `PayrollTreasury`. Treasury, payroll, and yield reads now depend on that field.
-
-## Common mistakes
-
-| Mistake | What breaks |
-| --- | --- |
-| Old `NEXT_PUBLIC_APP_URL` still points to a preview or Vercel domain | Invite links and KYC redirects open the wrong host |
-| Contract envs do not match the latest deployment | Treasury, payroll, or yield reads point at stale contracts |
-| `employer_admin_wallet` is empty for older employers | `/api/yield` and treasury reads return identity conflicts |
-| Bridge keys are set but webhook secret is missing | KYC or transfer state never reconciles back into the app |
+| Variable | Required | Description | Server-Only |
+|----------|----------|-------------|-------------|
+| `NEXT_PUBLIC_TEMPO_RPC` | Yes | The active Tempo Moderato Node URL (`https://rpc.moderato.tempo.xyz`). | No |
+| `NEXT_PUBLIC_TEMPO_CHAIN_ID` | Yes | The Tempo network ID (`42431`). | No |
+| `NEXT_PUBLIC_PRIVY_APP_ID` | Yes | The Privy client app ID. | No |
+| `NEXT_PUBLIC_SUPABASE_URL` | Yes | The REST endpoint URL for querying structured data. | No |
+| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Yes | The public anon key for basic data ingestion. | No |
+| `NEXT_PUBLIC_PAYROLL_TREASURY` | Yes | The active `PayrollTreasury` deployed address on Moderato. | No |
+| `NEXT_PUBLIC_PAYROLL_BATCHER` | Yes | The active `PayrollBatcher` deployed address on Moderato. | No |
+| `NEXT_PUBLIC_EMPLOYEE_REGISTRY` | Yes | The active `EmployeeRegistry` deployed address on Moderato. | No |
+| `NEXT_PUBLIC_STREAM_VESTING` | Yes | The active `StreamVesting` deployed address on Moderato. | No |
+| `NEXT_PUBLIC_YIELD_ROUTER` | Yes | The active `YieldRouter` deployed address on Moderato. | No |
+| `NEXT_PUBLIC_APP_URL` | Yes | The absolute web client URI (`https://remlo.xyz`). | No |
+| `SUPABASE_SERVICE_KEY` | Yes | High-context Database management bypassing row level security policies. | **Yes** |
+| `BRIDGE_API_KEY` | Yes | The explicit Bridge identifier to generate and operate the API suite. | **Yes** |
+| `BRIDGE_WEBHOOK_SECRET` | Yes | Cryptographic RSA public signature verification from incoming data. | **Yes** |
+| `REMLO_TREASURY_ADDRESS` | Yes | Receiving wallet for all completed MPP fractional toll transactions. | **Yes** |
+| `REMLO_AGENT_PRIVATE_KEY` | No | Private spending key initializing internal platform-wide testing scripts. | **Yes** |
+| `RESEND_API_KEY` | Yes | Configuration to broadcast employee verification and payment receipt emails. | **Yes** |
+| `CLAUDE_API_KEY` | Yes | Access tier powering integrated data anomaly sweeps inside runs. | **Yes** |
+| `STRIPE_SECRET_KEY` | No | Secondary integration supporting external fiat-backed logic parsing. | **Yes** |
+| `MPP_SECRET_KEY` | Yes | Randomized 32-byte base64 secure key constructing MPP payload receipts. | **Yes** |

@@ -1,0 +1,43 @@
+---
+title: "Bridge Off-ramp"
+description: "Transfer Tempo stablecoins to a local fiat bank account."
+---
+
+Facilitates an instantaneous conversion and transfer of an employee's on-chain stablecoin balance to their linked localized bank account using the Bridge API.
+
+**Endpoint**
+`POST /api/mpp/bridge/offramp`
+
+**Pricing**
+$0.25 per call — Covers internal accounting orchestration, KYC verification overhead, and the bridge processing execution.
+
+**Payment type**
+Single charge — Triggers a one-off fiat settlement transaction.
+
+**Request**
+```json
+{
+  "employeeWallet": "0xEmployeeWallet1",
+  "amount": "1500000000000000000000",
+  "currency": "USD",
+  "destinationBankId": "ba_123456789"
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "bridgeTransferId": "tr_987654321",
+  "fiatAmount": "1500.00",
+  "estimatedSettlement": "2026-03-27T09:00:00Z"
+}
+```
+
+**Example**
+```bash
+npx agentcash post https://remlo.xyz/api/mpp/bridge/offramp '{"employeeWallet":"0x...","amount":"150...","destinationBankId":"ba_123"}'
+```
+
+**Notes**
+Failure states usually trigger if the destination bank rejects the payload or the specific country corridor is temporarily paused for liquidity constraints via Bridge.

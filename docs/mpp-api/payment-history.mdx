@@ -1,0 +1,47 @@
+---
+title: "Payment History"
+description: "Fetch comprehensive ledger entries for an employee."
+---
+
+Returns the paginated history of all `payment_items` connected to an employee across multiple `payroll_runs` and streaming claims.
+
+**Endpoint**
+`GET /api/mpp/employee/[id]/history`
+
+**Pricing**
+$0.05 per call — Simple read operations querying indexed Supabase relational tables.
+
+**Payment type**
+Single charge — Appropriate for dashboard refreshing or agent audit scans.
+
+**Request**
+```json
+// Dynamic Route Parameter: id (Employee UUID)
+// Query params: limit=50&offset=0
+{}
+```
+
+**Response**
+```json
+{
+  "employeeId": "uuid-string",
+  "transactions": [
+    {
+      "id": "item-uuid",
+      "amount": "5000.00",
+      "status": "confirmed",
+      "txHash": "0x123abc...",
+      "createdAt": "2026-03-01T00:00:00Z"
+    }
+  ]
+}
+```
+
+**Example**
+```bash
+curl -H "Authorization: L402 <YOUR_TX_HASH>" \
+  https://remlo.xyz/api/mpp/employee/123000-abcde/history?limit=10
+```
+
+**Notes**
+This endpoint only returns off-chain index records from Supabase. To decode the on-chain payload, pass the returned `txHash` to the `memo/decode` endpoint.

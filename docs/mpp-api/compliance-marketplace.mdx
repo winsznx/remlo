@@ -1,0 +1,46 @@
+---
+title: "Compliance Marketplace"
+description: "Retrieve a consolidated compliance report on an employer's global registry."
+---
+
+Allows third-party operators (such as tax compliance agencies or large auditors) to acquire structured datasets regarding an employer's overall TIP-403 risk profile and recent compliance events.
+
+**Endpoint**
+`GET /api/mpp/marketplace/compliance-list/[employerId]`
+
+**Pricing**
+$0.50 per call — Sourced directly from indexed database records mapping high-value structural integrity logic over thousands of registered employee wallets.
+
+**Payment type**
+Single charge — Perfect for periodic sync cron jobs executing outside the bounds of dynamic real-time flows.
+
+**Request**
+```json
+// Dynamic Route Parameter: employerId
+{}
+```
+
+**Response**
+```json
+{
+  "employerId": "e3b0c442...",
+  "totalEmployees": 402,
+  "blockedWallets": 0,
+  "globalRiskScore": 12,
+  "lastAudited": "2026-03-20T12:00:00Z",
+  "events": [
+    {
+      "eventType": "kyc_approved",
+      "walletAddress": "0xEmployeeWallet1"
+    }
+  ]
+}
+```
+
+**Example**
+```bash
+npx agentcash get https://remlo.xyz/api/mpp/marketplace/compliance-list/e3b0-abc
+```
+
+**Notes**
+The endpoint ensures strict PII filtering by only rendering aggregate statuses, cryptographic public identifiers, and zero-knowledge indicators without returning exact identity structures.

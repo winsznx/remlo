@@ -1,44 +1,11 @@
 ---
-title: Bridge Integration
-description: How Remlo uses Bridge for KYC, virtual accounts, cards, and fiat off-ramp.
+title: "Bridge Integration"
+description: "Fiat on/off-ramping and card issuing."
 ---
 
-# Bridge Integration
+Remlo partners directly with Bridge to handle all fiat-to-stablecoin conversion operations inside the platform.
 
-Bridge is the fiat rail inside Remlo. It is responsible for the parts of payroll that operators and employees still expect to feel like normal finance software: KYC links, bank rails, and cards.
+Once an employer passes KYB, Remlo spins up a dedicated Bridge virtual account directly coupled to the employer's `PayrollTreasury` address on the Tempo network.
+Funds sent via ACH or wire instantly mint as tokenized stablecoin pathUSD inside the treasury upon receipt.
 
-## Runtime model
-
-| Property | Value |
-| --- | --- |
-| Production base URL | `https://api.bridge.xyz/v0` |
-| Sandbox base URL | `https://api.sandbox.bridge.xyz/v0` |
-| Auth header | `Api-Key: <BRIDGE_API_KEY>` |
-| Idempotency | `Idempotency-Key` on write requests |
-| Verification | `x-webhook-signature`, with `bridge-signature` accepted for compatibility |
-
-## Where Bridge shows up in Remlo
-
-| Remlo route | Bridge operation | Purpose |
-| --- | --- | --- |
-| `POST /api/employees/[id]/kyc` | `POST /customers`, `POST /kyc_links` | Create employee Bridge customer and return a KYC URL |
-| `GET/POST /api/employees/[id]/card` | `POST /customers/{id}/card_accounts` | Read card status or issue a prepaid card |
-| `POST /api/employees/[id]/offramp` | `POST /transfers` | Push payroll balance to bank rails from the employee portal |
-| `POST /api/mpp/bridge/offramp` | `POST /transfers` | Machine-paid off-ramp route |
-| `POST /api/webhooks/bridge` | Incoming Bridge webhook | Reconcile KYC and transfer state back into Supabase |
-
-## Webhooks handled
-
-- `transfer.payment_processed`
-- `customer.updated`
-- `card_transaction.created`
-
-The webhook handler also accepts older compatibility event names still seen in some sandboxes.
-
-## What Bridge enables in the product
-
-- employee KYC links
-- employee Bridge customer creation
-- employee card issuance
-- employee bank off-ramp
-- treasury-adjacent funding workflows where Bridge virtual accounts are part of the deployment
+Employees interact with the Bridge ecosystem on the egress side. Once salary is streamed or batched into their Tempo wallets, they can order and attach a virtual Bridge Visa card directly funded by their decentralized wallet balance or seamlessly trigger fiat off-ramping to a local bank account.
