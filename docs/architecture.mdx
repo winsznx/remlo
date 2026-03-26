@@ -1,101 +1,28 @@
 ---
-title: Architecture
-description: The Remlo stack across Tempo, Supabase, Bridge, Privy, and MPP.
+title: "Architecture"
+description: "Understanding the different layers of Remlo"
 ---
 
-# Architecture
+The Remlo architecture bridges traditional banking and on-chain payroll execution on the Tempo L1 network. Here is a high-level view of how funds move from an employer's bank account to an employee's local bank.
 
-Remlo is a multi-surface payroll system built around one canonical employer identity. The web app gives operators and employees clean workflows, while the contracts and APIs keep treasury, settlement, and audit data consistent underneath.
+```mermaid
+flowchart LR
+    A[Employer] -->|USD| B(Bridge Virtual Account)
+    B -->|Mint pathUSD| C(PayrollTreasury)
+    C -->|Execute Run| D(PayrollBatcher)
+    D -->|Distribute| E(Employee Wallets)
+    E -->|Spend/Off-ramp| F(Bridge Visa Cards)
+    F -->|Local Currency| G([Local Banks])
+```
 
-## The stack in one view
+## Employer Funding
+The employer initiates the flow by depositing funds into a Bridge virtual account. Bridge automatically handles the conversion from traditional currency to stablecoins (pathUSD) and mints these tokens directly into the employer's account within the PayrollTreasury contract on Tempo L1.
 
-| Layer | Technology |
-| --- | --- |
-| Chain | Tempo L1, chain ID `42431`, Simplex BFT, 0.5s finality |
-| Token standard | TIP-20 stablecoins with 6 decimals and ISO 20022 payroll memos |
-| Compliance | TIP-403 Policy Registry on every payout path |
-| Machine payments | MPP with `mppx`, HTTP 402, session vouchers, and SSE support |
-| Fiat rails | Stripe Bridge API for virtual accounts, cards, and bank off-ramp |
-| Wallets | Privy embedded wallets plus external wallet login |
-| Frontend | Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui |
-| Database | Supabase PostgreSQL with realtime updates and product state |
-| Client state | Zustand and TanStack Query |
+## PayrollTreasury
+The PayrollTreasury is the secure on-chain vault where employer funds reside. It holds the pathUSD and tracks the available balance and gas budget for each employer. All payroll runs originate from this treasury.
 
-## Four product layers
+## PayrollBatcher
+When a payroll run is executed—either manually via the dashboard or autonomously via the MPP API—the PayrollBatcher coordinates the simultaneous payout to all employees. It pulls the necessary funds from the treasury and distributes them, attaching the appropriate TIP-20 memo to each transfer for compliance and tracking. 
 
-### 1. Employer workspace
-
-The employer app under `/dashboard` is the control plane for team onboarding, payroll, treasury, compliance, API access, and cards.
-
-### 2. Employee experience
-
-The employee app under `/portal` focuses on received money, not treasury operations. It surfaces balances, payment history, cards, bank off-ramp, and wallet identity.
-
-### 3. Settlement and policy contracts
-
-Tempo contracts keep the financial state:
-
-- `PayrollTreasury` tracks available and locked payroll funds
-- `PayrollBatcher` executes multi-recipient payroll
-- `EmployeeRegistry` tracks workforce membership
-- `StreamVesting` handles accrued streaming salary
-- `YieldRouter` reads and rebalances yield allocation
-
-TIP-403 sits across the payout path as a policy gate.
-
-### 4. Fiat, identity, and machine access
-
-- Bridge handles KYC, virtual accounts, cards, and off-ramp
-- Privy handles sign-in and wallet provisioning
-- `mppx` prices machine access to the same payroll and treasury workflows
-
-## Payroll lifecycle
-
-### 1. Identity and workspace creation
-
-- An admin signs in with Privy
-- Remlo creates or resolves the employer record
-- The employer wallet is synced and becomes the canonical on-chain identity for treasury reads
-
-### 2. Employee onboarding
-
-- The employer creates an employee record
-- The employee claims the invite
-- Privy provisions or links a wallet
-- Bridge can be used for KYC and payout rails
-
-### 3. Treasury funding
-
-- The employer funds the Tempo treasury
-- `PayrollTreasury` records what is available versus already locked to payroll
-
-### 4. Payroll preparation
-
-- The app converts salary amounts into token units
-- Memo bytes are generated
-- TIP-403 checks run on recipient wallets
-- Draft payroll runs and payment items are written to Supabase
-
-### 5. Payroll settlement
-
-- `PayrollBatcher.executeBatchPayroll()` is submitted
-- `payment_items` and `payroll_runs` are updated
-- Tempo webhooks confirm or fail the run
-
-### 6. Employee receipt and off-ramp
-
-- Employees see the payment in the portal
-- They can spend, retain, or off-ramp depending on the integrations enabled for the deployment
-
-## Source of truth by layer
-
-| Boundary | What lives there |
-| --- | --- |
-| Supabase | Employers, employees, payroll runs, payment items, compliance events, MPP sessions |
-| Tempo contracts | Treasury balances, payroll execution, employee counts, streamed salary, yield state |
-| Bridge | Customer records, KYC links, virtual accounts, card accounts, fiat transfers |
-| Privy | User identity, embedded wallet provisioning, linked wallet accounts |
-
-## The most important design rule
-
-Remlo should never guess an employer’s on-chain identity from an off-chain company id. Treasury, yield, and payroll contract state resolve from the employer’s canonical admin wallet, so wallet sync is part of the core architecture, not a settings nicety.
+## Employee Wallets & Bridge
+Employees receive their salary directly into their on-chain wallets on Tempo. From there, they can use their connected Bridge Visa cards to spend the funds in the real world or seamlessly off-ramp the balance to their local bank accounts.

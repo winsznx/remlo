@@ -1,102 +1,25 @@
 ---
-title: Quickstart
-description: Go from clean install to a real employer, employee, treasury, and payroll walkthrough.
+title: "Quickstart"
+description: "Start running compliant payroll with Remlo."
 ---
 
-# Quickstart
+Whether you are an employer looking to manage your team's salary, an operator configuring an AI agent, or a developer building a custom integration, Remlo provides the tools you need. Choose the path that fits your use case.
 
-The fastest useful Remlo test is not just booting the frontend. It is proving the full loop:
+### 1. "I want to run payroll from my dashboard"
+If you prefer a visual interface, you can manage everything through the Remlo Employer Dashboard.
+1. Register your company on the [Remlo App](https://remlo.xyz).
+2. Add your employees to your team directory.
+3. Deposit funds into your treasury via the Bridge virtual account integration.
+4. Run the payroll wizard to execute a compliant batch payout.
 
-1. Sign in as an employer
-2. Sync the employer wallet
-3. Add an employee with a fresh identity
-4. Fund treasury on Tempo testnet
-5. Prepare or submit a payroll run
-6. Claim the invite in a separate browser profile and verify the employee portal
+### 2. "I want an agent to run payroll autonomously"
+Use AgentCash to authorize an AI agent to manage your treasury and execute payroll on your behalf.
+1. Set up AgentCash by running `npx agentcash try https://remlo.xyz`.
+2. Fund the agent's wallet with the required stablecoin balance for API gas fees.
+3. The agent can now securely interact with Remlo by calling the `/api/mpp/agent/session/treasury` endpoint.
 
-## Prerequisites
-
-- `pnpm`
-- Node.js 20 or newer
-- Foundry with Tempo support if you plan to build or deploy contracts
-- A populated `.env.local` copied from `.env.local.example`
-- A Supabase project with the current schema and migrations applied
-
-## Local setup
-
-```bash
-pnpm install
-cp .env.local.example .env.local
-# fill in values from operations/environment-variables
-pnpm dev
-```
-
-If your Supabase project predates the employer wallet sync fix, run `scripts/migrations/20260323_add_employer_admin_wallet.sql` and backfill `employers.employer_admin_wallet` before testing treasury or yield.
-
-## Ten-minute product walkthrough
-
-### 1. Sign in as the employer
-
-- Open `/login`
-- Create or reuse an employer identity
-- Finish company setup through `/register` if needed
-
-### 2. Confirm the employer wallet is synced
-
-- Open `/dashboard/settings`
-- Check **Employer Wallet Status**
-- Make sure the current session wallet and canonical payroll wallet match and the badge shows `Ready`
-
-### 3. Add an employee with a new identity
-
-- Open `/dashboard/team/add`
-- Use a fresh email or phone number that has not already claimed an invite
-- Copy the invite link
-
-### 4. Fund treasury
-
-- Open `/dashboard/treasury`
-- Use the deposit guidance for your environment
-- If you are testing on Tempo testnet, fund the employer wallet and treasury with sandbox assets first
-
-### 5. Prepare payroll
-
-- Open `/dashboard/payroll/new`
-- Choose the employee you just created
-- Review memo, compliance, and treasury checks
-- Submit the payroll run or keep it as a draft depending on your environment
-
-### 6. Claim the employee invite
-
-- Open the invite link in incognito or a separate browser profile
-- Sign in with a different identity from the employer account
-- Let Privy create the wallet automatically if you do not want to connect one manually
-- Confirm the employee lands in `/portal`
-
-## Contract deployment
-
-```bash
-foundryup -n tempo
-cd contracts
-forge build
-cast rpc tempo_fundAddress <YOUR_ADDRESS> --rpc-url https://rpc.moderato.tempo.xyz
-forge script script/Deploy.s.sol --broadcast --rpc-url https://rpc.moderato.tempo.xyz
-```
-
-After a redeploy, update all public contract addresses together before you test payroll, yield, or treasury again.
-
-## Run the autonomous demo agent
-
-```bash
-npx ts-node scripts/demo-agent.ts
-```
-
-The demo agent opens an MPP session, queries treasury and yield, checks compliance, executes a payroll action, streams balance updates, and closes the session.
-
-## Recommended verification steps
-
-1. `/dashboard/settings` shows `Ready` for the employer wallet.
-2. `/dashboard/treasury` loads without a wallet or yield conflict.
-3. `/dashboard/team` shows the new employee and the correct payment action state.
-4. `/portal/wallet` shows the employee wallet identity after invite claim.
-5. `/dashboard/api-access` and `/dashboard/demo` load if you plan to test MPP flows.
+### 3. "I want to call the API directly"
+Build custom workflows or integrations by calling the MPP API endpoints.
+1. Obtain an MPP-compatible wallet to handle standard 402 HTTP payment flows.
+2. Review the [MPP API Reference](/docs/mpp-api/overview) and pick the endpoint you need.
+3. Send the request handling the 402 payment flow to execute the transaction and retrieve your data.

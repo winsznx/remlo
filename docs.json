@@ -1,31 +1,25 @@
 {
   "$schema": "https://mintlify.com/docs.json",
-  "theme": "palm",
   "name": "Remlo",
-  "description": "Global payroll, treasury, cards, and machine-paid workflows on Tempo.",
+  "description": "Borderless enterprise payroll on Tempo L1.",
   "colors": {
-    "primary": "#22C55E",
-    "light": "#6EE7B7",
-    "dark": "#15803D"
+    "primary": "#059669",
+    "light": "#34D399",
+    "dark": "#064E3B",
+    "anchors": "#059669"
   },
-  "appearance": {
+  "modeToggle": {
     "default": "dark",
-    "strict": false
+    "isHidden": true
   },
   "logo": {
-    "light": "/docs/logo-light.svg",
     "dark": "/docs/logo-dark.svg",
     "href": "https://docs.remlo.xyz"
   },
-  "favicon": {
-    "light": "/docs/favicon.svg",
-    "dark": "/docs/favicon.svg"
-  },
+  "favicon": "/docs/favicon.svg",
   "styling": {
-    "eyebrows": "section",
     "codeblocks": {
       "theme": {
-        "light": "github-light",
         "dark": "github-dark"
       }
     },
@@ -33,100 +27,78 @@
       "library": "lucide"
     }
   },
-  "navigation": {
-    "tabs": [
-      {
-        "tab": "Docs",
-        "icon": "book-open",
-        "groups": [
-          {
-            "group": "Getting Started",
-            "pages": [
-              "docs/index",
-              "docs/quickstart",
-              "docs/architecture"
-            ]
-          },
-          {
-            "group": "Workspaces",
-            "pages": [
-              "docs/platform/auth-and-access",
-              "docs/platform/employer-dashboard",
-              "docs/platform/employee-portal"
-            ]
-          },
-          {
-            "group": "Protocol and Integrations",
-            "pages": [
-              "docs/protocol/contracts",
-              "docs/protocol/memo-and-compliance",
-              "docs/integrations/bridge",
-              "docs/integrations/privy"
-            ]
-          },
-          {
-            "group": "Operations",
-            "pages": [
-              "docs/operations/environment-variables",
-              "docs/operations/deployment"
-            ]
-          }
-        ]
-      },
-      {
-        "tab": "API Reference",
-        "icon": "square-terminal",
-        "groups": [
-          {
-            "group": "APIs and Webhooks",
-            "pages": [
-              "docs/reference/core-rest-api",
-              "docs/reference/mpp-endpoints",
-              "docs/reference/webhooks-and-demo-agent"
-            ]
-          },
-          {
-            "group": "Surface Map",
-            "pages": [
-              "docs/reference/web-routes"
-            ]
-          }
-        ]
-      }
-    ],
-    "anchors": [
-      {
-        "name": "App",
-        "url": "https://remlo.xyz",
-        "icon": "panel-top-open"
-      },
-      {
-        "name": "Status",
-        "url": "https://remlo.xyz/status",
-        "icon": "activity"
-      },
-      {
-        "name": "Contact",
-        "url": "https://remlo.xyz/contact",
-        "icon": "mail"
-      }
-    ]
-  },
+  "navigation": [
+    {
+      "group": "Overview",
+      "pages": [
+        "docs/index",
+        "docs/architecture",
+        "docs/quickstart"
+      ]
+    },
+    {
+      "group": "Protocol",
+      "pages": [
+        "docs/protocol/contracts",
+        "docs/protocol/memo"
+      ]
+    },
+    {
+      "group": "On-Chain",
+      "pages": [
+        "docs/on-chain/payroll-treasury",
+        "docs/on-chain/payroll-batcher",
+        "docs/on-chain/employee-registry",
+        "docs/on-chain/stream-vesting",
+        "docs/on-chain/yield-router"
+      ]
+    },
+    {
+      "group": "MPP API",
+      "pages": [
+        "docs/mpp-api/overview",
+        "docs/mpp-api/authentication",
+        "docs/mpp-api/yield-rates",
+        "docs/mpp-api/payroll-execution",
+        "docs/mpp-api/compliance-check",
+        "docs/mpp-api/salary-advance",
+        "docs/mpp-api/salary-stream",
+        "docs/mpp-api/payment-history",
+        "docs/mpp-api/payslip",
+        "docs/mpp-api/memo-decode",
+        "docs/mpp-api/bridge-off-ramp",
+        "docs/mpp-api/treasury-optimize",
+        "docs/mpp-api/treasury-session",
+        "docs/mpp-api/compliance-marketplace"
+      ]
+    },
+    {
+      "group": "Integrations",
+      "pages": [
+        "docs/integrations/bridge",
+        "docs/integrations/privy",
+        "docs/integrations/agentcash"
+      ]
+    },
+    {
+      "group": "Operations",
+      "pages": [
+        "docs/operations/environment-variables",
+        "docs/operations/deployment",
+        "docs/operations/contract-deployment"
+      ]
+    }
+  ],
   "navbar": {
     "links": [
       {
-        "label": "Pricing",
-        "href": "https://remlo.xyz/pricing"
+        "label": "App",
+        "href": "https://remlo.xyz"
       },
       {
         "label": "Status",
         "href": "https://remlo.xyz/status"
       }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Open App",
-      "href": "https://remlo.xyz"
-    }
+    ]
   }
 }
