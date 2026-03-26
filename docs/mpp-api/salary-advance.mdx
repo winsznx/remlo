@@ -1,0 +1,40 @@
+---
+title: "Salary Advance"
+description: "Trigger a liquid payout against an accrued streaming reserve."
+---
+
+Allows an employee (or their automated agent) to immediately claim their already vested but unpaid salary from the `StreamVesting` contract.
+
+**Endpoint**
+`POST /api/mpp/employee/advance`
+
+**Pricing**
+$0.50 per call — Represents a low flat fee for unlocking immediate liquidity compared to predatory payday loans.
+
+**Payment type**
+Single charge — Processes a single on-chain transaction to release the funds.
+
+**Request**
+```json
+{
+  "employeeWallet": "0xEmployeeWallet1",
+  "streamId": 42
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "txHash": "0xabc123321cba",
+  "amountReleased": "250000000000000000000"
+}
+```
+
+**Example**
+```bash
+npx agentcash post https://remlo.xyz/api/mpp/employee/advance '{"employeeWallet":"0x...","streamId":42}'
+```
+
+**Notes**
+The request will revert if the total accrued amount is less than the protocol's minimum claim threshold to prevent dusting attacks.

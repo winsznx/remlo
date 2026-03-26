@@ -1,0 +1,44 @@
+---
+title: "Compliance Check"
+description: "Verify a wallet against TIP-403 compliance policies."
+---
+
+Perform an exhaustive registry and oracle check to verify if a single wallet address is clear to receive or send funds under current compliance parameters.
+
+**Endpoint**
+`POST /api/mpp/compliance/check`
+
+**Pricing**
+$0.05 per call — Subsidizes the latency and computational overhead of querying the global TIP-403 Compliance Oracle.
+
+**Payment type**
+Single charge — Executed synchronously to prevent onboarding or execution delays for a single user context.
+
+**Request**
+```json
+{
+  "walletAddress": "0xEmployeeWallet1",
+  "employerId": "e3b0c442...91b7852b855"
+}
+```
+
+**Response**
+```json
+{
+  "wallet": "0xEmployeeWallet1",
+  "status": "CLEAR",
+  "riskScore": 0,
+  "policyId": 1
+}
+```
+
+**Example**
+```bash
+curl -X POST https://remlo.xyz/api/mpp/compliance/check \
+  -H "Authorization: L402 <YOUR_TX_HASH>" \
+  -H "Content-Type: application/json" \
+  -d '{"walletAddress":"0x...","employerId":"e3b0c442..."}'
+```
+
+**Notes**
+A status of `BLOCKED` will prevent the wallet from being added to the `EmployeeRegistry` and immediately revert any on-chain transfer attempts.

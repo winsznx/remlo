@@ -1,0 +1,20 @@
+---
+title: "Authentication"
+description: "HTTP 402 flows and agent keys."
+---
+
+You interact with Remlo's MPP endpoints not with standard Bearer tokens, but through HTTP 402 Payment Required flows utilizing the Tempo wallet connected to the caller.
+
+## Initiating a Payment
+
+When a standard REST request is made to an endpoint, the server responds with an `L402` macro, stipulating the payment network, the receiver (`REMLO_TREASURY_ADDRESS`), and the required currency format. 
+
+Your application or agent intercepts this, constructs a transaction satisfying the constraint on the Moderato network, and re-submits the original request with the transaction hash wrapped in a custom `Authorization: L402 <hash>` header.
+
+### Automated Flow with AgentCash
+
+Instead of orchestrating this process manually, we recommend passing requests via the AgentCash package, which abstracts away the L402 intercept/retry and executes the corresponding stablecoin transaction automatically based on your agent's private key.
+
+```bash
+npx agentcash try https://remlo.xyz
+```

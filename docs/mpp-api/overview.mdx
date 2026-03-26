@@ -1,0 +1,15 @@
+---
+title: "MPP Overview"
+description: "Turn your system endpoints into autonomous, paid-per-use workflows."
+---
+
+The Machine-Paid Protocol (MPP) allows developers to securely gate any Remlo functionality behind micro-transactions. By paying nominal sums per API call (or per open session), bots, agents, and other third-party services can interact with Remlo's underlying logic.
+
+### Why MPP?
+Traditional API keys are static. If leaked, they provide unbound continuous access. MPP shifts the paradigm by introducing verifiable 402 HTTP flows powered by on-chain stablecoins on the Tempo network.
+Every request guarantees payment first, drastically altering the incentive structures around abuse, rate-limiting, and scaling.
+
+### Core Philosophy
+- Keep execution lightweight and fully auditable by issuing a signed receipt per action.
+- Every endpoint explicitly declares its cost and whether it handles a single charge or requires an open session channel.
+- Real-time execution is decoupled from monthly SaaS plans, shifting usage from fixed predictable costs to entirely variable, on-demand execution logic.
