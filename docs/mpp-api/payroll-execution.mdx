@@ -1,0 +1,46 @@
+---
+title: "Payroll Execution"
+description: "Autonomous batching of employer payroll."
+---
+
+Triggers a formal batch distribution through the PayrollBatcher pulling funds directly from the employer Treasury.
+
+**Endpoint**
+`POST /api/mpp/payroll/execute`
+
+**Pricing**
+$1.00 per call — Represents a high-value state-changing transaction acting as a massive operational shortcut.
+
+**Payment type**
+Single charge — A dedicated endpoint to trigger one massive distribution event for the entire employee registry.
+
+**Request**
+```json
+{
+  "employerId": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+  "recipients": ["0xEmployeeWallet1"],
+  "amounts": ["1000000000000000000000"],
+  "memos": ["0x70616963..."]
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "txHash": "0xabc123...",
+  "receipt": "L402-Receipt-Payload...",
+  "employeeCount": 1
+}
+```
+
+**Example**
+```bash
+curl -X POST https://remlo.xyz/api/mpp/payroll/execute \
+  -H "Authorization: L402 <YOUR_TX_HASH>" \
+  -H "Content-Type: application/json" \
+  -d '{"employerId":"e3b0c442...","recipients":["0x..."],"amounts":["1000..."],"memos":["0x..."]}'
+```
+
+**Notes**
+If the treasury `availableBalance` is less than the requested `total_amount`, the execution will fail and revert, but the $1.00 API access charge is still settled due to processing costs. Ensure preflight checks on treasury health before execution.

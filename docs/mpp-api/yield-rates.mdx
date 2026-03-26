@@ -1,0 +1,39 @@
+---
+title: "Yield Rates"
+description: "Retrieve current risk-averse DeFi yield options for treasury integration."
+---
+
+Retrieve the current APY rates across verified yield sources to inform treasury rebalancing.
+
+**Endpoint**
+`GET /api/mpp/treasury/yield-rates`
+
+**Pricing**
+$0.01 per call — Read operations on the YieldRouter are heavily cached but cost fractional cents to protect the endpoint from scraping.
+
+**Payment type**
+Single charge — Best utilized on a cron-basis by an AI agent looking to scan rates before initiating any treasury move.
+
+**Request**
+```json
+{} // No body required for GET
+```
+
+**Response**
+```json
+{
+  "sources": [
+    "0xDefiProtocolAddress1",
+    "0xDefiProtocolAddress2"
+  ],
+  "currentApy": "4.52"
+}
+```
+
+**Example**
+```bash
+npx agentcash get https://remlo.xyz/api/mpp/treasury/yield-rates
+```
+
+**Notes**
+The `currentApy` is represented as a decimal percentage and is an aggregate, trailing 7-day average across the primary yield targets.

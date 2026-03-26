@@ -1,0 +1,38 @@
+---
+title: "Salary Stream"
+description: "Real-time SSE channel tracking salary accrual down to the second."
+---
+
+Opens a Server-Sent Events (SSE) stream allowing an employer dashboard or employee wallet to watch their salary balance grow in real-time.
+
+**Endpoint**
+`GET /api/mpp/employee/balance/stream`
+
+**Pricing**
+$0.001 per tick — Subsidizes the server overhead of maintaining an open websocket/SSE connection for long durations.
+
+**Payment type**
+Session — You initiate an MPP session, locking a small reserve of gas, which is drained incrementally by the tick as long as the stream is open.
+
+**Request**
+```json
+// SSE Request headers required
+{
+  "Authorization": "L402 <SESSION_HASH>"
+}
+```
+
+**Response**
+```json
+// Continuous SSE stream payload
+event: message
+data: {"accruedBalance": "1532.48", "currency": "USD", "timestamp": "2026-03-26T12:00:00Z"}
+```
+
+**Example**
+```bash
+npx agentcash stream https://remlo.xyz/api/mpp/employee/balance/stream
+```
+
+**Notes**
+Ensure your client can handle reconnection gracefully. The session will close if the locked reserve is depleted.
