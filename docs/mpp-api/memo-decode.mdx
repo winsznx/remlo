@@ -1,0 +1,45 @@
+---
+title: "Memo Decode"
+description: "Decode an on-chain TIP-20 32-byte payload."
+---
+
+Pass a raw hex memo from an L1 payload and receive a JSON-formatted representation of the encoded ISO 20022 fields.
+
+**Endpoint**
+`POST /api/mpp/memo/decode`
+
+**Pricing**
+$0.01 per call — Primarily serving as a convenience utility over Viem parsing to accelerate developer testing and integration.
+
+**Payment type**
+Single charge — Can be batched client-side but handled synchronously here per lookup.
+
+**Request**
+```json
+{
+  "memoBytes": "0x70616963a1b2c3d4e5f60718b2c3d4e5f607182907f60301abcd1234abcd1234"
+}
+```
+
+**Response**
+```json
+{
+  "messageType": "pain.001",
+  "employerId": "a1b2c3d4e5f60718",
+  "employeeId": "b2c3d4e5f6071829",
+  "payPeriod": "2026-03-01",
+  "costCenter": "abcd1234",
+  "recordHash": "abcd1234abcd1234"
+}
+```
+
+**Example**
+```bash
+curl -X POST https://remlo.xyz/api/mpp/memo/decode \
+  -H "Authorization: L402 <YOUR_TX_HASH>" \
+  -H "Content-Type: application/json" \
+  -d '{"memoBytes":"0x70616963..."}'
+```
+
+**Notes**
+The system gracefully fails on malformed hex strings. Always sanitize inputs to an exact 32 bytes representing the standard `paic` identifier structure before calling.

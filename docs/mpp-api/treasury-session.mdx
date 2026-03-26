@@ -1,0 +1,39 @@
+---
+title: "Treasury Session"
+description: "Open a multi-call session for your autonomous AI agent to manage your treasury."
+---
+
+Initiates a high context session wrapper around multiple internal endpoints related to balancing capital, routing yield, and managing headcount thresholds without needing to pay the L402 HTTP overhead on every single sequential call.
+
+**Endpoint**
+`POST /api/mpp/agent/session/treasury`
+
+**Pricing**
+$0.02 session opening charge — Followed by aggregated billing or fractional ticks against the locked gas reserve.
+
+**Payment type**
+Session — Designed specifically for long-context execution windows, generally wrapped automatically by the `AgentCash` execution driver.
+
+**Request**
+```json
+{
+  "employerId": "e3b0c442...91b7852b855",
+  "maxDeposit": "150000000000000000"
+}
+```
+
+**Response**
+```json
+{
+  "sessionToken": "mpp_sess_123xyz...",
+  "channelTxHash": "0xSessionHashOpen442"
+}
+```
+
+**Example**
+```bash
+npx agentcash try https://remlo.xyz
+```
+
+**Notes**
+Once open, subsequent queries like `yield-rates` and `optimize` utilize the returned `sessionToken` dynamically. Sessions expire if gas reserves are stripped down to 0, or by an explicit close execution, releasing unspent locked funds back to the user context.

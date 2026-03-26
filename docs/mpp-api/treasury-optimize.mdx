@@ -1,0 +1,46 @@
+---
+title: "Treasury Optimize"
+description: "Rebalance employer funds across idle yielding protocols."
+---
+
+Reallocates the idle treasury stablecoin bounds across distinct on-chain DeFi platforms configured by the employer.
+
+**Endpoint**
+`POST /api/mpp/treasury/optimize`
+
+**Pricing**
+$0.10 per session execution — Justifies executing multiple sequential smart contract interactions simulating gas usage on Moderato.
+
+**Payment type**
+Session — Triggered periodically through a long-running agent session evaluating micro-fluctuations in APY returns across protocols.
+
+**Request**
+```json
+{
+  "employerId": "e3b0c442...91b7852b855",
+  "targetAllocation": [
+    "5000000000000000000000",
+    "2500000000000000000000"
+  ]
+}
+```
+
+**Response**
+```json
+{
+  "success": true,
+  "txHash": "0xOptimizedTxHash12",
+  "receipt": "L402-Receipt..."
+}
+```
+
+**Example**
+```bash
+curl -X POST https://remlo.xyz/api/mpp/treasury/optimize \
+  -H "Authorization: L402 <SESSION_HASH>" \
+  -H "Content-Type: application/json" \
+  -d '{"employerId":"e3b0c442...","targetAllocation":["5000...","2500..."]}'
+```
+
+**Notes**
+Requires the `YieldRouter` to maintain a whitelisted address hierarchy to execute `rebalance`. If allocations sum over the liquid `PayrollTreasury` state, the transaction reverts to secure base capital limits.
