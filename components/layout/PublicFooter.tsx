@@ -14,9 +14,9 @@ const FOOTER_COLS = [
   {
     label: 'Developers',
     links: [
-      { label: 'API reference', href: '/docs' },
-      { label: 'MPP endpoints', href: '/docs#mpp' },
-      { label: 'Agent SDK', href: '/docs#sdk' },
+      { label: 'API reference', href: 'https://docs.remlo.xyz', external: true },
+      { label: 'MPP endpoints', href: 'https://docs.remlo.xyz/mpp-api/overview', external: true },
+      { label: 'AgentCash', href: 'https://docs.remlo.xyz/integrations/agentcash', external: true },
       { label: 'GitHub', href: 'https://github.com/winsznx/remlo', external: true },
     ],
   },
