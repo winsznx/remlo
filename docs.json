@@ -5,8 +5,7 @@
   "colors": {
     "primary": "#059669",
     "light": "#34D399",
-    "dark": "#064E3B",
-    "anchors": "#059669"
+    "dark": "#064E3B"
   },
   "modeToggle": {
     "default": "dark",
@@ -17,78 +16,75 @@
     "href": "https://docs.remlo.xyz"
   },
   "favicon": "/docs/favicon.svg",
-  "styling": {
-    "codeblocks": {
-      "theme": {
-        "dark": "github-dark"
+  "navigation": {
+    "tabs": [
+      {
+        "tab": "Documentation",
+        "groups": [
+          {
+            "group": "Overview",
+            "pages": [
+              "docs/index",
+              "docs/architecture",
+              "docs/quickstart"
+            ]
+          },
+          {
+            "group": "Protocol",
+            "pages": [
+              "docs/protocol/contracts",
+              "docs/protocol/memo"
+            ]
+          },
+          {
+            "group": "On-Chain",
+            "pages": [
+              "docs/on-chain/payroll-treasury",
+              "docs/on-chain/payroll-batcher",
+              "docs/on-chain/employee-registry",
+              "docs/on-chain/stream-vesting",
+              "docs/on-chain/yield-router"
+            ]
+          },
+          {
+            "group": "MPP API",
+            "pages": [
+              "docs/mpp-api/overview",
+              "docs/mpp-api/authentication",
+              "docs/mpp-api/yield-rates",
+              "docs/mpp-api/payroll-execution",
+              "docs/mpp-api/compliance-check",
+              "docs/mpp-api/salary-advance",
+              "docs/mpp-api/salary-stream",
+              "docs/mpp-api/payment-history",
+              "docs/mpp-api/payslip",
+              "docs/mpp-api/memo-decode",
+              "docs/mpp-api/bridge-off-ramp",
+              "docs/mpp-api/treasury-optimize",
+              "docs/mpp-api/treasury-session",
+              "docs/mpp-api/compliance-marketplace"
+            ]
+          },
+          {
+            "group": "Integrations",
+            "pages": [
+              "docs/integrations/bridge",
+              "docs/integrations/privy",
+              "docs/integrations/agentcash"
+            ]
+          },
+          {
+            "group": "Operations",
+            "pages": [
+              "docs/operations/environment-variables",
+              "docs/operations/deployment",
+              "docs/operations/contract-deployment"
+            ]
+          }
+        ]
       }
-    },
-    "icons": {
-      "library": "lucide"
-    }
+    ]
   },
-  "navigation": [
-    {
-      "group": "Overview",
-      "pages": [
-        "docs/index",
-        "docs/architecture",
-        "docs/quickstart"
-      ]
-    },
-    {
-      "group": "Protocol",
-      "pages": [
-        "docs/protocol/contracts",
-        "docs/protocol/memo"
-      ]
-    },
-    {
-      "group": "On-Chain",
-      "pages": [
-        "docs/on-chain/payroll-treasury",
-        "docs/on-chain/payroll-batcher",
-        "docs/on-chain/employee-registry",
-        "docs/on-chain/stream-vesting",
-        "docs/on-chain/yield-router"
-      ]
-    },
-    {
-      "group": "MPP API",
-      "pages": [
-        "docs/mpp-api/overview",
-        "docs/mpp-api/authentication",
-        "docs/mpp-api/yield-rates",
-        "docs/mpp-api/payroll-execution",
-        "docs/mpp-api/compliance-check",
-        "docs/mpp-api/salary-advance",
-        "docs/mpp-api/salary-stream",
-        "docs/mpp-api/payment-history",
-        "docs/mpp-api/payslip",
-        "docs/mpp-api/memo-decode",
-        "docs/mpp-api/bridge-off-ramp",
-        "docs/mpp-api/treasury-optimize",
-        "docs/mpp-api/treasury-session",
-        "docs/mpp-api/compliance-marketplace"
-      ]
-    },
-    {
-      "group": "Integrations",
-      "pages": [
-        "docs/integrations/bridge",
-        "docs/integrations/privy",
-        "docs/integrations/agentcash"
-      ]
-    },
-    {
-      "group": "Operations",
-      "pages": [
-        "docs/operations/environment-variables",
-        "docs/operations/deployment",
-        "docs/operations/contract-deployment"
-      ]
-    }
-  ],
   "navbar": {
     "links": [
       {
@@ -99,6 +95,11 @@
         "label": "Status",
         "href": "https://remlo.xyz/status"
       }
-    ]
+    ],
+    "primary": {
+      "type": "button",
+      "label": "Open App",
+      "href": "https://remlo.xyz"
+    }
   }
 }
