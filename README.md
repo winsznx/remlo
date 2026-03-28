@@ -18,6 +18,7 @@ Remlo is a Tempo settlement layer wrapped in a Next.js control plane. On-chain c
 | Machine payments | MPP / mppx (HTTP 402, PathUSD, sessions + SSE streaming) |
 | Fiat rails | Stripe Bridge API (virtual accounts, Visa cards, ACH/SEPA/PIX off-ramp) |
 | Wallets | Privy embedded wallets (email/SMS, gasless via TempoTransaction Type 0x76) |
+| Agent signing | Vincent / Lit Protocol PKPs (non-custodial threshold signing, programmable spend policies) |
 | Frontend | Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui |
 | Database | Supabase (PostgreSQL, RLS, realtime) |
 | State | Zustand + TanStack Query |
@@ -74,7 +75,17 @@ forge script script/Deploy.s.sol --broadcast --rpc-url https://rpc.moderato.temp
 npx ts-node scripts/demo-agent.ts
 ```
 
-The script opens an MPP session, queries yield, checks compliance, executes payroll, starts the streaming balance flow, and closes the session. The full run spends roughly `$1.33` across 12 MPP actions, with unspent session balance returned on close.
+The script opens an MPP session, demonstrates non-custodial transaction signing via a Vincent PKP wallet (step 1b), queries yield, checks compliance, executes payroll, starts the streaming balance flow, and closes the session. The full run spends roughly `$1.33` across 12 MPP actions, with unspent session balance returned on close.
+
+Set `VINCENT_DELEGATEE_PRIVATE_KEY`, `VINCENT_PKP_ETH_ADDRESS`, and `VINCENT_AGENT_ADDRESS` to activate live PKP signing in step 1b. Without them the step runs in stub mode and prints the signing flow without hitting the Lit network.
+
+To provision the three Vincent env vars, run the registration script:
+
+```bash
+DELEGATEE_PRIVATE_KEY=0x... npx ts-node scripts/setup-vincent.ts
+```
+
+See `VINCENT_SETUP.md` for the full setup flow including PKP minting and contract whitelist policy configuration.
 
 ## Environment variables
 
@@ -107,9 +118,9 @@ The script opens an MPP session, queries yield, checks compliance, executes payr
 | `DEMO_EMPLOYER_ID` | Optional local override for the demo employer id. |
 | `DEMO_PAYROLL_RUN_ID` | Optional local override for the demo payroll run id. |
 | `DEPLOYER_PRIVATE_KEY` | Local contract deployment key used by `contracts/script/Deploy.s.sol`. |
+| `LIT_API_KEY` | Server only. Lit Chipotle admin key — manages groups, PKPs, and action authorization. |
+| `LIT_USAGE_KEY` | Server only. Lit Chipotle execute-scoped key used by `signWithVincent()` at runtime. |
+| `VINCENT_PKP_ETH_ADDRESS` | Server only. PKP agent wallet address on Tempo L1 — the non-custodial signing identity. |
 
 Existing workspaces must also have `employers.employer_admin_wallet` backfilled with the actual Tempo/Privy wallet that funds `PayrollTreasury`. Treasury, payroll, and yield reads now derive the on-chain employer account id from that wallet rather than hashing the off-chain employer UUID.
 
-## Built at
-
-Tempo × Stripe HIIT Hackathon - March 19, 2026, San Francisco

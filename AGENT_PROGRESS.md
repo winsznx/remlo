@@ -1447,3 +1447,105 @@ Shafu confirmed from MPPscan backend: 6 transactions existed under correct `reml
 - **Bridge** — offramp
 
 **Commit:** `bf3bc38`
+
+---
+
+## Vincent PKP Signing Integration (2026-03-27)
+
+Integrated Vincent (Lit Protocol) as the signing layer for the Remlo agent wallet.
+
+### What was done
+
+- **Installed** `@lit-protocol/vincent-app-sdk@2.7.0`, `@lit-protocol/vincent-ability-evm-transaction-signer@0.2.2`, `@lit-protocol/vincent-contracts-sdk@8.1.0`, `ethers@5.8.0`
+- **Created** `lib/vincent-agent.ts` — exports `signWithVincent(unsignedTx: UnsignedTempoTx): Promise<0x${string}>`. Serializes EIP-1559 transaction via ethers v5, runs `precheck()` then `execute()` via the Lit PKP network, returns signed tx hex. Calls `disconnectVincentAbilityClients()` in finally block for clean process exit.
+- **Updated** `scripts/demo-agent.ts` — added step 1b that demonstrates Vincent PKP signing with a mock Tempo payroll transaction. Gracefully stubs if env vars are not set.
+- **Scaffolded** env vars in `.env.local` — `VINCENT_DELEGATEE_PRIVATE_KEY`, `VINCENT_PKP_ETH_ADDRESS`, `VINCENT_AGENT_ADDRESS`
+- **Created** `VINCENT_SETUP.md` — PKP minting, app registration, delegation steps, policy configuration, and future migration path to replace `getServerWalletClient(DEPLOYER_KEY)` in route handlers
+
+### Architecture
+
+The PKP private key never exists in one place. The agent signs via Lit's distributed threshold MPC network inside TEEs. The delegatee key (app operator) only generates Lit session signatures — it never holds or signs with the PKP key itself.
+
+### Known risk
+
+Lit Protocol Naga v1 sunset: March 25–April 1, 2026. Chipotle (v3) replaces it. Vincent migration guide not yet published. Route handler signing (`getServerWalletClient`) intentionally NOT migrated yet — wait for Chipotle stability.
+
+---
+
+## Vincent Documentation (2026-03-28)
+
+- **Created** `docs/integrations/vincent.mdx` — full integration page covering PKP architecture, mermaid signing flow diagram, env vars table, 4-step setup guide, Contract Whitelist Policy example targeting Remlo's Tempo contracts, and Naga sunset warning with Chipotle next steps
+- **Updated** `docs.json` — added `docs/integrations/vincent` to the Integrations nav group
+- **Updated** `docs/ASSISTANT.md` — added `VINCENT_*` env vars to the env table and a Vincent/Lit bullet to the Key Concepts section
+- **Updated** `README.md` — added Vincent/Lit Protocol row to the Architecture table, expanded demo agent description to mention step 1b PKP signing, added three Vincent env vars, removed `## Built at` footer
+
+---
+
+## Lit Chipotle Integration — Complete (2026-03-28)
+
+Replaced the broken Vincent/Naga SDK integration with a direct Lit Protocol Chipotle REST API implementation. Signing is live on-chain.
+
+### Root cause of prior blockage
+
+`@lit-protocol/vincent-app-sdk` v2.7.0 targeted `LIT_NETWORK.Datil` (sunset February 25, 2026). No Chipotle-compatible Vincent SDK release exists. The old integration was architecturally complete but runtime-dead.
+
+### What was done
+
+**`lib/vincent-agent.ts` — full rewrite**
+- Removed all `@lit-protocol/vincent-app-sdk` and `@lit-protocol/vincent-ability-evm-transaction-signer` imports
+- Rewrote to call Lit Chipotle REST API (`api.dev.litprotocol.com/core/v1/lit_action`) via native `fetch`
+- Signing Lit Action: `async function main({ pkpId, unsignedTxHex }) { const tx = ethers.utils.parseTransaction(unsignedTxHex); const wallet = new ethers.Wallet(await Lit.Actions.getPrivateKey({ pkpId })); const signedTx = await wallet.signTransaction(tx); return { signedTransaction: signedTx }; }`
+- Authorized IPFS CID: `QmSAfc7Hh6MPhe3T3fTBVEvryYR6ChaeHf2icins23aET7`
+- Same `signWithVincent(unsignedTx)` export — no callers changed
+- tsc clean
+
+**Live credentials provisioned**
+- Created Lit Chipotle account via `POST /new_account`
+- Minted PKP wallet: `0x3324a8B644a78ed5c9EEBbD0e661b67FE417342F`
+- Created signing group `remlo-payroll-signers`, added PKP and usage key
+- Pre-authorized signing action CID in the group
+- Added `LIT_API_KEY`, `LIT_USAGE_KEY`, `VINCENT_PKP_ETH_ADDRESS` to `.env.local`
+- Funded PKP wallet via Tempo Moderato faucet (`cast rpc tempo_fundAddress`)
+
+**`scripts/setup-vincent.ts` — complete rewrite**
+- Replaced fake `@lit-protocol/vincent-cli` commands with real Chipotle REST API flow
+- Full automated setup: account → PKP wallet → signing group → usage key → CID pre-authorization → signing verification
+- Prints three env vars to paste into `.env.local`
+
+**`scripts/demo-agent.ts` — step 1b now live**
+- Updated to check `LIT_USAGE_KEY` / `VINCENT_PKP_ETH_ADDRESS` (new env vars, not old Vincent ones)
+- Builds a real unsigned EIP-1559 tx (PKP self-send, Tempo Moderato chainId 42431, gasLimit 300000)
+- Signs via Lit Chipotle TEE, broadcasts to Tempo Moderato
+- Prints pkp_wallet, signer_recovered, address_match, tx_hash, and clickable explorer link
+- Live verified: tx `0xaf9a6bf7c2e15a8a5d1d88c2a9ccd68ea1548a5bd6846f87dfa7bceb4e08b98a` on Tempo Moderato
+
+**Explorer links fixed across entire app**
+- Root cause: `TEMPO_EXPLORER_URL = 'https://explore.tempo.xyz'` (mainnet) — transactions on Moderato testnet couldn't be found
+- Fixed `lib/constants.ts`, `lib/privy.ts`, `components/payroll/BatchProgress.tsx` to use `https://explore.moderato.tempo.xyz`
+- All in-app tx and address links now resolve correctly on the testnet
+
+**`docs/integrations/vincent.mdx` — updated**
+- Added "Why Remlo Uses Lit" section with three payroll-specific justifications: employer-delegated non-custodial authorization, programmable spend policies enforced in TEE (not just application layer), verifiable on-chain audit trail separating authorization from execution
+- Removed all fake CLI commands (`@lit-protocol/vincent-cli` doesn't exist on npm)
+- Updated setup to reference `scripts/setup-vincent.ts`
+- Updated network warning to reflect accurate Datil/Chipotle status
+
+**Docs updated:** `VINCENT_SETUP.md`, `docs/ASSISTANT.md`, `README.md` — all reflect new `LIT_API_KEY` / `LIT_USAGE_KEY` env vars and Chipotle setup
+
+### Architecture
+
+```
+demo-agent step 1b
+  └─ signWithVincent(unsignedTx)
+       └─ POST api.dev.litprotocol.com/core/v1/lit_action
+            └─ Lit Action runs in TEE
+                 └─ Lit.Actions.getPrivateKey({ pkpId: PKP_ADDRESS })
+                      └─ ethers.Wallet.signTransaction(tx)
+                           └─ returns signedTx (key never leaves enclave)
+  └─ publicClient.sendRawTransaction(signedTx)
+       └─ Tempo Moderato → on-chain tx with clickable explorer link
+```
+
+### Current state
+
+Fully working end-to-end on Lit Chipotle dev network + Tempo Moderato testnet. For Lit production network (`api.litprotocol.com`), re-run `scripts/setup-vincent.ts` with `LIT_API_URL=https://api.litprotocol.com/core/v1`.
