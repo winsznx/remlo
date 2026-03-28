@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getAddress, isAddress } from 'viem'
 import { createServerClient } from '@/lib/supabase-server'
+import { PAYROLL_TREASURY_ADDRESS } from '@/lib/constants'
 
 function decodePrivyToken(token: string): { sub: string } | null {
   try {
@@ -85,7 +86,10 @@ export async function POST(req: NextRequest) {
     if (normalizedEmployerAdminWallet) {
       await supabase
         .from('employers')
-        .update({ employer_admin_wallet: normalizedEmployerAdminWallet })
+        .update({
+          employer_admin_wallet: normalizedEmployerAdminWallet,
+          treasury_contract: PAYROLL_TREASURY_ADDRESS,
+        })
         .eq('id', existing.id)
     }
     return NextResponse.json({ employerId: existing.id })
@@ -102,6 +106,7 @@ export async function POST(req: NextRequest) {
       company_name: companyName,
       company_size: body.companySize ?? null,
       employer_admin_wallet: normalizedEmployerAdminWallet,
+      treasury_contract: PAYROLL_TREASURY_ADDRESS,
       subscription_tier: 'starter',
       active: true,
     })
