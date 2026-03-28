@@ -5,6 +5,7 @@
  *
  * Workflow:
  *  1. Open MPP session with maxDeposit: $5.00
+ *  1b. Demonstrate Vincent PKP signing (non-custodial, policy-enforced)
  *  2. Query yield rates         (MPP-1, $0.01)
  *  3. Query treasury balance    (MPP-6, $0.02)
  *  4. Compliance check × 5     (MPP-2, $0.05 × 5 = $0.25)
@@ -14,6 +15,8 @@
  *
  * Run: npx ts-node scripts/demo-agent.ts
  */
+
+import { signWithVincent, type UnsignedTempoTx } from '../lib/vincent-agent'
 
 const BASE_URL = process.env.NEXT_PUBLIC_APP_URL ?? 'http://localhost:3000'
 const MPP_CREDENTIAL = process.env.DEMO_MPP_CREDENTIAL ?? ''
@@ -95,6 +98,74 @@ async function step1_openSession(): Promise<void> {
   // The agent pre-authorizes a max spend; each endpoint deducts from the channel
   await new Promise((r) => setTimeout(r, 200))
   console.log('  ✓ Session initialized. Agent wallet funded from mppx account.')
+}
+
+async function step1b_vincentSigning(): Promise<void> {
+  console.log('\n[STEP 1b] Lit Protocol PKP signing (non-custodial, TEE-backed)...')
+  console.log('  Agent wallet:', process.env.VINCENT_PKP_ETH_ADDRESS ?? '(not configured)')
+  console.log('  Private key lives inside Lit TEE nodes — never transmitted to any caller')
+
+  if (!process.env.LIT_USAGE_KEY || !process.env.VINCENT_PKP_ETH_ADDRESS) {
+    console.log('\n  ⚠  LIT_USAGE_KEY or VINCENT_PKP_ETH_ADDRESS not set — skipping live signing')
+    console.log('  Run: npx ts-node scripts/setup-vincent.ts')
+    return
+  }
+
+  const pkpAddress = process.env.VINCENT_PKP_ETH_ADDRESS as `0x${string}`
+
+  try {
+    const { createPublicClient, http } = await import('viem')
+    const { defineChain } = await import('viem')
+    const tempoModerato = defineChain({
+      id: 42431,
+      name: 'Tempo Moderato',
+      nativeCurrency: { name: 'USD', symbol: 'USD', decimals: 6 },
+      rpcUrls: { default: { http: ['https://rpc.moderato.tempo.xyz'] } },
+    })
+    const publicClient = createPublicClient({ chain: tempoModerato, transport: http() })
+
+    const nonce = await publicClient.getTransactionCount({ address: pkpAddress })
+    const gasPrice = await publicClient.getGasPrice()
+
+    // Proof-of-control: PKP signs a 0-value self-send — creates verifiable on-chain record
+    // Tempo L1 minimum intrinsic gas is ~274k; use 300k to be safe
+    const unsignedTx: UnsignedTempoTx = {
+      to: pkpAddress, // self-send
+      value: 0n,
+      data: '0x',
+      chainId: 42431,
+      nonce,
+      gasLimit: 300000n,
+      maxFeePerGas: gasPrice,
+      maxPriorityFeePerGas: gasPrice / 2n,
+    }
+
+    console.log('\n  Signing via Lit Chipotle TEE...')
+    const signedTx = await signWithVincent(unsignedTx)
+
+    const { ethers } = await import('ethers')
+    const parsed = ethers.utils.parseTransaction(signedTx)
+
+    console.log('  Broadcasting to Tempo Moderato...')
+    const txHash = await publicClient.sendRawTransaction({ serializedTransaction: signedTx as `0x${string}` })
+
+    const timestamp = new Date().toISOString()
+    console.log(`\n[${timestamp}] STEP 1b: Lit PKP Signing — LIVE`)
+    console.log(JSON.stringify({
+      pkp_wallet: pkpAddress,
+      signer_recovered: parsed.from,
+      address_match: parsed.from?.toLowerCase() === pkpAddress.toLowerCase(),
+      tx_hash: txHash,
+      explorer: `https://explore.moderato.tempo.xyz/tx/${txHash}`,
+      chain: 'Tempo Moderato (chainId 42431)',
+      signing_network: 'Lit Chipotle (api.dev.litprotocol.com)',
+      note: 'PKP private key never left the Lit TEE enclave',
+    }, null, 2))
+    console.log('  ✓ On-chain proof of PKP signing. Explorer link above is clickable.')
+  } catch (err: unknown) {
+    const msg = err instanceof Error ? err.message : String(err)
+    console.log(`  ⚠  Signing error: ${msg}`)
+  }
 }
 
 async function step2_queryYieldRates(): Promise<void> {
@@ -228,6 +299,7 @@ async function main(): Promise<void> {
   console.log('═'.repeat(60))
 
   await step1_openSession()
+  await step1b_vincentSigning()
   await step2_queryYieldRates()
   await step3_queryTreasuryBalance()
   await step4_complianceChecks()
