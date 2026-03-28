@@ -32,6 +32,7 @@ The AgentCash CLI (`npx agentcash`) automates steps 2 through 4 transparently.
 - **Bridge**: Stripe's stablecoin and card infrastructure. Remlo uses Bridge to handle fiat on-ramping (employer deposits), employee Visa card issuance, and fiat off-ramping to local bank accounts in supported corridors.
 - **Privy**: The embedded wallet SDK Remlo uses for employer and employee authentication. Employees get non-custodial wallets provisioned automatically when they accept a payroll invite. No seed phrase management required.
 - **AgentCash**: A CLI and SDK (`npx agentcash`) that acts as a spending wallet for AI agents. It abstracts the full L402 HTTP 402 interception and retry flow. An agent calls `npx agentcash try https://remlo.xyz` to test connectivity before adding Remlo to its active tool list.
+- **Lit Protocol Chipotle**: The non-custodial signing layer for the Remlo autonomous agent. Lit Protocol PKPs (Programmable Key Pairs) hold the agent's private key inside distributed TEEs — it never leaves the enclave. Remlo uses the Chipotle v3 REST API (`api.dev.litprotocol.com`). The integration lives in `lib/vincent-agent.ts` and exports `signWithVincent(unsignedTx)`. Required env vars: `LIT_USAGE_KEY` (runtime execute key) and `VINCENT_PKP_ETH_ADDRESS` (PKP wallet address).
 - **Session vs. Single charge**: Some MPP endpoints use single charges (one fee per request, immediate response). Others use sessions (a channel is opened with a locked gas reserve, and the agent can make multiple calls within the session billing that reserve incrementally).
 
 ## Deployed Contracts (Moderato Testnet)
@@ -108,6 +109,9 @@ The application uses these runtime variables. Server-only variables must never b
 | `CLAUDE_API_KEY` | **No** | Anthropic API key for AI analysis features |
 | `STRIPE_SECRET_KEY` | **No** | Stripe key for multi-rail MPP fallback |
 | `MPP_SECRET_KEY` | **No** | 32-byte key for signing MPP session receipts |
+| `LIT_API_KEY` | **No** | Lit Chipotle admin key — manages groups, PKPs, and action authorization |
+| `LIT_USAGE_KEY` | **No** | Lit Chipotle execute-scoped key — used by `signWithVincent()` at runtime |
+| `VINCENT_PKP_ETH_ADDRESS` | **No** | PKP agent wallet address on Tempo L1 — this is where treasury funds live for agent-initiated signing |
 
 ## Integration Quick Reference
 
