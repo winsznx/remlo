@@ -75,7 +75,8 @@
             "pages": [
               "docs/integrations/bridge",
               "docs/integrations/privy",
-              "docs/integrations/agentcash"
+              "docs/integrations/agentcash",
+              "docs/integrations/vincent"
             ]
           },
           {
