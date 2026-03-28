@@ -113,7 +113,7 @@ export function BatchProgress({ status, employeeCount, txHash, error }: BatchPro
             </p>
             {txHash && (
               <a
-                href={`https://explore.tempo.xyz/tx/${txHash}`}
+                href={`https://explore.moderato.tempo.xyz/tx/${txHash}`}
                 target="_blank"
                 rel="noopener noreferrer"
                 className="inline-block font-mono text-xs text-[var(--accent)] hover:underline"

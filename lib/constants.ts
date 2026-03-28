@@ -1,6 +1,6 @@
 export const TEMPO_CHAIN_ID = 42431
 export const TEMPO_RPC_URL = 'https://rpc.moderato.tempo.xyz'
-export const TEMPO_EXPLORER_URL = 'https://explore.tempo.xyz'
+export const TEMPO_EXPLORER_URL = 'https://explore.moderato.tempo.xyz'
 export const TEMPO_SPONSOR_URL = 'https://sponsor.moderato.tempo.xyz'
 
 // TIP-20 stablecoins on Moderato testnet
