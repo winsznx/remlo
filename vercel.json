@@ -24,11 +24,11 @@
   "crons": [
     {
       "path": "/api/cron/process-expired-escrows",
-      "schedule": "*/15 * * * *"
+      "schedule": "0 3 * * *"
     },
     {
       "path": "/api/cron/process-reputation-writes",
-      "schedule": "*/10 * * * *"
+      "schedule": "15 3 * * *"
     }
   ]
 }
