@@ -1,7 +1,7 @@
 /**
  * lib/memo.ts — ISO 20022 TIP-20 memo encode/decode
  *
- * 32-byte memo layout (from REMLO_MASTER.md Part 7):
+ * 32-byte memo layout:
  *   Bytes  0– 3  Message type      "paic" = 0x70616963 (pain.001)
  *   Bytes  4–11  Employer ID       8 bytes (first 8 bytes of UUID, as hex)
  *   Bytes 12–19  Employee ID       8 bytes (first 8 bytes of UUID, as hex)

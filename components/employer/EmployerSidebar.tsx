@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import { RemloLogo } from '@/components/brand/RemloLogo'
-import { LayoutDashboard, Users, Banknote, Wallet, ShieldCheck, Terminal, ChevronLeft, ChevronRight, X, CreditCard, Settings } from 'lucide-react'
+import { LayoutDashboard, Users, Banknote, Wallet, ShieldCheck, Terminal, ChevronLeft, ChevronRight, X, CreditCard, Settings, Coins, Bot, Scale, Award, Sparkles, Gavel } from 'lucide-react'
 
 interface NavItem {
   href: string
@@ -37,6 +37,42 @@ const NAV_ITEMS: NavItem[] = [
     activeMatch: '/dashboard/treasury',
     label: 'Payments',
     icon: <Wallet className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/treasury/council',
+    activeMatch: '/dashboard/treasury/council',
+    label: 'Council',
+    icon: <Gavel className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/solana',
+    activeMatch: '/dashboard/solana',
+    label: 'Solana',
+    icon: <Coins className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/agent',
+    activeMatch: '/dashboard/agent',
+    label: 'AI Agent',
+    icon: <Bot className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/escrows',
+    activeMatch: '/dashboard/escrows',
+    label: 'Escrows',
+    icon: <Scale className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/reputation',
+    activeMatch: '/dashboard/reputation',
+    label: 'Reputation',
+    icon: <Award className="w-5 h-5" />,
+  },
+  {
+    href: '/dashboard/superteam',
+    activeMatch: '/dashboard/superteam',
+    label: 'Superteam',
+    icon: <Sparkles className="w-5 h-5" />,
   },
   {
     href: '/dashboard/compliance',
@@ -82,7 +118,12 @@ export function EmployerSidebar({ collapsed, onCollapsedChange, mobileOpen, onMo
     if (match === '/dashboard' || match === '/employee') {
       return pathname === match
     }
-    return pathname === match || pathname.startsWith(match + '/')
+    if (!(pathname === match || pathname.startsWith(match + '/'))) return false
+    const allMatches = [...NAV_ITEMS, ...BOTTOM_ITEMS]
+      .map((i) => i.activeMatch || i.href)
+      .filter((m) => pathname === m || pathname.startsWith(m + '/'))
+    const mostSpecific = allMatches.reduce((a, b) => (b.length > a.length ? b : a), match)
+    return mostSpecific === match
   }
 
   const renderNavLink = (item: NavItem, isMobilePanel: boolean) => {

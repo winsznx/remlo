@@ -27,7 +27,7 @@ export const privyConfig: PrivyClientConfig = {
     loginMessage: 'Use email, SMS, or a wallet connection to access Remlo.',
   },
   embeddedWallets: {
-    createOnLogin: 'users-without-wallets',
+    createOnLogin: 'all-users',
     requireUserPasswordOnCreate: false,
   },
 }

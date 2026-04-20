@@ -1,0 +1,365 @@
+{
+  "address": "2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA",
+  "metadata": {
+    "name": "remlo_escrow",
+    "version": "0.1.0",
+    "spec": "0.1.0",
+    "description": "Remlo multi-agent escrow with LLM-judge verdict settlement"
+  },
+  "instructions": [
+    {
+      "name": "initialize_escrow",
+      "discriminator": [243, 160, 77, 153, 11, 92, 48, 209],
+      "accounts": [
+        { "name": "requester", "writable": true, "signer": true },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [101, 115, 99, 114, 111, 119] },
+              { "kind": "account", "path": "requester" },
+              { "kind": "arg", "path": "args.nonce" }
+            ]
+          }
+        },
+        { "name": "mint" },
+        {
+          "name": "requester_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "requester" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        {
+          "name": "vault_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "escrow" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        { "name": "token_program", "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { "name": "associated_token_program", "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" },
+        { "name": "system_program", "address": "11111111111111111111111111111111" },
+        { "name": "rent", "address": "SysvarRent111111111111111111111111111111111" }
+      ],
+      "args": [
+        { "name": "args", "type": { "defined": { "name": "InitializeEscrowArgs" } } }
+      ]
+    },
+    {
+      "name": "submit_deliverable",
+      "discriminator": [38, 137, 64, 44, 237, 11, 125, 101],
+      "accounts": [
+        { "name": "worker", "signer": true },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [101, 115, 99, 114, 111, 119] },
+              { "kind": "account", "path": "escrow.requester", "account": "Escrow" },
+              { "kind": "account", "path": "escrow.nonce", "account": "Escrow" }
+            ]
+          }
+        }
+      ],
+      "args": [
+        { "name": "uri_hash", "type": { "array": ["u8", 32] } },
+        { "name": "content_hash", "type": { "array": ["u8", 32] } }
+      ]
+    },
+    {
+      "name": "post_verdict",
+      "discriminator": [198, 254, 149, 6, 94, 65, 180, 197],
+      "accounts": [
+        { "name": "validator_authority", "signer": true },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [101, 115, 99, 114, 111, 119] },
+              { "kind": "account", "path": "escrow.requester", "account": "Escrow" },
+              { "kind": "account", "path": "escrow.nonce", "account": "Escrow" }
+            ]
+          }
+        }
+      ],
+      "args": [
+        { "name": "verdict", "type": { "defined": { "name": "VerdictState" } } },
+        { "name": "confidence_bps", "type": "u16" }
+      ]
+    },
+    {
+      "name": "settle",
+      "discriminator": [175, 42, 185, 87, 144, 131, 102, 212],
+      "accounts": [
+        { "name": "payer", "writable": true, "signer": true },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [101, 115, 99, 114, 111, 119] },
+              { "kind": "account", "path": "escrow.requester", "account": "Escrow" },
+              { "kind": "account", "path": "escrow.nonce", "account": "Escrow" }
+            ]
+          }
+        },
+        { "name": "mint" },
+        {
+          "name": "vault_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "escrow" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        {
+          "name": "worker_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "worker" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        { "name": "worker" },
+        { "name": "token_program", "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { "name": "associated_token_program", "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" },
+        { "name": "system_program", "address": "11111111111111111111111111111111" },
+        { "name": "rent", "address": "SysvarRent111111111111111111111111111111111" }
+      ],
+      "args": []
+    },
+    {
+      "name": "refund",
+      "discriminator": [2, 96, 183, 251, 63, 208, 46, 46],
+      "accounts": [
+        { "name": "payer", "writable": true, "signer": true },
+        {
+          "name": "escrow",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "const", "value": [101, 115, 99, 114, 111, 119] },
+              { "kind": "account", "path": "escrow.requester", "account": "Escrow" },
+              { "kind": "account", "path": "escrow.nonce", "account": "Escrow" }
+            ]
+          }
+        },
+        { "name": "mint" },
+        {
+          "name": "vault_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "escrow" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        {
+          "name": "requester_ata",
+          "writable": true,
+          "pda": {
+            "seeds": [
+              { "kind": "account", "path": "requester" },
+              { "kind": "const", "value": [6, 221, 246, 225, 215, 101, 161, 147, 217, 203, 225, 70, 206, 235, 121, 172, 28, 180, 133, 237, 95, 91, 55, 145, 58, 140, 245, 133, 126, 255, 0, 169] },
+              { "kind": "account", "path": "mint" }
+            ],
+            "program": { "kind": "const", "value": [140, 151, 37, 143, 78, 36, 137, 241, 187, 61, 16, 41, 20, 142, 13, 131, 11, 90, 19, 153, 218, 255, 16, 132, 4, 142, 123, 216, 219, 233, 248, 89] }
+          }
+        },
+        { "name": "requester" },
+        { "name": "token_program", "address": "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA" },
+        { "name": "associated_token_program", "address": "ATokenGPvbdGVxr1b2hvZbsiqW5xWH25efTNsLJA8knL" },
+        { "name": "system_program", "address": "11111111111111111111111111111111" },
+        { "name": "rent", "address": "SysvarRent111111111111111111111111111111111" }
+      ],
+      "args": [
+        { "name": "reason", "type": { "defined": { "name": "RefundReason" } } }
+      ]
+    }
+  ],
+  "accounts": [
+    { "name": "Escrow", "discriminator": [31, 213, 123, 187, 186, 22, 218, 155] }
+  ],
+  "events": [
+    { "name": "EscrowPosted", "discriminator": [217, 63, 126, 78, 224, 87, 250, 29] },
+    { "name": "DeliverableSubmitted", "discriminator": [128, 198, 110, 44, 67, 73, 255, 99] },
+    { "name": "VerdictPosted", "discriminator": [44, 223, 37, 191, 52, 84, 78, 6] },
+    { "name": "EscrowSettled", "discriminator": [97, 27, 150, 55, 203, 179, 173, 23] },
+    { "name": "EscrowRefunded", "discriminator": [132, 209, 49, 109, 135, 138, 28, 81] }
+  ],
+  "errors": [
+    { "code": 6000, "name": "AmountMustBePositive", "msg": "Amount must be positive" },
+    { "code": 6001, "name": "AmountAboveCap", "msg": "Amount exceeds maximum escrow cap (100 USDC)" },
+    { "code": 6002, "name": "ExpiryTooSoon", "msg": "Expiry is too soon (minimum 1 hour)" },
+    { "code": 6003, "name": "ExpiryTooFar", "msg": "Expiry is too far in the future (maximum 7 days)" },
+    { "code": 6004, "name": "InvalidStatus", "msg": "Escrow is not in the required status for this action" },
+    { "code": 6005, "name": "Expired", "msg": "Escrow has already expired" },
+    { "code": 6006, "name": "NotYetExpired", "msg": "Escrow has not yet expired" },
+    { "code": 6007, "name": "WorkerMismatch", "msg": "Signer does not match the worker recorded at initialize" },
+    { "code": 6008, "name": "RequesterMismatch", "msg": "Requester ATA owner does not match the requester recorded at initialize" },
+    { "code": 6009, "name": "ValidatorMismatch", "msg": "Signer does not match the validator_authority recorded at initialize" },
+    { "code": 6010, "name": "InvalidVerdict", "msg": "Verdict must be Approved or Rejected (not Pending)" },
+    { "code": 6011, "name": "InvalidConfidence", "msg": "Confidence must be between 0 and 10000 basis points" },
+    { "code": 6012, "name": "NotApproved", "msg": "Cannot settle: verdict was not Approved" },
+    { "code": 6013, "name": "NotRejected", "msg": "Cannot refund as Rejected: verdict was not Rejected" }
+  ],
+  "types": [
+    {
+      "name": "InitializeEscrowArgs",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "nonce", "type": "u64" },
+          { "name": "amount", "type": "u64" },
+          { "name": "worker", "type": "pubkey" },
+          { "name": "validator_authority", "type": "pubkey" },
+          { "name": "rubric_hash", "type": { "array": ["u8", 32] } },
+          { "name": "expires_at", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "Escrow",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "requester", "type": "pubkey" },
+          { "name": "worker", "type": "pubkey" },
+          { "name": "validator_authority", "type": "pubkey" },
+          { "name": "mint", "type": "pubkey" },
+          { "name": "amount", "type": "u64" },
+          { "name": "rubric_hash", "type": { "array": ["u8", 32] } },
+          { "name": "deliverable_uri_hash", "type": { "array": ["u8", 32] } },
+          { "name": "deliverable_content_hash", "type": { "array": ["u8", 32] } },
+          { "name": "has_deliverable", "type": "bool" },
+          { "name": "created_at", "type": "i64" },
+          { "name": "expires_at", "type": "i64" },
+          { "name": "status", "type": { "defined": { "name": "EscrowStatus" } } },
+          { "name": "verdict", "type": { "defined": { "name": "VerdictState" } } },
+          { "name": "confidence_bps", "type": "u16" },
+          { "name": "nonce", "type": "u64" },
+          { "name": "bump", "type": "u8" }
+        ]
+      }
+    },
+    {
+      "name": "EscrowStatus",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Posted" },
+          { "name": "Delivered" },
+          { "name": "Validated" },
+          { "name": "Settled" },
+          { "name": "RejectedRefunded" },
+          { "name": "ExpiredRefunded" }
+        ]
+      }
+    },
+    {
+      "name": "VerdictState",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Pending" },
+          { "name": "Approved" },
+          { "name": "Rejected" }
+        ]
+      }
+    },
+    {
+      "name": "RefundReason",
+      "type": {
+        "kind": "enum",
+        "variants": [
+          { "name": "Rejected" },
+          { "name": "Expired" }
+        ]
+      }
+    },
+    {
+      "name": "EscrowPosted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "escrow", "type": "pubkey" },
+          { "name": "requester", "type": "pubkey" },
+          { "name": "worker", "type": "pubkey" },
+          { "name": "amount", "type": "u64" },
+          { "name": "expires_at", "type": "i64" }
+        ]
+      }
+    },
+    {
+      "name": "DeliverableSubmitted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "escrow", "type": "pubkey" },
+          { "name": "worker", "type": "pubkey" },
+          { "name": "uri_hash", "type": { "array": ["u8", 32] } },
+          { "name": "content_hash", "type": { "array": ["u8", 32] } }
+        ]
+      }
+    },
+    {
+      "name": "VerdictPosted",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "escrow", "type": "pubkey" },
+          { "name": "verdict", "type": { "defined": { "name": "VerdictState" } } },
+          { "name": "confidence_bps", "type": "u16" }
+        ]
+      }
+    },
+    {
+      "name": "EscrowSettled",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "escrow", "type": "pubkey" },
+          { "name": "worker", "type": "pubkey" },
+          { "name": "amount", "type": "u64" }
+        ]
+      }
+    },
+    {
+      "name": "EscrowRefunded",
+      "type": {
+        "kind": "struct",
+        "fields": [
+          { "name": "escrow", "type": "pubkey" },
+          { "name": "requester", "type": "pubkey" },
+          { "name": "amount", "type": "u64" },
+          { "name": "reason", "type": { "defined": { "name": "RefundReason" } } }
+        ]
+      }
+    }
+  ]
+}

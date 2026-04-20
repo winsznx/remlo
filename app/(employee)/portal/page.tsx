@@ -2,11 +2,15 @@
 
 import * as React from 'react'
 import { motion } from 'framer-motion'
-import { CreditCard, ArrowDownRight, Eye, Wallet, TrendingUp, ArrowRight } from 'lucide-react'
+import { CreditCard, ArrowDownRight, Eye, Wallet, TrendingUp, ArrowRight, Coins } from 'lucide-react'
 import Link from 'next/link'
+import { useSolanaWallets } from '@privy-io/react-auth'
 import { useEmployee, useEmployeeBalance, useEmployeePayments, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
+import { AddressDisplay } from '@/components/wallet/AddressDisplay'
+import { SolanaBadge } from '@/components/wallet/SolanaBadge'
 import { BalanceTicker } from '@/components/treasury/BalanceTicker'
 import { TxStatus } from '@/components/wallet/TxStatus'
+import { ReputationPanel } from '@/components/reputation/ReputationPanel'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -70,6 +74,8 @@ function PortalSkeleton() {
 // ─── Main page ────────────────────────────────────────────────────────────────
 
 export default function PortalHomePage() {
+  const { wallets: solanaWallets } = useSolanaWallets()
+  const solanaAddress = solanaWallets[0]?.address ?? null
   const { data: employee, isLoading } = useEmployee()
   const { data: payments } = useEmployeePayments(employee?.id, 1)
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
@@ -265,6 +271,50 @@ export default function PortalHomePage() {
             <p className="text-xs text-[var(--text-muted)]">Embedded wallet</p>
             <p className="text-xs font-mono text-[var(--mono)] truncate">{employee.wallet_address}</p>
           </div>
+        </motion.div>
+      )}
+
+      {/* Solana wallet */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ duration: 0.3, delay: 0.25 }}
+        className="rounded-xl bg-[var(--bg-subtle)] border border-[var(--border-default)] p-4 flex items-center gap-3"
+      >
+        <Coins className="h-4 w-4 text-[var(--text-muted)] shrink-0" />
+        <div className="flex-1 min-w-0">
+          <div className="flex items-center gap-2 mb-0.5">
+            <SolanaBadge />
+          </div>
+          {solanaAddress ? (
+            <AddressDisplay
+              address={solanaAddress}
+              explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
+            />
+          ) : (
+            <p className="text-xs text-[var(--text-muted)]">Solana wallet available on next login</p>
+          )}
+        </div>
+      </motion.div>
+
+      {/* Your reputation credential */}
+      {solanaAddress && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 0.3, delay: 0.3 }}
+        >
+          <ReputationPanel
+            solanaAddress={solanaAddress}
+            title="Your reputation credential"
+            compact
+          />
+          <p className="text-[11px] text-[var(--text-muted)] mt-2">
+            Payment history as a portable on-chain credential.{' '}
+            <Link href="/portal/reputation" className="underline hover:text-[var(--text-primary)]">
+              View detail →
+            </Link>
+          </p>
         </motion.div>
       )}
     </div>

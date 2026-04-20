@@ -48,7 +48,7 @@ const PUBLIC_PREFIXES = [
   '/.well-known/', // x402 payment discovery
   '/api/mpp/', // MPP endpoints are pay-per-call — payment header is the auth
   '/api/demo/', // Demo endpoints are public — used by unauthenticated pitch pages
-  '/lit', // Lit Protocol pitch page — publicly shareable
+  '/dev/', // Reference implementations (e.g. Lit signing architecture demo) — publicly shareable
   '/opengraph-image', // OG image must be public for social link previews
   '/twitter-image', // Twitter card image must be public for social link previews
 ]

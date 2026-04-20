@@ -5,9 +5,13 @@ import { motion, AnimatePresence } from 'framer-motion'
 import { Search, ChevronDown, Download, ExternalLink } from 'lucide-react'
 import { useEmployee, useEmployeePayments, type PaymentWithRun } from '@/lib/hooks/useEmployee'
 import { TxStatus } from '@/components/wallet/TxStatus'
+import { SolanaTxStatus } from '@/components/wallet/SolanaTxStatus'
+import { ChainBadge } from '@/components/wallet/ChainBadge'
+import { SolanaBadge } from '@/components/wallet/SolanaBadge'
 import { MemoDecoder } from '@/components/payroll/MemoDecoder'
 import { cn } from '@/lib/utils'
 import { TEMPO_EXPLORER_URL } from '@/lib/constants'
+import { SOLANA_CLUSTER } from '@/lib/solana-constants'
 import { byteaMemoToHex } from '@/lib/memo'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -67,6 +71,8 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
   const settlementMs = run?.settlement_time_ms
   const memoHex = byteaMemoToHex(payment.memo_bytes)
   const hasMemo = Boolean(memoHex)
+  const isSolana = payment.chain === 'solana' || Boolean(payment.solana_signature)
+  const solanaSig = payment.solana_signature
 
   return (
     <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
@@ -76,11 +82,12 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
         className="w-full p-5 flex items-center justify-between text-left hover:bg-[var(--bg-subtle)] transition-colors"
       >
         <div className="flex-1 min-w-0">
-          <div className="flex items-center gap-2 mb-1">
+          <div className="flex items-center gap-2 mb-1 flex-wrap">
             <span className="number-lg text-[var(--text-primary)] text-lg leading-none">
               {formatUsd(payment.amount)}
             </span>
             {statusBadge(payment.status)}
+            {isSolana ? <SolanaBadge /> : <ChainBadge />}
           </div>
           <p className="text-sm text-[var(--text-secondary)] truncate">
             {decodeMemoLabel(payment.memo_decoded)}
@@ -106,20 +113,47 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
             <div className="p-5 space-y-4">
               {/* Status chip */}
               <div className="flex items-center gap-3">
-                <TxStatus
-                  status={
-                    payment.status === 'confirmed' ? 'confirmed'
-                      : payment.status === 'failed' ? 'failed'
-                      : payment.status === 'pending' ? 'pending'
-                      : 'confirming'
-                  }
-                  txHash={payment.tx_hash ?? undefined}
-                  confirmTime={settlementMs ? settlementMs / 1000 : undefined}
-                />
+                {isSolana && solanaSig ? (
+                  <SolanaTxStatus
+                    signature={solanaSig}
+                    cluster={SOLANA_CLUSTER}
+                    status={
+                      payment.status === 'confirmed' ? 'confirmed'
+                        : payment.status === 'failed' ? 'failed'
+                        : 'pending'
+                    }
+                  />
+                ) : (
+                  <TxStatus
+                    status={
+                      payment.status === 'confirmed' ? 'confirmed'
+                        : payment.status === 'failed' ? 'failed'
+                        : payment.status === 'pending' ? 'pending'
+                        : 'confirming'
+                    }
+                    txHash={payment.tx_hash ?? undefined}
+                    confirmTime={settlementMs ? settlementMs / 1000 : undefined}
+                  />
+                )}
               </div>
 
-              {/* Tx hash */}
-              {payment.tx_hash && (
+              {/* Tx hash / signature */}
+              {isSolana && solanaSig ? (
+                <div className="space-y-1">
+                  <p className="text-xs text-[var(--text-muted)]">Solana signature</p>
+                  <div className="flex items-center gap-2">
+                    <p className="font-mono text-xs text-[var(--mono)] truncate flex-1">{solanaSig}</p>
+                    <a
+                      href={`https://explorer.solana.com/tx/${solanaSig}?cluster=${SOLANA_CLUSTER}`}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-[var(--text-muted)] hover:text-[var(--accent)] shrink-0"
+                    >
+                      <ExternalLink className="h-3.5 w-3.5" />
+                    </a>
+                  </div>
+                </div>
+              ) : payment.tx_hash && (
                 <div className="space-y-1">
                   <p className="text-xs text-[var(--text-muted)]">Transaction hash</p>
                   <div className="flex items-center gap-2">
@@ -136,8 +170,8 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
                 </div>
               )}
 
-              {/* Block number */}
-              {run?.block_number && (
+              {/* Block number (Tempo only) */}
+              {!isSolana && run?.block_number && (
                 <div className="space-y-1">
                   <p className="text-xs text-[var(--text-muted)]">Block</p>
                   <p className="font-mono text-xs text-[var(--text-secondary)]">#{run.block_number}</p>
@@ -151,15 +185,25 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
                 </p>
               )}
 
-              {/* Memo decoder */}
-              {hasMemo && memoHex && (
+              {/* Memo decoder — Tempo ISO 20022 only */}
+              {!isSolana && hasMemo && memoHex && (
                 <div className="space-y-1">
                   <p className="text-xs text-[var(--text-muted)]">Payment memo</p>
                   <MemoDecoder memoHex={memoHex} />
                 </div>
               )}
 
-              {payment.tx_hash ? (
+              {isSolana && solanaSig ? (
+                <a
+                  href={`https://explorer.solana.com/tx/${solanaSig}?cluster=${SOLANA_CLUSTER}`}
+                  target="_blank"
+                  rel="noreferrer"
+                  className="inline-flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
+                >
+                  <Download className="h-3.5 w-3.5" />
+                  View on Solana Explorer
+                </a>
+              ) : payment.tx_hash ? (
                 <a
                   href={`${TEMPO_EXPLORER_URL}/tx/${payment.tx_hash}`}
                   target="_blank"

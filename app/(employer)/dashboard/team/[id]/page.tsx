@@ -44,6 +44,7 @@ import {
 } from '@/components/ui/select'
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
 import { AddressDisplay } from '@/components/wallet/AddressDisplay'
+import { ReputationPanel } from '@/components/reputation/ReputationPanel'
 import { GasSponsored } from '@/components/wallet/GasSponsored'
 import { TxStatus } from '@/components/wallet/TxStatus'
 import { ComplianceBadge } from '@/components/employee/ComplianceBadge'
@@ -56,6 +57,81 @@ import { useEmployerTeamDetail, type EmployerTeamDetailResponse } from '@/lib/ho
 import { useEmployeeCard } from '@/lib/hooks/useEmployee'
 import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
 import { byteaMemoToHex } from '@/lib/memo'
+import { Zap, ExternalLink } from 'lucide-react'
+
+function StreamControlSection({
+  employerId,
+  employeeId,
+  streamTxHash,
+}: {
+  employerId: string | undefined
+  employeeId: string
+  streamTxHash: string | null
+}): React.ReactElement {
+  const authedFetch = usePrivyAuthedFetch()
+  const queryClient = useQueryClient()
+  const [starting, setStarting] = React.useState(false)
+
+  async function handleStart(): Promise<void> {
+    if (!employerId || starting) return
+    setStarting(true)
+    try {
+      const res = await authedFetch(`/api/employers/${employerId}/team/${employeeId}/stream`, {
+        method: 'POST',
+      })
+      const data = await res.json() as { tx_hash?: string; error?: string; explorer_url?: string }
+      if (!res.ok) throw new Error(data.error ?? `Error ${res.status}`)
+      toast.success('Stream created on-chain!')
+      await queryClient.invalidateQueries({ queryKey: ['team-detail', employerId, employeeId] })
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Failed to start stream')
+    } finally {
+      setStarting(false)
+    }
+  }
+
+  return (
+    <section className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5 sm:p-6">
+      <div className="flex items-center gap-2 mb-4">
+        <Zap className="h-4 w-4 text-[var(--accent)]" />
+        <h3 className="text-sm font-semibold text-[var(--text-primary)]">Salary stream</h3>
+      </div>
+
+      {streamTxHash ? (
+        <div className="space-y-3">
+          <div className="flex items-start gap-2">
+            <span className="h-2 w-2 rounded-full bg-[var(--status-success)] mt-1.5 shrink-0" />
+            <div>
+              <p className="text-sm font-medium text-[var(--text-primary)]">Stream active</p>
+              <p className="text-xs text-[var(--text-muted)] mt-0.5">
+                Salary accrues every second via StreamVesting. Employee can claim accrued balance at any time.
+              </p>
+            </div>
+          </div>
+          <a
+            href={`https://explore.moderato.tempo.xyz/tx/${streamTxHash}`}
+            target="_blank"
+            rel="noopener noreferrer"
+            className="inline-flex items-center gap-1.5 text-xs font-mono text-[var(--accent)] hover:underline"
+          >
+            {streamTxHash.slice(0, 12)}…{streamTxHash.slice(-8)}
+            <ExternalLink className="h-3 w-3" />
+          </a>
+        </div>
+      ) : (
+        <div className="space-y-3">
+          <p className="text-sm text-[var(--text-secondary)]">
+            No stream yet. Starting a stream calls <span className="font-mono text-xs">StreamVesting.createStream</span> on Tempo, funding a 1-year accrual schedule at the employee&apos;s annual salary. The employee can then claim accrued balance on-demand.
+          </p>
+          <Button onClick={() => void handleStart()} disabled={starting || !employerId}>
+            {starting && <Loader2 className="h-4 w-4 animate-spin" />}
+            {starting ? 'Creating stream…' : 'Start salary stream'}
+          </Button>
+        </div>
+      )}
+    </section>
+  )
+}
 
 const PAY_FREQUENCIES = [
   { value: 'monthly', label: 'Monthly' },
@@ -192,6 +268,14 @@ function OverviewTab({
           </div>
         </div>
       </section>
+
+      {employee.pay_frequency === 'stream' && (
+        <StreamControlSection
+          employerId={employee.employer_id}
+          employeeId={employee.id}
+          streamTxHash={employee.stream_contract ?? null}
+        />
+      )}
 
       <section className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5 sm:p-6">
         <div className="flex items-center gap-2">
@@ -685,6 +769,7 @@ export default function EmployeeDetailPage() {
           <TabsTrigger value="overview">Overview</TabsTrigger>
           <TabsTrigger value="payments">Payment History</TabsTrigger>
           <TabsTrigger value="compliance">Compliance</TabsTrigger>
+          <TabsTrigger value="reputation">Reputation</TabsTrigger>
         </TabsList>
 
         <TabsContent value="overview" className="mt-6">
@@ -702,6 +787,13 @@ export default function EmployeeDetailPage() {
             isPlatformAdmin={isPlatformAdmin}
             onManualReview={() => void handleManualReview()}
             manualReviewLoading={actionLoading}
+          />
+        </TabsContent>
+
+        <TabsContent value="reputation" className="mt-6">
+          <ReputationPanel
+            solanaAddress={employee.solana_wallet_address ?? undefined}
+            title="Employee on-chain reputation"
           />
         </TabsContent>
       </Tabs>

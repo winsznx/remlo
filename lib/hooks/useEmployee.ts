@@ -32,12 +32,15 @@ export interface PaymentWithRun {
   memo_decoded: unknown
   status: string
   tx_hash: string | null
+  chain: 'tempo' | 'solana' | null
+  solana_signature: string | null
   created_at: string
   payroll_run: {
     id: string
     finalized_at: string | null
     settlement_time_ms: number | null
     block_number: number | null
+    chain: string | null
   } | null
 }
 

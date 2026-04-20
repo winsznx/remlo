@@ -1,126 +1,136 @@
-# Remlo
+**Remlo is a multi-chain payroll and agent-coordination protocol for stablecoin payments, LLM-judged escrow, and cross-chain reputation credentials.**
 
-Borderless enterprise payroll on Tempo L1. AI agents execute compliant batch payments via MPP, employees receive in 0.4s, and spend via Visa.
+Remlo gives employers, workers, and autonomous agents a single substrate for borderless compensation: stablecoin payroll on two chains, three-party escrow with programmable verdicts, and portable on-chain reputation that follows a counterparty across protocols. Every primitive settles on-chain — funds custody is enforced by the program, not by Remlo.
 
-## What it does
+---
 
-Remlo turns payroll into Tempo-native settlement flows built on TIP-20 transfers with fixed 32-byte ISO 20022 memos that encode `paic`, employer ID, employee ID, pay period, cost center, and record hash. Every payout path runs through the TIP-403 Policy Registry before funds move, and atomic payroll runs execute through `PayrollBatcher.executeBatchPayroll` so a batch settles as one unit. Streaming compensation is handled by `StreamVesting` on a per-second accrual model, while Bridge provides employer virtual accounts, employee off-ramp rails, and Visa card issuance. All programmatic payroll operations are exposed as MPP endpoints and gated by HTTP 402 charges, so agents pay in PathUSD per action instead of authenticating with long-lived API keys.
+## Live deployments
+
+| Primitive | Chain | Address / Program ID |
+|---|---|---|
+| PayrollTreasury | Tempo Moderato | [`0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5`](https://explore.moderato.tempo.xyz/address/0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5) |
+| PayrollBatcher | Tempo Moderato | [`0x90657d3F18abaB8B1b105779601644dF7ce4ee65`](https://explore.moderato.tempo.xyz/address/0x90657d3F18abaB8B1b105779601644dF7ce4ee65) |
+| StreamVesting | Tempo Moderato | [`0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021`](https://explore.moderato.tempo.xyz/address/0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021) |
+| EmployeeRegistry | Tempo Moderato | [`0xe7DdA49d250e014769F5d2C840146626Bf153BC4`](https://explore.moderato.tempo.xyz/address/0xe7DdA49d250e014769F5d2C840146626Bf153BC4) |
+| YieldRouter | Tempo Moderato | [`0x78B0548c7bb5B51135BBC87382f131d85abf1061`](https://explore.moderato.tempo.xyz/address/0x78B0548c7bb5B51135BBC87382f131d85abf1061) |
+| ERC-8004 IdentityRegistry | Tempo Moderato | [`0x1279d568C096937f73E1624B160A42eD67f7a485`](https://explore.moderato.tempo.xyz/address/0x1279d568C096937f73E1624B160A42eD67f7a485) |
+| ERC-8004 ReputationRegistry | Tempo Moderato | [`0x9f514D7ad37507630541a5557dF325EC0eDC4ad7`](https://explore.moderato.tempo.xyz/address/0x9f514D7ad37507630541a5557dF325EC0eDC4ad7) |
+| ERC-8004 ValidationRegistry | Tempo Moderato | [`0x2eeC2CA27E8428c409516E9418bb7F6560553B78`](https://explore.moderato.tempo.xyz/address/0x2eeC2CA27E8428c409516E9418bb7F6560553B78) |
+| `remlo_escrow` (Anchor program) | Solana Devnet | [`2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA`](https://explorer.solana.com/address/2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA?cluster=devnet) |
+| SAS Credential Authority | Solana Devnet | [`BxoTaz3cbrVafhA2chLWAPNzdV5JAvh1YTHJbgD79kn7`](https://explorer.solana.com/address/BxoTaz3cbrVafhA2chLWAPNzdV5JAvh1YTHJbgD79kn7?cluster=devnet) |
+
+Tempo Moderato runs at chain ID `42431` (`https://rpc.moderato.tempo.xyz`). Solana addresses resolve on `devnet`.
+
+---
+
+## The three primitives
+
+### Payroll
+
+Employers deposit a stablecoin balance into `PayrollTreasury` and release payroll in atomic batches via `PayrollBatcher`. Employees can elect streaming compensation through `StreamVesting` (Tempo, native) or Streamflow (Solana). `/api/mpp/agent/pay` exposes the same settlement rail to external autonomous agents: authorized callers route USDC payments subject to per-transaction and per-day spend caps configured by the employer, with full audit trail and ERC-8004 feedback written on every success.
+
+### Escrow
+
+A three-party coordination primitive on Solana. The requester locks USDC in an escrow PDA with a rubric, the worker submits a deliverable URI, and a validator (default: Claude; configurable to human arbitrators or multi-validator consensus) posts a verdict on-chain. Funds are custodied during the escrow period by the `remlo_escrow` Anchor program — not by Remlo. Only `post_verdict` requires a privileged signer (the Remlo Privy server wallet, policy-gated to that single instruction); `settle`, `refund`, and `expired_refund` are permissionless on-chain. Even under a fully compromised server, funds remain claimable by the correct counterparty.
+
+Optional multi-validator consensus supports `simple_majority`, `unanimous`, and `weighted` strategies over `llm_claude` and `human` validator types. When configured, N validators vote in Supabase; `tryFinalizeConsensus` broadcasts one atomic `post_verdict` on-chain when the consensus rule resolves.
+
+### Reputation
+
+Settled work writes portable, on-chain reputation credentials on both chains. On Solana, four Solana Attestation Service (SAS) schemas — `remlo-payment-completed`, `remlo-escrow-settled`, `remlo-escrow-refunded`, `remlo-employer-verified` — attest to recipient counterparties. On Tempo, every agent-pay or escrow settlement writes an ERC-8004 `giveFeedback` entry to the counterparty agent's identity, with `int128` value on a -100..100 scale and structured tags.
+
+Reputation is read-back queryable: the escrow flow uses SAS attestation counts to reputation-tier worker wallets and scale escrow expiry accordingly. Unknown workers get the full requested waiting period; trusted workers (20+ prior attestations) earn a shorter floor.
+
+---
 
 ## Architecture
 
-Remlo is a Tempo settlement layer wrapped in a Next.js control plane. On-chain contracts handle treasury accounting, atomic payroll batches, employee compliance anchoring, salary streaming, and yield routing; Supabase stores employer, employee, payroll, compliance, and MPP session state; Bridge supplies the fiat ingress and card/off-ramp surface; Privy abstracts wallet creation and gas sponsorship; and `mppx` monetizes machine access to every payroll workflow.
+```
+                      ┌──────────────────────────┐
+                      │      Employer UI         │
+                      │   (Next.js, Privy auth)  │
+                      └────────────┬─────────────┘
+                                   │
+                ┌──────────────────┼──────────────────┐
+                │                  │                  │
+                ▼                  ▼                  ▼
+       ┌───────────────┐  ┌────────────────┐  ┌────────────────┐
+       │ Tempo payroll │  │ Solana payroll │  │ Escrow (Solana)│
+       │ PayrollBatcher│  │ SPL Token +    │  │ remlo_escrow   │
+       │ StreamVesting │  │ Streamflow     │  │ Anchor program │
+       └───────┬───────┘  └────────┬───────┘  └────────┬───────┘
+               │                   │                    │
+               └─────────┬─────────┴────────┬───────────┘
+                         │                  │
+                         ▼                  ▼
+            ┌────────────────────┐  ┌──────────────────┐
+            │ ERC-8004 on Tempo  │  │ SAS on Solana    │
+            │ Identity /         │  │ 4 credential     │
+            │ Reputation /       │  │ schemas          │
+            │ Validation         │  │                  │
+            └────────────────────┘  └──────────────────┘
+```
 
-| Layer | Technology |
-|-------|-----------|
-| Chain | Tempo L1 (Chain ID 42431, Simplex BFT, 0.5s finality) |
-| Token standard | TIP-20 (6-decimal, ISO 20022 memo fields) |
-| Compliance | TIP-403 Policy Registry (OFAC sanctions screening on every transfer) |
-| Machine payments | MPP / mppx (HTTP 402, PathUSD, sessions + SSE streaming) |
-| Fiat rails | Stripe Bridge API (virtual accounts, Visa cards, ACH/SEPA/PIX off-ramp) |
-| Wallets | Privy embedded wallets (email/SMS, gasless via TempoTransaction Type 0x76) |
-| Agent signing | Vincent / Lit Protocol PKPs (non-custodial threshold signing, programmable spend policies) |
-| Frontend | Next.js 15 App Router, TypeScript, Tailwind, shadcn/ui |
-| Database | Supabase (PostgreSQL, RLS, realtime) |
-| State | Zustand + TanStack Query |
+All signer authority is scoped. The Remlo Privy server wallet on each chain is policy-gated to whitelisted programs and instructions; no raw keys appear in any agent-initiated signing path on Solana, and Tempo ERC-8004 feedback writes sign through the same Privy wallet. Funds in the escrow PDA and the payroll treasury are never accessible via any off-chain key.
 
-## MPP Endpoints
+---
 
-| Route | Charge | Description |
-|-------|--------|-------------|
-| `/api/mpp/treasury/yield-rates` | `$0.01` | Reads `YieldRouter.getYieldSources()` and `YieldRouter.getCurrentAPY()` for an AI treasury agent. |
-| `/api/mpp/payroll/execute` | `$1.00` | Executes `PayrollBatcher.executeBatchPayroll()` and persists payroll receipt metadata to Supabase. |
-| `/api/mpp/employee/advance` | `$0.50` | Claims accrued streamed wages from `StreamVesting.claimAccrued()` for an employee. |
-| `/api/mpp/compliance/check` | `$0.05` | Runs TIP-403 authorization checks and records the result in `compliance_events`. |
-| `/api/mpp/employee/balance/stream` | `$0.001/tick` | Streams live accrued salary balance over SSE using session vouchers and `StreamVesting.getAccruedBalance()`. |
-| `/api/mpp/payslips/[runId]/[employeeId]` | `$0.02` | Returns a single payslip assembled from `payment_items` and `payroll_runs`. |
-| `/api/mpp/memo/decode` | `$0.01` | Decodes on-chain TIP-20 memo bytes into ISO 20022 payroll fields via Viem. |
-| `/api/mpp/employee/[id]/history` | `$0.05` | Returns employee payment history from `payment_items` and `payroll_runs`. |
-| `/api/mpp/bridge/offramp` | `$0.25` | Initiates a Bridge transfer from payroll balance to local bank rails. |
-| `/api/mpp/treasury/optimize` | `$0.10` | Session endpoint for treasury and yield optimization using `YieldRouter` and `PayrollTreasury`. |
-| `/api/mpp/marketplace/compliance-list/[employerId]` | `$0.50` | Returns the employer compliance event ledger for auditors and marketplace consumers. |
-| `/api/mpp/agent/session/treasury` | `$0.02` | Session endpoint for agent balance, yield, rebalance, and headcount actions across Remlo contracts. |
+## For integrators
 
-## Smart Contracts
+Discover Remlo's endpoints via the OpenAPI spec:
 
-| Contract | Description | Moderato testnet address |
-|----------|-------------|--------------------------|
-| `PayrollTreasury` | Employer treasury ledger for payroll balances, locked funds, and gas budget sponsorship. | `0xeFac4A0cC3D54903746e811f6cd45DD7F43A43a5` |
-| `PayrollBatcher` | Atomic batch executor that sends TIP-20 payroll transfers with memo fields in one run. | `0x90657d3F18abaB8B1b105779601644dF7ce4ee65` |
-| `EmployeeRegistry` | Employee wallet registry anchored to employer identity and TIP-403 policy approval. | `0xe7DdA49d250e014769F5d2C840146626Bf153BC4` |
-| `StreamVesting` | Per-second salary streaming contract with accrued balance reads and claims. | `0x83ac4D8E7957F9DCD2e18F22EbD8b83c2BDD3021` |
-| `YieldRouter` | Yield allocation layer for idle treasury capital and employer/employee yield splits. | `0x78B0548c7bb5B51135BBC87382f131d85abf1061` |
+```
+curl https://remlo.xyz/openapi.json
+```
 
-## Local development
+Or via the agentcash discovery protocol:
+
+```
+npx -y @agentcash/discovery@latest check https://remlo.xyz
+```
+
+Our agents are registered in the public ERC-8004 IdentityRegistry on Tempo. Read both agents' live reputation + discovery metadata:
+
+```
+curl https://remlo.xyz/api/agents/remlo
+```
+
+The public `/agents` page documents the full registration flow for external agents that want to transact against Remlo employers and build mutual on-chain reputation.
+
+---
+
+## Running locally
 
 ```bash
 pnpm install
 cp .env.local.example .env.local
-# fill in env vars - see Environment Variables section below
+# populate .env.local: Privy app credentials, Anthropic key,
+# Supabase project + service key, Tempo contract addresses,
+# Solana program ID, and ERC-8004 registry addresses.
 pnpm dev
 ```
 
-## Contract deployment
+Local runtime requires a Privy app, a Supabase project with the migrations under `db/migrations/` applied, an Anthropic API key, and the deployed contract / program addresses listed above (or your own deployments).
 
-```bash
-foundryup -n tempo
-cd contracts
-forge build
-cast rpc tempo_fundAddress <YOUR_ADDRESS> --rpc-url https://rpc.moderato.tempo.xyz
-forge script script/Deploy.s.sol --broadcast --rpc-url https://rpc.moderato.tempo.xyz
-```
+---
 
-## Running the demo agent
+## Contracts
 
-```bash
-npx ts-node scripts/demo-agent.ts
-```
+**Tempo (Solidity)** — under [`contracts/`](./contracts/):
 
-The script opens an MPP session, demonstrates non-custodial transaction signing via a Vincent PKP wallet (step 1b), queries yield, checks compliance, executes payroll, starts the streaming balance flow, and closes the session. The full run spends roughly `$1.33` across 12 MPP actions, with unspent session balance returned on close.
+- `PayrollTreasury` — per-employer stablecoin custody with memo-indexed deposits
+- `PayrollBatcher` — atomic multi-employee payroll distribution with fee accounting
+- `StreamVesting` — native streaming compensation
+- `EmployeeRegistry` — compliance anchoring (KYC status, jurisdiction metadata)
+- `YieldRouter` — treasury idle-balance routing
+- `erc8004/IdentityRegistry`, `erc8004/ReputationRegistry`, `erc8004/ValidationRegistry` — ERC-8004 trustless-agents registries (UUPS-upgradeable)
 
-Set `VINCENT_DELEGATEE_PRIVATE_KEY`, `VINCENT_PKP_ETH_ADDRESS`, and `VINCENT_AGENT_ADDRESS` to activate live PKP signing in step 1b. Without them the step runs in stub mode and prints the signing flow without hitting the Lit network.
+**Solana (Anchor)** — under [`solana/`](./solana/):
 
-To provision the three Vincent env vars, run the registration script:
+- `remlo_escrow` — three-party escrow with pluggable validator authority, atomic settlement, permissionless post-verdict operations
 
-```bash
-DELEGATEE_PRIVATE_KEY=0x... npx ts-node scripts/setup-vincent.ts
-```
+---
 
-See `VINCENT_SETUP.md` for the full setup flow including PKP minting and contract whitelist policy configuration.
+## License
 
-## Environment variables
-
-| Variable | Description |
-|----------|-------------|
-| `NEXT_PUBLIC_TEMPO_RPC` | Tempo Moderato RPC URL used by client and server contract callers. |
-| `NEXT_PUBLIC_TEMPO_CHAIN_ID` | Public chain ID for Tempo Moderato. |
-| `NEXT_PUBLIC_PRIVY_APP_ID` | Privy application ID from the Privy dashboard. |
-| `NEXT_PUBLIC_SUPABASE_URL` | Public Supabase project URL. |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Public Supabase anon key used by browser clients. |
-| `NEXT_PUBLIC_PAYROLL_TREASURY` | Deployed `PayrollTreasury` address exposed to the frontend. |
-| `NEXT_PUBLIC_PAYROLL_BATCHER` | Deployed `PayrollBatcher` address exposed to the frontend. |
-| `NEXT_PUBLIC_EMPLOYEE_REGISTRY` | Deployed `EmployeeRegistry` address exposed to the frontend. |
-| `NEXT_PUBLIC_STREAM_VESTING` | Deployed `StreamVesting` address exposed to the frontend. |
-| `NEXT_PUBLIC_YIELD_ROUTER` | Deployed `YieldRouter` address exposed to the frontend. |
-| `NEXT_PUBLIC_APP_URL` | Public app origin used for MPP session callback URLs. |
-| `NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID` | Optional public WalletConnect project id used by Privy when external wallet connections are enabled. |
-| `SUPABASE_SERVICE_KEY` | Server only. Supabase service role key for API routes and background writes. |
-| `BRIDGE_API_KEY` | Server only. Stripe Bridge API key for fiat rails, card issuance, and off-ramp operations. |
-| `BRIDGE_WEBHOOK_SECRET` | Server only. Bridge RSA webhook verification secret. |
-| `TEMPO_WEBHOOK_SECRET` | Server only. Tempo webhook verification secret for `/api/webhooks/tempo`. |
-| `REMLO_TREASURY_ADDRESS` | Server only. Tempo wallet that receives MPP fees. |
-| `REMLO_AGENT_PRIVATE_KEY` | Server only. Private key for the autonomous demo treasury agent. |
-| `RESEND_API_KEY` | Server only. Resend API key for invite and notification email delivery. |
-| `CLAUDE_API_KEY` | Server only. Anthropic API key for CSV parsing, anomaly detection, and compliance explanations. |
-| `STRIPE_SECRET_KEY` | Server only. Stripe secret key used by multi-rail MPP payment fallback. |
-| `MPP_SECRET_KEY` | Server only. Base64 secret used by `mppx` to sign and verify session state. |
-| `ADMIN_USER_IDS` | Optional server-only comma-separated allowlist for `/admin`. |
-| `DEMO_MPP_CREDENTIAL` | Optional local demo credential for `scripts/demo-agent.ts`. |
-| `DEMO_EMPLOYER_ID` | Optional local override for the demo employer id. |
-| `DEMO_PAYROLL_RUN_ID` | Optional local override for the demo payroll run id. |
-| `DEPLOYER_PRIVATE_KEY` | Local contract deployment key used by `contracts/script/Deploy.s.sol`. |
-| `LIT_API_KEY` | Server only. Lit Chipotle admin key — manages groups, PKPs, and action authorization. |
-| `LIT_USAGE_KEY` | Server only. Lit Chipotle execute-scoped key used by `signWithVincent()` at runtime. |
-| `VINCENT_PKP_ETH_ADDRESS` | Server only. PKP agent wallet address on Tempo L1 — the non-custodial signing identity. |
-
-Existing workspaces must also have `employers.employer_admin_wallet` backfilled with the actual Tempo/Privy wallet that funds `PayrollTreasury`. Treasury, payroll, and yield reads now derive the on-chain employer account id from that wallet rather than hashing the off-chain employer UUID.
-
+MIT.

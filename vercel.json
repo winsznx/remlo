@@ -13,6 +13,22 @@
     },
     "app/api/demo/run-agent/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/process-expired-escrows/route.ts": {
+      "maxDuration": 60
+    },
+    "app/api/cron/process-reputation-writes/route.ts": {
+      "maxDuration": 60
     }
-  }
+  },
+  "crons": [
+    {
+      "path": "/api/cron/process-expired-escrows",
+      "schedule": "*/15 * * * *"
+    },
+    {
+      "path": "/api/cron/process-reputation-writes",
+      "schedule": "*/10 * * * *"
+    }
+  ]
 }

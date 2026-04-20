@@ -6,8 +6,8 @@ import { ethers } from 'ethers'
 const LIT_API_URL = 'https://api.dev.litprotocol.com/core/v1'
 
 // The signing Lit Action. Runs inside a Lit TEE. The exact content of this
-// string determines the IPFS CID — changing it requires re-running
-// scripts/setup-vincent.ts to authorize the new CID in the signing group.
+// string determines the IPFS CID — changing it requires re-authorizing the
+// new CID in the signing group.
 // Authorized CID: QmSAfc7Hh6MPhe3T3fTBVEvryYR6ChaeHf2icins23aET7
 const SIGNING_ACTION_CODE =
   'async function main({ pkpId, unsignedTxHex }) { const tx = ethers.utils.parseTransaction(unsignedTxHex); const wallet = new ethers.Wallet(await Lit.Actions.getPrivateKey({ pkpId })); const signedTx = await wallet.signTransaction(tx); return { signedTransaction: signedTx }; }'

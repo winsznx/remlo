@@ -3,10 +3,11 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { Bell, Building2, ChevronRight, CreditCard, Loader2, LogOut, Shield, User, Wallet } from 'lucide-react'
-import { useLinkWithPasskey, usePrivy } from '@privy-io/react-auth'
+import { useLinkWithPasskey, usePrivy, useSolanaWallets } from '@privy-io/react-auth'
 import { useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useEmployee, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
+import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
@@ -83,6 +84,8 @@ export default function SettingsPage() {
   const queryClient = useQueryClient()
   const { user, logout } = usePrivy()
   const { linkWithPasskey } = useLinkWithPasskey()
+  const { wallets: solanaWallets } = useSolanaWallets()
+  const solanaAddress = solanaWallets[0]?.address ?? null
   const { data: employee, isLoading } = useEmployee()
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
   const [prefs, setPrefs] = React.useState<NotificationPrefs>(DEFAULT_PREFS)
@@ -203,6 +206,19 @@ export default function SettingsPage() {
         </div>
         <ReadOnlyField label="Company" value={employer?.company_name ?? 'Not set'} />
         <ReadOnlyField label="Role" value={employee?.job_title ?? 'Not set'} />
+      </Section>
+
+      <Section icon={Wallet} title="Solana Wallet">
+        <div className="px-5 py-4">
+          {solanaAddress ? (
+            <AddressDisplay
+              address={solanaAddress}
+              explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
+            />
+          ) : (
+            <p className="text-sm text-[var(--text-muted)]">Solana wallet will be created on next login.</p>
+          )}
+        </div>
       </Section>
 
       <Section icon={Building2} title="Bank Account">

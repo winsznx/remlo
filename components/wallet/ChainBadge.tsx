@@ -1,4 +1,5 @@
 import * as React from 'react'
+import Image from 'next/image'
 import { cn } from '@/lib/utils'
 
 interface ChainBadgeProps {
@@ -6,7 +7,7 @@ interface ChainBadgeProps {
   className?: string
 }
 
-export function ChainBadge({ chain = 'Tempo Moderato', className }: ChainBadgeProps) {
+export function ChainBadge({ chain = 'Tempo', className }: ChainBadgeProps): React.ReactElement {
   return (
     <span
       className={cn(
@@ -14,7 +15,7 @@ export function ChainBadge({ chain = 'Tempo Moderato', className }: ChainBadgePr
         className,
       )}
     >
-      <span className="h-2 w-2 rounded-full bg-[var(--accent)]" />
+      <Image src="/chains/tempo.svg" alt="" width={12} height={12} className="shrink-0" />
       {chain}
     </span>
   )

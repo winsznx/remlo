@@ -22,7 +22,10 @@ export interface Database {
           tip403_policy_id: number | null
           subscription_tier: string
           mpp_agent_key_hash: string | null
+          solana_treasury_address: string | null
+          solana_enabled: boolean
           active: boolean
+          yield_preference: string | null
           created_at: string
           updated_at: string
         }
@@ -38,7 +41,10 @@ export interface Database {
           tip403_policy_id?: number | null
           subscription_tier?: string
           mpp_agent_key_hash?: string | null
+          solana_treasury_address?: string | null
+          solana_enabled?: boolean
           active?: boolean
+          yield_preference?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -54,7 +60,10 @@ export interface Database {
           tip403_policy_id?: number | null
           subscription_tier?: string
           mpp_agent_key_hash?: string | null
+          solana_treasury_address?: string | null
+          solana_enabled?: boolean
           active?: boolean
+          yield_preference?: string | null
           created_at?: string
           updated_at?: string
         }
@@ -66,6 +75,8 @@ export interface Database {
           employer_id: string
           user_id: string | null
           wallet_address: string | null
+          solana_wallet_address: string | null
+          preferred_chain: string
           email: string
           first_name: string | null
           last_name: string | null
@@ -93,6 +104,8 @@ export interface Database {
           employer_id: string
           user_id?: string | null
           wallet_address?: string | null
+          solana_wallet_address?: string | null
+          preferred_chain?: string
           email: string
           first_name?: string | null
           last_name?: string | null
@@ -120,6 +133,8 @@ export interface Database {
           employer_id?: string
           user_id?: string | null
           wallet_address?: string | null
+          solana_wallet_address?: string | null
+          preferred_chain?: string
           email?: string
           first_name?: string | null
           last_name?: string | null
@@ -159,6 +174,9 @@ export interface Database {
           finalized_at: string | null
           settlement_time_ms: number | null
           created_by: string | null
+          chain: string
+          solana_signatures: string[] | null
+          council_approved_at: string | null
           created_at: string
         }
         Insert: {
@@ -175,6 +193,9 @@ export interface Database {
           finalized_at?: string | null
           settlement_time_ms?: number | null
           created_by?: string | null
+          chain?: string
+          solana_signatures?: string[] | null
+          council_approved_at?: string | null
           created_at?: string
         }
         Update: {
@@ -191,6 +212,9 @@ export interface Database {
           finalized_at?: string | null
           settlement_time_ms?: number | null
           created_by?: string | null
+          chain?: string
+          solana_signatures?: string[] | null
+          council_approved_at?: string | null
           created_at?: string
         }
         Relationships: []
@@ -205,6 +229,9 @@ export interface Database {
           memo_decoded: Json | null
           status: string
           tx_hash: string | null
+          chain: string
+          solana_signature: string | null
+          policy_rejection_reason: string | null
           created_at: string
         }
         Insert: {
@@ -216,6 +243,9 @@ export interface Database {
           memo_decoded?: Json | null
           status?: string
           tx_hash?: string | null
+          chain?: string
+          solana_signature?: string | null
+          policy_rejection_reason?: string | null
           created_at?: string
         }
         Update: {
@@ -227,6 +257,9 @@ export interface Database {
           memo_decoded?: Json | null
           status?: string
           tx_hash?: string | null
+          chain?: string
+          solana_signature?: string | null
+          policy_rejection_reason?: string | null
           created_at?: string
         }
         Relationships: []
@@ -306,6 +339,356 @@ export interface Database {
           opened_at?: string
           closed_at?: string | null
           last_action?: string | null
+        }
+        Relationships: []
+      }
+      agent_decisions: {
+        Row: {
+          id: string
+          employer_id: string | null
+          payroll_run_id: string | null
+          decision_type: string
+          inputs: Json
+          reasoning: string
+          decision: Json
+          confidence: number | null
+          executed: boolean
+          executed_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employer_id?: string | null
+          payroll_run_id?: string | null
+          decision_type: string
+          inputs: Json
+          reasoning: string
+          decision: Json
+          confidence?: number | null
+          executed?: boolean
+          executed_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          employer_id?: string | null
+          payroll_run_id?: string | null
+          decision_type?: string
+          inputs?: Json
+          reasoning?: string
+          decision?: Json
+          confidence?: number | null
+          executed?: boolean
+          executed_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      employer_agent_authorizations: {
+        Row: {
+          id: string
+          employer_id: string
+          label: string
+          agent_identifier: string
+          per_tx_cap_usd: number
+          per_day_cap_usd: number
+          active: boolean
+          created_at: string
+          revoked_at: string | null
+        }
+        Insert: {
+          id?: string
+          employer_id: string
+          label: string
+          agent_identifier: string
+          per_tx_cap_usd?: number
+          per_day_cap_usd?: number
+          active?: boolean
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Update: {
+          id?: string
+          employer_id?: string
+          label?: string
+          agent_identifier?: string
+          per_tx_cap_usd?: number
+          per_day_cap_usd?: number
+          active?: boolean
+          created_at?: string
+          revoked_at?: string | null
+        }
+        Relationships: []
+      }
+      agent_pay_calls: {
+        Row: {
+          id: string
+          authorization_id: string
+          employer_id: string
+          recipient_wallet: string
+          usd_amount: number
+          tx_hash: string | null
+          reference: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          authorization_id: string
+          employer_id: string
+          recipient_wallet: string
+          usd_amount: number
+          tx_hash?: string | null
+          reference?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          authorization_id?: string
+          employer_id?: string
+          recipient_wallet?: string
+          usd_amount?: number
+          tx_hash?: string | null
+          reference?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      escrows: {
+        Row: {
+          id: string
+          employer_id: string
+          requester_agent_identifier: string
+          worker_agent_identifier: string
+          requester_pubkey: string
+          worker_wallet_address: string
+          nonce: number
+          escrow_pda: string
+          amount_base_units: number
+          currency: string
+          chain: string
+          rubric_prompt: string
+          rubric_hash: string
+          deliverable_uri: string | null
+          deliverable_hash: string | null
+          deliverable_submitted_at: string | null
+          validator_verdict: 'approved' | 'rejected' | null
+          validator_confidence: number | null
+          validator_reasoning: string | null
+          validator_model: string | null
+          validator_decided_at: string | null
+          initialize_signature: string | null
+          deliverable_signature: string | null
+          verdict_signature: string | null
+          settlement_signature: string | null
+          refund_signature: string | null
+          status: 'posted' | 'delivered' | 'validating' | 'voting' | 'settled' | 'rejected_refunded' | 'expired_refunded'
+          expires_at: string
+          requested_expiry_hours: number | null
+          applied_expiry_hours: number | null
+          worker_reputation_tier: string | null
+          worker_attestation_count: number | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          employer_id: string
+          requester_agent_identifier: string
+          worker_agent_identifier: string
+          requester_pubkey: string
+          worker_wallet_address: string
+          nonce: number
+          escrow_pda: string
+          amount_base_units: number
+          currency?: string
+          chain?: string
+          rubric_prompt: string
+          rubric_hash: string
+          deliverable_uri?: string | null
+          deliverable_hash?: string | null
+          deliverable_submitted_at?: string | null
+          validator_verdict?: 'approved' | 'rejected' | null
+          validator_confidence?: number | null
+          validator_reasoning?: string | null
+          validator_model?: string | null
+          validator_decided_at?: string | null
+          initialize_signature?: string | null
+          deliverable_signature?: string | null
+          verdict_signature?: string | null
+          settlement_signature?: string | null
+          refund_signature?: string | null
+          status?: 'posted' | 'delivered' | 'validating' | 'voting' | 'settled' | 'rejected_refunded' | 'expired_refunded'
+          expires_at: string
+          requested_expiry_hours?: number | null
+          applied_expiry_hours?: number | null
+          worker_reputation_tier?: string | null
+          worker_attestation_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          employer_id?: string
+          requester_agent_identifier?: string
+          worker_agent_identifier?: string
+          requester_pubkey?: string
+          worker_wallet_address?: string
+          nonce?: number
+          escrow_pda?: string
+          amount_base_units?: number
+          currency?: string
+          chain?: string
+          rubric_prompt?: string
+          rubric_hash?: string
+          deliverable_uri?: string | null
+          deliverable_hash?: string | null
+          deliverable_submitted_at?: string | null
+          validator_verdict?: 'approved' | 'rejected' | null
+          validator_confidence?: number | null
+          validator_reasoning?: string | null
+          validator_model?: string | null
+          validator_decided_at?: string | null
+          initialize_signature?: string | null
+          deliverable_signature?: string | null
+          verdict_signature?: string | null
+          settlement_signature?: string | null
+          refund_signature?: string | null
+          status?: 'posted' | 'delivered' | 'validating' | 'voting' | 'settled' | 'rejected_refunded' | 'expired_refunded'
+          expires_at?: string
+          requested_expiry_hours?: number | null
+          applied_expiry_hours?: number | null
+          worker_reputation_tier?: string | null
+          worker_attestation_count?: number | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      validator_votes: {
+        Row: {
+          id: string
+          escrow_id: string
+          validator_id: string
+          validator_address: string
+          validator_type: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
+          verdict: 'approved' | 'rejected'
+          confidence: number | null
+          reasoning: string | null
+          voted_at: string
+          decision_type: 'escrow_verdict' | 'treasury_action'
+        }
+        Insert: {
+          id?: string
+          escrow_id: string
+          validator_id: string
+          validator_address: string
+          validator_type: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
+          verdict: 'approved' | 'rejected'
+          confidence?: number | null
+          reasoning?: string | null
+          voted_at?: string
+          decision_type?: 'escrow_verdict' | 'treasury_action'
+        }
+        Update: {
+          verdict?: 'approved' | 'rejected'
+          confidence?: number | null
+          reasoning?: string | null
+          decision_type?: 'escrow_verdict' | 'treasury_action'
+        }
+        Relationships: []
+      }
+      treasury_decisions: {
+        Row: {
+          id: string
+          employer_id: string
+          action_type: 'yield_route_change' | 'allocation_rebalance' | 'large_payroll_approval'
+          action_payload: Record<string, unknown>
+          rationale: string
+          status:
+            | 'pending_council'
+            | 'council_approved'
+            | 'council_rejected'
+            | 'executed'
+            | 'execution_failed'
+            | 'cancelled'
+          council_verdict: 'approved' | 'rejected' | null
+          council_confidence: number | null
+          council_reasoning: string | null
+          execution_signature: string | null
+          execution_error: string | null
+          proposer_user_id: string | null
+          created_at: string
+          finalized_at: string | null
+          executed_at: string | null
+        }
+        Insert: {
+          id?: string
+          employer_id: string
+          action_type: 'yield_route_change' | 'allocation_rebalance' | 'large_payroll_approval'
+          action_payload?: Record<string, unknown>
+          rationale: string
+          status?:
+            | 'pending_council'
+            | 'council_approved'
+            | 'council_rejected'
+            | 'executed'
+            | 'execution_failed'
+            | 'cancelled'
+          council_verdict?: 'approved' | 'rejected' | null
+          council_confidence?: number | null
+          council_reasoning?: string | null
+          execution_signature?: string | null
+          execution_error?: string | null
+          proposer_user_id?: string | null
+          created_at?: string
+          finalized_at?: string | null
+          executed_at?: string | null
+        }
+        Update: {
+          status?:
+            | 'pending_council'
+            | 'council_approved'
+            | 'council_rejected'
+            | 'executed'
+            | 'execution_failed'
+            | 'cancelled'
+          council_verdict?: 'approved' | 'rejected' | null
+          council_confidence?: number | null
+          council_reasoning?: string | null
+          execution_signature?: string | null
+          execution_error?: string | null
+          finalized_at?: string | null
+          executed_at?: string | null
+        }
+        Relationships: []
+      }
+      escrow_validator_configs: {
+        Row: {
+          id: string
+          employer_id: string
+          validator_id: string
+          validator_address: string
+          validator_type: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
+          weight: number
+          active: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          employer_id: string
+          validator_id: string
+          validator_address: string
+          validator_type: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
+          weight?: number
+          active?: boolean
+          created_at?: string
+        }
+        Update: {
+          validator_id?: string
+          validator_address?: string
+          validator_type?: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
+          weight?: number
+          active?: boolean
         }
         Relationships: []
       }

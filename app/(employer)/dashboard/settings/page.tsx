@@ -4,7 +4,7 @@ import * as React from 'react'
 import Link from 'next/link'
 import { usePrivy } from '@privy-io/react-auth'
 import { useQueryClient } from '@tanstack/react-query'
-import { Building2, CreditCard, Key, Landmark, ShieldCheck } from 'lucide-react'
+import { Building2, CreditCard, Key, Landmark, ShieldCheck, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { SectionHeader } from '@/components/ui/SectionHeader'
@@ -14,6 +14,8 @@ import { useEmployer } from '@/lib/hooks/useEmployer'
 import { usePayrollRuns, useTreasury } from '@/lib/hooks/useDashboard'
 import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import { getPrimaryPrivyEthereumWallet } from '@/lib/privy-wallet'
+import { useSolanaWallets } from '@privy-io/react-auth'
+import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 
 function InfoCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
   return (
@@ -35,6 +37,8 @@ export default function EmployerSettingsPage() {
   const { data: treasury } = useTreasury(employer?.id)
   const { data: payrollRuns } = usePayrollRuns(employer?.id, 1, 25)
   const sessionWallet = getPrimaryPrivyEthereumWallet(user)
+  const { wallets: solanaWallets } = useSolanaWallets()
+  const solanaAddress = solanaWallets[0]?.address ?? null
   const [isSyncingWallet, setIsSyncingWallet] = React.useState(false)
 
   const payrollVolume = payrollRuns?.runs.reduce((sum, run) => sum + run.total_amount, 0) ?? 0
@@ -86,9 +90,14 @@ export default function EmployerSettingsPage() {
         title="Settings"
         description="Review workspace identity, treasury linkage, compliance posture, and billing-related account state."
         action={
-          <Button asChild variant="outline">
-            <Link href="/dashboard/settings/billing">Open billing</Link>
-          </Button>
+          <div className="flex gap-2">
+            <Button asChild variant="outline">
+              <Link href="/dashboard/settings/agents">Authorized agents</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/settings/billing">Open billing</Link>
+            </Button>
+          </div>
         }
       />
 
@@ -141,6 +150,21 @@ export default function EmployerSettingsPage() {
             </div>
           </div>
         </div>
+      </div>
+
+      <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-5 sm:p-6">
+        <div className="flex items-center gap-2 mb-4">
+          <Wallet className="h-4 w-4 text-[var(--text-muted)]" />
+          <h2 className="text-sm font-semibold text-[var(--text-primary)]">Solana Wallet</h2>
+        </div>
+        {solanaAddress ? (
+          <AddressDisplay
+            address={solanaAddress}
+            explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
+          />
+        ) : (
+          <p className="text-sm text-[var(--text-muted)]">Solana wallet will be created on next login.</p>
+        )}
       </div>
 
       <WalletStatusPanel

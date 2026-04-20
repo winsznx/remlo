@@ -34,9 +34,41 @@ contracts/broadcast/**
 !contracts/broadcast/**/
 !contracts/broadcast/**/run-latest.json
 
-# compiled script output
-scripts/*.js
+# Platform-operator tooling (not part of the public protocol)
+/scripts/
+
+# Internal development notes
+AGENT_PROGRESS.md
+DB_AUDIT.md
+DEMO_CHECKLIST.md
+GAPS.md
+REMLO_MASTER.md
+VINCENT_SETUP.md
+FRONTEND_SKILL.md
+*_PROGRESS.md
+*_AUDIT.md
+
+# Internal spec documents
+remlo_architecture_spec.md
+remlo_build_guide.md
+remlo_mpp_blueprint.md
+remlo_*.md
+remlo *.md
+vincent_research.md
+
+# Claude Code state
+.claude/
+
+# remotion (separate project, own tsconfig)
+remotion/
+
+# Anchor / Solana program build artifacts
+solana/target/
+solana/.anchor/
+solana/node_modules/
+solana/test-ledger/
+solana/Cargo.lock
 
 # macOS
 .DS_Store
-desktop.ini 
+desktop.ini

@@ -2,13 +2,17 @@
 
 import * as React from 'react'
 import { usePrivy } from '@privy-io/react-auth'
+import Link from 'next/link'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Check } from 'lucide-react'
+import { Bot, Check } from 'lucide-react'
 import { Button } from '@/components/ui/button'
 import { BatchProgress, type BatchStatus } from '@/components/payroll/BatchProgress'
 import { GasSponsored } from '@/components/wallet/GasSponsored'
+import { ChainBadge } from '@/components/wallet/ChainBadge'
+import { SolanaBadge } from '@/components/wallet/SolanaBadge'
 import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
 import { cn } from '@/lib/utils'
+import { estimateBatchCount } from '@/lib/solana-payroll'
 import type { Employee } from '@/lib/queries/employees'
 
 // ─── Types ─────────────────────────────────────────────────────────────────
@@ -69,29 +73,71 @@ function StepBar({ current }: { current: number }) {
 
 // ─── Step 1: Select employees ──────────────────────────────────────────────
 
+function ChainSelector({ chain, onChange }: { chain: 'tempo' | 'solana'; onChange: (c: 'tempo' | 'solana') => void }) {
+  return (
+    <div className="grid grid-cols-2 gap-3 mb-4">
+      <button
+        onClick={() => onChange('tempo')}
+        className={cn(
+          'rounded-xl border-2 p-3 text-left transition-all',
+          chain === 'tempo'
+            ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+            : 'border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-[var(--border-strong)]',
+        )}
+      >
+        <ChainBadge />
+        <p className="mt-2 text-xs text-[var(--text-muted)]">pathUSD · ~0.4s settlement</p>
+      </button>
+      <button
+        onClick={() => onChange('solana')}
+        className={cn(
+          'rounded-xl border-2 p-3 text-left transition-all',
+          chain === 'solana'
+            ? 'border-[var(--accent)] bg-[var(--accent)]/5'
+            : 'border-[var(--border-default)] bg-[var(--bg-surface)] hover:border-[var(--border-strong)]',
+        )}
+      >
+        <SolanaBadge />
+        <p className="mt-2 text-xs text-[var(--text-muted)]">USDC · ~1-2s settlement</p>
+      </button>
+    </div>
+  )
+}
+
 function Step1({
   employees,
   selected,
   onToggle,
+  chain,
+  onChainChange,
 }: {
   employees: Employee[]
   selected: Set<string>
   onToggle: (id: string) => void
+  chain: 'tempo' | 'solana'
+  onChainChange: (c: 'tempo' | 'solana') => void
 }) {
-  const allSelected = employees.length > 0 && selected.size === employees.length
+  const filteredEmployees = React.useMemo(
+    () => chain === 'solana' ? employees.filter((e) => e.solana_wallet_address) : employees,
+    [employees, chain],
+  )
+  const allSelected = filteredEmployees.length > 0 && selected.size === filteredEmployees.length
 
   function toggleAll() {
     if (allSelected) {
-      employees.forEach((e) => onToggle(e.id))
+      filteredEmployees.forEach((e) => onToggle(e.id))
     } else {
-      employees.filter((e) => !selected.has(e.id)).forEach((e) => onToggle(e.id))
+      filteredEmployees.filter((e) => !selected.has(e.id)).forEach((e) => onToggle(e.id))
     }
   }
 
   return (
     <div className="space-y-3">
+      <ChainSelector chain={chain} onChange={onChainChange} />
       <p className="text-sm text-[var(--text-muted)]">
-        Select employees to include in this payroll run.
+        {chain === 'solana'
+          ? 'Only employees with Solana wallets are shown.'
+          : 'Select employees to include in this payroll run.'}
       </p>
       <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
         {/* Select all */}
@@ -101,12 +147,12 @@ function Step1({
         >
           <Checkbox checked={allSelected} indeterminate={selected.size > 0 && !allSelected} />
           <span className="text-xs font-semibold text-[var(--text-muted)] uppercase tracking-wide">
-            {allSelected ? 'Deselect all' : `Select all (${employees.length})`}
+            {allSelected ? 'Deselect all' : `Select all (${filteredEmployees.length})`}
           </span>
         </div>
         {/* Employee rows */}
         <div className="divide-y divide-[var(--border-default)]">
-          {employees.map((emp) => {
+          {filteredEmployees.map((emp) => {
             const isSelected = selected.has(emp.id)
             return (
               <div
@@ -139,7 +185,7 @@ function Step1({
         </div>
       </div>
       <p className="text-xs text-[var(--text-muted)]">
-        {selected.size} of {employees.length} employees selected
+        {selected.size} of {filteredEmployees.length} employees selected
       </p>
     </div>
   )
@@ -200,15 +246,21 @@ function Step2({
 
 // ─── Step 3: Review ─────────────────────────────────────────────────────────
 
-function Step3({ items }: { items: PayrollItem[] }) {
+function Step3({ items, chain }: { items: PayrollItem[]; chain: 'tempo' | 'solana' }) {
   const total = items.reduce((s, i) => s + i.amount, 0)
   const fee = 0.01 // <$0.01 per spec
 
   return (
     <div className="space-y-4">
       <div className="rounded-xl border border-[var(--border-default)] overflow-hidden">
-        <div className="px-5 py-4 border-b border-[var(--border-default)]">
+        <div className="px-5 py-4 border-b border-[var(--border-default)] flex items-center justify-between">
           <h3 className="text-sm font-semibold text-[var(--text-primary)]">Payroll Summary</h3>
+          <div className="flex items-center gap-2">
+            {chain === 'solana' ? <SolanaBadge /> : <ChainBadge />}
+            {chain === 'solana' && (
+              <span className="text-xs text-[var(--text-muted)]">Est. {estimateBatchCount(items.length)} tx · ~1-2s</span>
+            )}
+          </div>
         </div>
         <div className="divide-y divide-[var(--border-default)]">
           {items.map((item) => {
@@ -287,6 +339,7 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
   const { authenticated, getAccessToken } = usePrivy()
   const authedFetch = usePrivyAuthedFetch()
   const [step, setStep] = React.useState(0)
+  const [chain, setChain] = React.useState<'tempo' | 'solana'>('tempo')
   const [selected, setSelected] = React.useState<Set<string>>(new Set())
   const [items, setItems] = React.useState<PayrollItem[]>([])
   const [batchStatus, setBatchStatus] = React.useState<BatchStatus>('idle')
@@ -321,6 +374,13 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
   }
 
   async function executePayroll() {
+    if (chain === 'solana') {
+      setStep(3)
+      setBatchStatus('error')
+      setExecError('SOLANA_AGENT_REDIRECT')
+      return
+    }
+
     setStep(3)
     setBatchStatus('signing')
     setExecError(undefined)
@@ -405,13 +465,13 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
           transition={{ duration: 0.2 }}
         >
           {step === 0 && (
-            <Step1 employees={employees} selected={selected} onToggle={toggleEmployee} />
+            <Step1 employees={employees} selected={selected} onToggle={toggleEmployee} chain={chain} onChainChange={setChain} />
           )}
           {step === 1 && (
             <Step2 items={items} onAmountChange={updateAmount} />
           )}
           {step === 2 && (
-            <Step3 items={items} />
+            <Step3 items={items} chain={chain} />
           )}
           {step === 3 && (
             <BatchProgress
@@ -465,12 +525,29 @@ export function PayrollWizard({ employees, employerId, onComplete }: PayrollWiza
         </div>
       )}
 
+      {/* Solana redirect */}
+      {step === 3 && execError === 'SOLANA_AGENT_REDIRECT' && (
+        <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] p-8 text-center space-y-4">
+          <Bot className="h-10 w-10 text-[var(--accent)] mx-auto" />
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Solana payroll runs through the AI Agent</p>
+            <p className="text-xs text-[var(--text-muted)] mt-1">The agent evaluates yield rates, compliance, and anomalies before executing.</p>
+          </div>
+          <div className="flex justify-center gap-3">
+            <Button variant="outline" onClick={() => { setStep(0); setChain('tempo') }}>Switch to Tempo</Button>
+            <Button asChild>
+              <Link href="/dashboard/agent">Go to AI Agent</Link>
+            </Button>
+          </div>
+        </div>
+      )}
+
       {/* Error retry */}
-      {step === 3 && batchStatus === 'error' && (
+      {step === 3 && batchStatus === 'error' && execError !== 'SOLANA_AGENT_REDIRECT' && (
         <div className="flex justify-center gap-3 pt-2">
           <Button variant="outline" onClick={() => setStep(2)}>Back to Review</Button>
           <Button
-            onClick={executePayroll}
+            onClick={() => void executePayroll()}
             className="bg-[var(--accent)] text-[var(--accent-foreground)] hover:opacity-90"
           >
             Retry

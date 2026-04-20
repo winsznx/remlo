@@ -117,5 +117,30 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: error?.message ?? 'Failed to create employer' }, { status: 500 })
   }
 
+  // Ship 6: seed the platform default Claude validator config so every
+  // employer's first escrow has a working single-validator fast path without
+  // a manual setup step. Non-blocking — failure just means the escrow flow
+  // falls back to getDefaultValidator() at runtime.
+  const privyWalletId = process.env.PRIVY_SOLANA_AGENT_WALLET_ID
+  const privyWalletAddress = process.env.PRIVY_SOLANA_AGENT_WALLET_ADDRESS
+  if (privyWalletId && privyWalletAddress) {
+    const { error: validatorErr } = await supabase
+      .from('escrow_validator_configs')
+      .insert({
+        employer_id: data.id,
+        validator_id: privyWalletId,
+        validator_address: privyWalletAddress,
+        validator_type: 'llm_claude',
+        weight: 1,
+        active: true,
+      })
+    if (validatorErr && validatorErr.code !== '23505') {
+      // log but don't block employer creation
+      console.warn(
+        `[employers] default validator config seed failed (non-fatal): ${validatorErr.message}`,
+      )
+    }
+  }
+
   return NextResponse.json({ employerId: data.id }, { status: 201 })
 }

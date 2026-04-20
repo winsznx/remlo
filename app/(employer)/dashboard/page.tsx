@@ -9,6 +9,7 @@ import { ArrowRight, ChevronRight, DollarSign, Sparkles, TrendingUp, Users } fro
 import { useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
 import { PayrollRunCard } from '@/components/payroll/PayrollRunCard'
+import { ExternalAgentsCard } from '@/components/dashboard/ExternalAgentsCard'
 import { useEmployer } from '@/lib/hooks/useEmployer'
 import {
   useEmployerCompliance,
@@ -310,6 +311,8 @@ export default function DashboardPage() {
           iconBg="bg-[var(--accent-subtle)]"
         />
       </div>
+
+      <ExternalAgentsCard />
 
       <div className="grid gap-4 xl:grid-cols-[1.7fr_1fr]">
         <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-hidden">

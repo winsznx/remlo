@@ -15,8 +15,8 @@ export async function GET(req: NextRequest) {
   const { data, error } = await supabase
     .from('payment_items')
     .select(`
-      id, amount, memo_bytes, memo_decoded, status, tx_hash, created_at,
-      payroll_run:payroll_runs(id, finalized_at, settlement_time_ms, block_number)
+      id, amount, memo_bytes, memo_decoded, status, tx_hash, chain, solana_signature, created_at,
+      payroll_run:payroll_runs(id, finalized_at, settlement_time_ms, block_number, chain)
     `)
     .eq('employee_id', employee.id)
     .order('created_at', { ascending: false })

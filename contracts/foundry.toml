@@ -6,6 +6,10 @@ solc = "0.8.24"
 optimizer = true
 optimizer_runs = 200
 evm_version = "cancun"
+# ERC-8004's ReputationRegistry hits "stack too deep" without via_ir because
+# its Feedback struct has >16 local variables. Upstream uses via_ir too. This
+# compiles ~3x slower but unblocks the build.
+via_ir = true
 
 [rpc_endpoints]
 tempo_moderato = "https://rpc.moderato.tempo.xyz"

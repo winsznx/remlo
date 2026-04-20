@@ -8,7 +8,7 @@ const spec = {
     description:
       'Enterprise payroll infrastructure as MPP-native API endpoints. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402.',
     'x-guidance':
-      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Start by querying yield rates (GET /api/mpp/treasury/yield-rates, $0.01) to check treasury state. Use POST /api/mpp/agent/session/treasury ($0.02/action) for multi-action treasury management. Execute payroll via POST /api/mpp/payroll/execute ($1.00). All endpoints use USDC.e (Stargate USDC, 0x20C000000000000000000000b9537d11c60E8b50) on Tempo mainnet (chainId 4217). No API keys required beyond MPP payment credential.',
+      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Start by querying yield rates (GET /api/mpp/treasury/yield-rates, $0.01) to check treasury state. Use POST /api/mpp/agent/session/treasury ($0.02/action) for multi-action treasury management. Execute payroll via POST /api/mpp/payroll/execute ($1.00). All endpoints use USDC.e (Stargate USDC, 0x20C000000000000000000000b9537d11c60E8b50) on Tempo mainnet (chainId 4217). No API keys required beyond MPP payment credential. Remlo produces on-chain reputation as a byproduct of payment work: settled Solana payments write SAS attestations, and completed Tempo payroll + escrow participation write ERC-8004 feedback. See GET /api/reputation/{address} (free, no auth) to query reputation for any subject.',
   },
   'x-discovery': {
     ownershipProofs: [
@@ -26,8 +26,119 @@ const spec = {
     { name: 'Compliance', description: 'Wallet compliance screening and cleared-list queries' },
     { name: 'Agent', description: 'AI agent workflows — multi-action treasury and memo decoding' },
     { name: 'Bridge', description: 'Fiat off-ramp via Bridge protocol' },
+    { name: 'Reputation', description: 'Cross-chain reputation aggregation (SAS on Solana + ERC-8004 on Tempo)' },
+    { name: 'Streams', description: 'Solana payroll streaming (Ship 4 stub; real Streamflow integration in Ship 5)' },
   ],
   paths: {
+    '/api/x402/streams': {
+      post: {
+        tags: ['Streams'],
+        summary: 'Create a Solana payroll stream ($0.05, stub)',
+        'x-guidance':
+          "Ship 4 STUB — returns a mock SolanaStreamHandle with provider='streamflow'. The handle shape is the permanent contract; production implementation in Ship 5 will wire this through the Streamflow Protocol SDK (@streamflow/stream) on Solana devnet + mainnet with no breaking changes to callers. Alternative under evaluation: a native Anchor program for cross-chain parity with Tempo StreamVesting.sol. x402 gating is real now ($0.05 USDC.e) to let us validate demand before committing to the full build.",
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                required: ['recipientAddress', 'amountUsdc', 'durationSeconds', 'cancelAuthority'],
+                properties: {
+                  recipientAddress: { type: 'string', description: 'Solana base58 pubkey' },
+                  amountUsdc: { type: 'number', description: 'Total USDC to stream' },
+                  durationSeconds: { type: 'number', description: 'Stream window in seconds' },
+                  cliffSeconds: { type: 'number', description: 'Optional cliff before any funds vest' },
+                  cancelAuthority: {
+                    type: 'string',
+                    enum: ['sender', 'recipient', 'both'],
+                    description: 'Who can cancel the stream early',
+                  },
+                },
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Mock SolanaStreamHandle with stub=true flag',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    streamId: { type: 'string' },
+                    provider: { type: 'string', enum: ['streamflow', 'native'] },
+                    startedAt: { type: 'integer', description: 'Unix seconds' },
+                    estimatedEndAt: { type: 'integer', description: 'Unix seconds' },
+                    claimedUsdc: { type: 'number' },
+                    remainingUsdc: { type: 'number' },
+                    stub: { type: 'boolean' },
+                    note: { type: 'string' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: 'Validation error on request body' },
+          '402': { description: 'Payment Required' },
+          '503': { description: 'Solana agent wallet not configured on server' },
+        },
+      },
+    },
+    '/api/reputation/{address}': {
+      get: {
+        tags: ['Reputation'],
+        summary: 'Read cross-chain reputation for any subject (free, no auth)',
+        'x-guidance':
+          "Read-only reputation aggregator. Queries SAS attestations on Solana and ERC-8004 Reputation Registry feedback on Tempo for a given subject. No payment required — reputation data is public by design. Accepts either a Solana base58 pubkey (44 chars) or a numeric ERC-8004 Tempo agent ID. Returns unified summary (totalPayments, totalValueMoved, agentFeedbackScore, workerAttestationCount) plus per-chain detail. For write-side reputation, see /api/mpp/* endpoints — every settled payment or escrow automatically writes a reputation artifact.",
+        parameters: [
+          {
+            name: 'address',
+            in: 'path',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Solana base58 pubkey OR numeric ERC-8004 agent ID',
+          },
+        ],
+        responses: {
+          '200': {
+            description: 'Reputation summary for the subject',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    subject: {
+                      type: 'object',
+                      properties: {
+                        solana: { type: 'string' },
+                        tempo_agent_id: { type: 'string' },
+                      },
+                    },
+                    solana: { type: 'object', nullable: true },
+                    tempo: { type: 'object', nullable: true },
+                    unified: {
+                      type: 'object',
+                      properties: {
+                        totalPayments: { type: 'integer' },
+                        totalValueMovedBaseUnits: { type: 'string' },
+                        agentFeedbackScore: { type: 'number', nullable: true },
+                        agentFeedbackCount: { type: 'integer' },
+                        workerAttestationCount: { type: 'integer' },
+                        firstActivityAt: { type: 'string', format: 'date-time', nullable: true },
+                        latestActivityAt: { type: 'string', format: 'date-time', nullable: true },
+                      },
+                    },
+                    last_updated: { type: 'string', format: 'date-time' },
+                  },
+                },
+              },
+            },
+          },
+          '400': { description: 'Address must be Solana base58 or numeric agent ID' },
+        },
+      },
+    },
     '/api/mpp/treasury/yield-rates': {
       get: {
         summary: 'Get current treasury yield rates',
@@ -715,6 +826,270 @@ const spec = {
         },
       },
     },
+    '/api/mpp/escrow/post': {
+      post: {
+        summary: 'Post an agent-to-agent escrow with Claude-judge settlement',
+        description: 'Creates a three-party escrow: requester locks USDC, worker submits a deliverable, Claude judge decides against rubric_prompt. Funds custodied on-chain by the remlo_escrow Anchor program PDA — not by Remlo. Settlement and refund are permissionless after the verdict is posted. Max 100 USDC per escrow, 1h-7d expiry, max 2000-char rubric.',
+        operationId: 'escrowPost',
+        tags: ['Agent'],
+        parameters: [
+          {
+            name: 'X-Agent-Identifier',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Pre-registered agent identity authorized for this employer.',
+          },
+        ],
+        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.10' },
+        'x-guidance': 'Post an escrow that will be auto-validated by a Claude judge against your rubric_prompt. Approved verdicts release funds to worker_wallet_address via a permissionless Solana instruction; rejected verdicts or expiry refund to the employer. Funds custodied during the escrow period by the remlo_escrow Anchor program at 2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA (Solana devnet). Settled escrows write a SAS reputation attestation (remlo-escrow-settled) to the worker subject; rejected or expired refunds write remlo-escrow-refunded to the requester. Both attestations are written asynchronously by /api/cron/process-reputation-writes. Expiry duration is reputation-scaled: unknown workers (no SAS attestations) receive the full requested duration; trusted workers with 20+ attestations receive a shorter expiry floor. Check the response applied_expiry_hours and worker_reputation_tier fields to see the duration actually used.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  employer_id: { type: 'string', description: 'Remlo employer UUID' },
+                  worker_wallet_address: { type: 'string', description: 'Solana address of the worker who will receive funds on approved verdict' },
+                  worker_agent_identifier: { type: 'string', description: 'Agent identity of the worker — must match X-Agent-Identifier when they call /deliver' },
+                  amount_usdc: { type: 'string', description: 'USDC amount as decimal string (e.g. "10.00"), max 100.00' },
+                  rubric_prompt: { type: 'string', description: 'Validation criteria for Claude to evaluate the deliverable against. Max 2000 chars.' },
+                  expiry_hours: { type: 'number', description: 'Hours until escrow auto-refunds if no verdict. Default 24, max 168 (7 days).' },
+                },
+                required: ['employer_id', 'worker_wallet_address', 'worker_agent_identifier', 'amount_usdc', 'rubric_prompt'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Escrow created on-chain',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    escrow_id: { type: 'string' },
+                    escrow_pda: { type: 'string' },
+                    status: { type: 'string', enum: ['posted'] },
+                    expires_at: { type: 'string', format: 'date-time' },
+                    initialize_signature: { type: 'string' },
+                    solana_explorer_urls: { type: 'object' },
+                    applied_expiry_hours: { type: 'number', description: 'Hours actually applied (reputation-scaled from requested).' },
+                    requested_expiry_hours: { type: 'number', description: 'Hours the caller requested.' },
+                    worker_reputation_tier: { type: 'string', enum: ['unknown', 'new', 'established', 'trusted'], description: 'Worker SAS reputation tier at escrow-post time.' },
+                    worker_attestation_count: { type: 'number', description: 'Number of prior SAS attestations driving the tier.' },
+                  },
+                },
+              },
+            },
+          },
+          '401': { description: 'Missing X-Agent-Identifier header' },
+          '402': { description: 'Payment Required' },
+          '403': { description: 'Agent not authorized for this employer, or amount over per-tx cap' },
+        },
+      },
+    },
+    '/api/mpp/escrow/deliver': {
+      post: {
+        summary: 'Submit a deliverable URI for an escrow',
+        description: 'The submitting agent must match worker_agent_identifier recorded at post time. Validation and settlement broadcast asynchronously — poll /status for the final verdict.',
+        operationId: 'escrowDeliver',
+        tags: ['Agent'],
+        parameters: [
+          {
+            name: 'X-Agent-Identifier',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Must equal worker_agent_identifier of the target escrow.',
+          },
+        ],
+        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.02' },
+        'x-guidance': 'Submit a deliverable URI. Remlo fetches the content (10s timeout, 100KB max), computes SHA-256, records the hash on-chain, and invokes the Claude judge against the rubric. Settlement or refund broadcasts automatically within ~30s of validator decision. The caller polls /api/mpp/escrow/{id}/status to observe the final state.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  escrow_id: { type: 'string' },
+                  deliverable_uri: { type: 'string', description: 'HTTPS URL, IPFS link, or inline data: URI' },
+                },
+                required: ['escrow_id', 'deliverable_uri'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Deliverable submitted; validation running async' },
+          '401': { description: 'Missing X-Agent-Identifier' },
+          '402': { description: 'Payment Required' },
+          '403': { description: 'Submitting agent does not match worker_agent_identifier, or escrow expired' },
+          '404': { description: 'Escrow not found' },
+        },
+      },
+    },
+    '/api/mpp/escrow/deliver-signed': {
+      post: {
+        summary: 'Submit a worker-signed deliverable (external-key agents)',
+        description: 'For worker agents that manage their own Solana keys instead of delegating to Remlo Privy. Client signs the submit_deliverable instruction offline; Remlo verifies signature + uri_hash match, then broadcasts and runs validator+settle.',
+        operationId: 'escrowDeliverSigned',
+        tags: ['Agent'],
+        parameters: [
+          {
+            name: 'X-Agent-Identifier',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Must equal worker_agent_identifier of the target escrow.',
+          },
+        ],
+        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.02' },
+        'x-guidance': 'Build a submit_deliverable instruction via lib/escrow-client.ts::buildSubmitDeliverableInstruction, wrap in a Transaction, sign client-side with the worker keypair, base64-encode the serialized tx, submit here. The uri_hash in the signed instruction must match sha256(deliverable_uri) exactly — the server verifies this before broadcasting. Fee payer on the signed tx MUST be the worker pubkey.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  escrow_id: { type: 'string' },
+                  deliverable_uri: { type: 'string', description: 'HTTPS URL, IPFS link, or inline data: URI' },
+                  signed_transaction: { type: 'string', description: 'Base64-encoded fully-signed Solana Transaction' },
+                },
+                required: ['escrow_id', 'deliverable_uri', 'signed_transaction'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': { description: 'Worker-signed deliverable broadcast; validation running async' },
+          '400': { description: 'Invalid tx, uri_hash mismatch, or missing fields' },
+          '401': { description: 'Missing X-Agent-Identifier' },
+          '402': { description: 'Payment Required' },
+          '403': { description: 'Fee payer mismatch, agent mismatch, or escrow expired' },
+          '404': { description: 'Escrow not found' },
+          '502': { description: 'Broadcast or confirmation failed' },
+        },
+      },
+    },
+    '/api/mpp/escrow/{id}/status': {
+      get: {
+        summary: 'Read escrow lifecycle status',
+        description: 'Public read access to any x402-paying caller. Returns public-facing fields only — no validator model, no internal hashes, no employer scope.',
+        operationId: 'escrowStatus',
+        tags: ['Agent'],
+        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.01' },
+        'x-guidance': 'Check escrow state and any on-chain signatures. No X-Agent-Identifier required — this is a public read path for any caller observing the escrow.',
+        parameters: [
+          { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Escrow UUID' },
+        ],
+        responses: {
+          '200': {
+            description: 'Current escrow state',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    escrow_id: { type: 'string' },
+                    status: { type: 'string', enum: ['posted', 'delivered', 'validating', 'settled', 'rejected_refunded', 'expired_refunded'] },
+                    amount_usdc: { type: 'string' },
+                    worker_wallet_address: { type: 'string' },
+                    rubric_prompt: { type: 'string' },
+                    deliverable_uri: { type: 'string', nullable: true },
+                    validator_verdict: { type: 'string', enum: ['approved', 'rejected'], nullable: true },
+                    validator_confidence: { type: 'integer', nullable: true },
+                    validator_reasoning: { type: 'string', nullable: true },
+                    expires_at: { type: 'string', format: 'date-time' },
+                    signatures: { type: 'object' },
+                    solana_explorer_urls: { type: 'object' },
+                  },
+                },
+              },
+            },
+          },
+          '402': { description: 'Payment Required' },
+          '404': { description: 'Escrow not found' },
+        },
+      },
+    },
+    '/api/mpp/agent/pay': {
+      post: {
+        summary: 'Agent-to-agent direct payment',
+        description: 'Sends USDC from a Remlo employer treasury to a recipient wallet. Designed for autonomous agents paying other autonomous agents: pay $0.05 via x402, specify recipient and amount, receive on-chain tx hash. The caller must identify itself via the X-Agent-Identifier header; that identifier must be pre-registered by the employer at /dashboard/settings/agents with per-transaction and per-day spend caps. Calls that exceed caps or use an unregistered identifier are rejected with 403 (AGENT_NOT_AUTHORIZED, PER_TX_CAP_EXCEEDED, PER_DAY_CAP_EXCEEDED) — the $0.05 x402 fee is still charged. Successful calls write ERC-8004 Reputation Registry feedback to the Remlo Payroll Agent on-chain identity; the reputation record is publicly queryable at /api/reputation/{agentId}.',
+        operationId: 'agentPay',
+        tags: ['Agent'],
+        parameters: [
+          {
+            name: 'X-Agent-Identifier',
+            in: 'header',
+            required: true,
+            schema: { type: 'string' },
+            description: 'Pre-registered agent identity (EVM address, AgentCard URI, or opaque token). Must match an active employer_agent_authorizations row for the employer.',
+          },
+        ],
+        'x-payment-info': {
+          protocols: ['mpp'],
+          pricingMode: 'fixed',
+          price: '0.05',
+        },
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  employer_id: { type: 'string', description: 'Remlo employer UUID whose treasury funds the transfer' },
+                  recipient_wallet: { type: 'string', description: '0x-prefixed EVM address of the recipient agent or human' },
+                  amount: { type: 'string', description: 'USDC amount as decimal string (e.g. "12.50")' },
+                  reference: { type: 'string', description: 'Optional free-text reference for audit trail', nullable: true },
+                },
+                required: ['employer_id', 'recipient_wallet', 'amount'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Payment broadcast on-chain',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    success: { type: 'boolean' },
+                    tx_hash: { type: 'string' },
+                    recipient: { type: 'string' },
+                    amount: { type: 'string' },
+                    employer_id: { type: 'string' },
+                    employer_account_id: { type: 'string' },
+                    reference: { type: 'string', nullable: true },
+                    explorer_url: { type: 'string' },
+                    memo: { type: 'string' },
+                    timestamp: { type: 'string', format: 'date-time' },
+                  },
+                  required: ['success', 'tx_hash', 'recipient', 'amount', 'explorer_url'],
+                },
+              },
+            },
+          },
+          '402': {
+            description: 'Payment Required',
+            headers: {
+              'WWW-Authenticate': { schema: { type: 'string' }, description: 'MPP payment challenge' },
+            },
+          },
+          '422': {
+            description: 'Insufficient treasury balance',
+          },
+        },
+      },
+    },
     '/api/mpp/agent/session/treasury': {
       post: {
         summary: 'Multi-action treasury management',
@@ -783,6 +1158,65 @@ const spec = {
               'WWW-Authenticate': {
                 schema: { type: 'string' },
                 description: 'MPP payment challenge',
+              },
+            },
+          },
+        },
+      },
+    },
+    '/api/x402/payroll/execute': {
+      post: {
+        summary: 'Execute an agent-planned payroll decision on-chain',
+        description: 'Authenticated via Privy JWT (not yet x402-gated — see TODO comment in route source). Broadcasts any Tempo payments via REMLO_AGENT_PRIVATE_KEY (legacy transitional path) and any Solana payments via a Privy server wallet with policy enforcement. Mixed-chain decisions return both tempo_tx_hash and solana_signatures. Per-item policy rejections are surfaced in solana_policy_rejections without failing the entire run — the affected payment_items rows are marked status=policy_rejected with the rejection reason.',
+        operationId: 'x402ExecutePayroll',
+        tags: ['Agent'],
+        'x-guidance': 'Solana broadcasts are policy-gated through Privy server wallets. Transactions whose amounts exceed the per-tx cap or whose instructions target non-whitelisted programs return a 200 with payment_items[].status = \'policy_rejected\' rather than failing the entire run. Check solana_policy_rejections in the response.',
+        requestBody: {
+          required: true,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                properties: {
+                  employer_id: { type: 'string', description: 'Employer UUID' },
+                  decision_id: { type: 'string', description: 'agent_decisions row UUID to execute' },
+                },
+                required: ['employer_id', 'decision_id'],
+              },
+            },
+          },
+        },
+        responses: {
+          '200': {
+            description: 'Decision executed (partial or full). Check error fields + policy_rejections to see what actually broadcast.',
+            content: {
+              'application/json': {
+                schema: {
+                  type: 'object',
+                  properties: {
+                    payroll_run_id: { type: 'string' },
+                    decision_id: { type: 'string' },
+                    tempo_tx_hash: { type: 'string', nullable: true },
+                    tempo_broadcast_error: { type: 'string', nullable: true },
+                    tempo_explorer_url: { type: 'string', nullable: true },
+                    solana_signatures: { type: 'array', items: { type: 'string' } },
+                    solana_broadcast_error: { type: 'string', nullable: true },
+                    solana_policy_rejections: {
+                      type: 'array',
+                      items: {
+                        type: 'object',
+                        properties: {
+                          employee_id: { type: 'string' },
+                          reason: { type: 'string', description: 'Privy policy rejection reason' },
+                        },
+                      },
+                    },
+                    solana_explorer_urls: { type: 'array', items: { type: 'string' } },
+                    total_amount: { type: 'number' },
+                    employee_count: { type: 'integer' },
+                  },
+                  required: ['payroll_run_id', 'decision_id', 'solana_signatures'],
+                },
               },
             },
           },

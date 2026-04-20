@@ -247,3 +247,54 @@ export function useMppReceipts(employerId: string | undefined) {
     refetchInterval: 10_000,
   })
 }
+
+// ─── Solana / Agent hooks ──────────────────────────────────────────────────
+
+export interface CrossChainTreasury {
+  tempo: { balance: number; currency: string }
+  solana: { balance: number; currency: string; error?: string }
+  total_usd: number
+  agent_wallet: {
+    tempo_address: string | null
+    tempo_balance: number | null
+    solana_address: string | null
+    solana_balance: number | null
+  }
+  timestamp: number
+}
+
+export interface AgentDecisionSummary {
+  id: string
+  employer_id: string | null
+  payroll_run_id: string | null
+  decision_type: string
+  reasoning: string
+  confidence: number | null
+  executed: boolean
+  executed_at: string | null
+  created_at: string
+  inputs: Record<string, unknown>
+  decision: Record<string, unknown>
+}
+
+export function useCrossChainTreasury() {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<CrossChainTreasury>({
+    queryKey: ['cross-chain-treasury'],
+    queryFn: () => fetchJson('/api/x402/treasury/status'),
+    enabled: ready && authenticated,
+  })
+}
+
+export function useAgentDecisions(employerId: string | undefined, limit = 20) {
+  const { ready, authenticated } = usePrivy()
+  const fetchJson = usePrivyAuthedJson()
+
+  return useQuery<AgentDecisionSummary[]>({
+    queryKey: ['agent-decisions', employerId, limit],
+    queryFn: () => fetchJson(`/api/employers/${employerId}/agent-decisions?limit=${limit}`),
+    enabled: ready && authenticated && Boolean(employerId),
+  })
+}

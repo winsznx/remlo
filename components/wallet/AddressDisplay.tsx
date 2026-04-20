@@ -10,6 +10,7 @@ interface AddressDisplayProps {
   label?: string
   showFull?: boolean
   showExplorer?: boolean
+  explorerUrl?: string
   className?: string
 }
 
@@ -23,8 +24,10 @@ export function AddressDisplay({
   label,
   showFull = false,
   showExplorer = true,
+  explorerUrl,
   className,
 }: AddressDisplayProps) {
+  const resolvedExplorerUrl = explorerUrl ?? `${TEMPO_EXPLORER_URL}/address/${address}`
   const [copied, setCopied] = React.useState(false)
 
   async function handleCopy() {
@@ -52,7 +55,7 @@ export function AddressDisplay({
       </button>
       {showExplorer && (
         <a
-          href={`${TEMPO_EXPLORER_URL}/address/${address}`}
+          href={resolvedExplorerUrl}
           target="_blank"
           rel="noopener noreferrer"
           className="shrink-0 text-[var(--text-muted)] hover:text-[var(--accent)] transition-colors"
