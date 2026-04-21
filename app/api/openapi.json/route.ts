@@ -34,8 +34,14 @@ const spec = {
       post: {
         tags: ['Streams'],
         summary: 'Create a Solana payroll stream ($0.05, stub)',
+        operationId: 'createX402Stream',
         'x-guidance':
           "Ship 4 STUB — returns a mock SolanaStreamHandle with provider='streamflow'. The handle shape is the permanent contract; production implementation in Ship 5 will wire this through the Streamflow Protocol SDK (@streamflow/stream) on Solana devnet + mainnet with no breaking changes to callers. Alternative under evaluation: a native Anchor program for cross-chain parity with Tempo StreamVesting.sol. x402 gating is real now ($0.05 USDC.e) to let us validate demand before committing to the full build.",
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
+          protocols: [{ x402: {} }],
+          authMode: 'x402',
+        },
         requestBody: {
           required: true,
           content: {
@@ -89,6 +95,8 @@ const spec = {
       get: {
         tags: ['Reputation'],
         summary: 'Read cross-chain reputation for any subject (free, no auth)',
+        operationId: 'getReputation',
+        security: [],
         'x-guidance':
           "Read-only reputation aggregator. Queries SAS attestations on Solana and ERC-8004 Reputation Registry feedback on Tempo for a given subject. No payment required — reputation data is public by design. Accepts either a Solana base58 pubkey (44 chars) or a numeric ERC-8004 Tempo agent ID. Returns unified summary (totalPayments, totalValueMoved, agentFeedbackScore, workerAttestationCount) plus per-chain detail. For write-side reputation, see /api/mpp/* endpoints — every settled payment or escrow automatically writes a reputation artifact.",
         parameters: [
@@ -154,10 +162,23 @@ const spec = {
             description: 'Optional token address filter (defaults to pathUSD)',
           },
         ],
-        'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.01',
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — use the `token` query parameter to filter.',
+                properties: {
+                  token: { type: 'string', description: 'Optional token address' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         responses: {
           '200': {
@@ -197,9 +218,8 @@ const spec = {
         operationId: 'executePayroll',
         tags: ['Payroll'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '1.00',
+          price: { mode: 'fixed', currency: 'USD', amount: '1.000000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -254,9 +274,8 @@ const spec = {
         operationId: 'claimSalaryAdvance',
         tags: ['Employee'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.50',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.500000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -309,9 +328,8 @@ const spec = {
         operationId: 'checkCompliance',
         tags: ['Compliance'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.05',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -367,10 +385,24 @@ const spec = {
         description: 'Server-Sent Events stream of an employee\'s real-time accruing salary balance, ticking every second.',
         operationId: 'streamEmployeeBalance',
         tags: ['Employee'],
-        'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.001',
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — use `employeeId` and `streamId` query parameters.',
+                properties: {
+                  employeeId: { type: 'string', description: 'Employee UUID' },
+                  streamId: { type: 'string', description: 'Stream contract ID' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.001000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         parameters: [
           {
@@ -427,10 +459,24 @@ const spec = {
         description: 'Retrieves the payslip for an employee in a specific payroll run.',
         operationId: 'getPayslip',
         tags: ['Payroll'],
-        'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.02',
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — runId and employeeId come from the URL path.',
+                properties: {
+                  runId: { type: 'string', description: 'Payroll run UUID (path)' },
+                  employeeId: { type: 'string', description: 'Employee UUID (path)' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         parameters: [
           {
@@ -495,9 +541,8 @@ const spec = {
         operationId: 'decodeMemo',
         tags: ['Agent'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.01',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -551,10 +596,25 @@ const spec = {
         description: 'Returns paginated payment history for an employee.',
         operationId: 'getEmployeeHistory',
         tags: ['Employee'],
-        'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.05',
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — `id` is a path parameter; `limit` and `cursor` are query parameters.',
+                properties: {
+                  id: { type: 'string', description: 'Employee UUID (path)' },
+                  limit: { type: 'integer', description: 'Optional page size' },
+                  cursor: { type: 'string', description: 'Optional pagination cursor' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         parameters: [
           {
@@ -620,9 +680,8 @@ const spec = {
         operationId: 'bridgeOfframp',
         tags: ['Bridge'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.25',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.250000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -684,9 +743,8 @@ const spec = {
         operationId: 'optimizeTreasury',
         tags: ['Treasury'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.10',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.100000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -765,10 +823,23 @@ const spec = {
         description: 'Returns the list of compliance-cleared wallet addresses for an employer, suitable for marketplace use.',
         operationId: 'getComplianceList',
         tags: ['Compliance'],
-        'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.50',
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — employerId is a path parameter.',
+                properties: {
+                  employerId: { type: 'string', description: 'Employer UUID (path)' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.500000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         parameters: [
           {
@@ -841,7 +912,10 @@ const spec = {
             description: 'Pre-registered agent identity authorized for this employer.',
           },
         ],
-        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.10' },
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.100000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
+        },
         'x-guidance': 'Post an escrow that will be auto-validated by a Claude judge against your rubric_prompt. Approved verdicts release funds to worker_wallet_address via a permissionless Solana instruction; rejected verdicts or expiry refund to the employer. Funds custodied during the escrow period by the remlo_escrow Anchor program at 2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA (Solana devnet). Settled escrows write a SAS reputation attestation (remlo-escrow-settled) to the worker subject; rejected or expired refunds write remlo-escrow-refunded to the requester. Both attestations are written asynchronously by /api/cron/process-reputation-writes. Expiry duration is reputation-scaled: unknown workers (no SAS attestations) receive the full requested duration; trusted workers with 20+ attestations receive a shorter expiry floor. Check the response applied_expiry_hours and worker_reputation_tier fields to see the duration actually used.',
         requestBody: {
           required: true,
@@ -906,7 +980,10 @@ const spec = {
             description: 'Must equal worker_agent_identifier of the target escrow.',
           },
         ],
-        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.02' },
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
+        },
         'x-guidance': 'Submit a deliverable URI. Remlo fetches the content (10s timeout, 100KB max), computes SHA-256, records the hash on-chain, and invokes the Claude judge against the rubric. Settlement or refund broadcasts automatically within ~30s of validator decision. The caller polls /api/mpp/escrow/{id}/status to observe the final state.',
         requestBody: {
           required: true,
@@ -947,7 +1024,10 @@ const spec = {
             description: 'Must equal worker_agent_identifier of the target escrow.',
           },
         ],
-        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.02' },
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
+        },
         'x-guidance': 'Build a submit_deliverable instruction via lib/escrow-client.ts::buildSubmitDeliverableInstruction, wrap in a Transaction, sign client-side with the worker keypair, base64-encode the serialized tx, submit here. The uri_hash in the signed instruction must match sha256(deliverable_uri) exactly — the server verifies this before broadcasting. Fee payer on the signed tx MUST be the worker pubkey.',
         requestBody: {
           required: true,
@@ -982,7 +1062,24 @@ const spec = {
         description: 'Public read access to any x402-paying caller. Returns public-facing fields only — no validator model, no internal hashes, no employer scope.',
         operationId: 'escrowStatus',
         tags: ['Agent'],
-        'x-payment-info': { protocols: ['mpp'], pricingMode: 'fixed', price: '0.01' },
+requestBody: {
+          required: false,
+          content: {
+            'application/json': {
+              schema: {
+                type: 'object',
+                description: 'No body — escrow id is a path parameter.',
+                properties: {
+                  id: { type: 'string', description: 'Escrow UUID (path)' },
+                },
+              },
+            },
+          },
+        },
+                'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
+        },
         'x-guidance': 'Check escrow state and any on-chain signatures. No X-Agent-Identifier required — this is a public read path for any caller observing the escrow.',
         parameters: [
           { name: 'id', in: 'path', required: true, schema: { type: 'string' }, description: 'Escrow UUID' },
@@ -1033,9 +1130,8 @@ const spec = {
           },
         ],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.05',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -1097,9 +1193,8 @@ const spec = {
         operationId: 'agentSessionTreasury',
         tags: ['Agent'],
         'x-payment-info': {
-          protocols: ['mpp'],
-          pricingMode: 'fixed',
-          price: '0.02',
+          price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
+          protocols: [{ x402: {} }, { mpp: { method: '', intent: '', currency: '' } }],
         },
         requestBody: {
           required: true,
@@ -1167,10 +1262,15 @@ const spec = {
     '/api/x402/payroll/execute': {
       post: {
         summary: 'Execute an agent-planned payroll decision on-chain',
-        description: 'Authenticated via Privy JWT (not yet x402-gated — see TODO comment in route source). Broadcasts any Tempo payments via REMLO_AGENT_PRIVATE_KEY (legacy transitional path) and any Solana payments via a Privy server wallet with policy enforcement. Mixed-chain decisions return both tempo_tx_hash and solana_signatures. Per-item policy rejections are surfaced in solana_policy_rejections without failing the entire run — the affected payment_items rows are marked status=policy_rejected with the rejection reason.',
+        description: 'Authenticated via Privy JWT (identity-only, zero-dollar auth). Broadcasts any Tempo payments via REMLO_AGENT_PRIVATE_KEY (legacy transitional path) and any Solana payments via a Privy server wallet with policy enforcement. Mixed-chain decisions return both tempo_tx_hash and solana_signatures. Per-item policy rejections are surfaced in solana_policy_rejections without failing the entire run — the affected payment_items rows are marked status=policy_rejected with the rejection reason.',
         operationId: 'x402ExecutePayroll',
         tags: ['Agent'],
         'x-guidance': 'Solana broadcasts are policy-gated through Privy server wallets. Transactions whose amounts exceed the per-tx cap or whose instructions target non-whitelisted programs return a 200 with payment_items[].status = \'policy_rejected\' rather than failing the entire run. Check solana_policy_rejections in the response.',
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.000000' },
+          protocols: [{ x402: {} }],
+          authMode: 'identity',
+        },
         requestBody: {
           required: true,
           content: {
