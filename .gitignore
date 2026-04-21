@@ -72,3 +72,4 @@ solana/Cargo.lock
 # macOS
 .DS_Store
 desktop.ini
+.git.backup-pre-filterrepo/
