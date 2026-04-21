@@ -99,7 +99,7 @@ const spec = {
         security: [],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.000000' },
-          protocols: [],
+          protocols: [{ x402: {} }],
           authMode: 'none',
         },
         'x-guidance':
@@ -174,7 +174,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — use the `token` query parameter to filter.',
-                properties: {
+                required: [],
+              properties: {
                   token: { type: 'string', description: 'Optional token address' },
                 },
               },
@@ -397,7 +398,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — use `employeeId` and `streamId` query parameters.',
-                properties: {
+                required: ['employeeId'],
+              properties: {
                   employeeId: { type: 'string', description: 'Employee UUID' },
                   streamId: { type: 'string', description: 'Stream contract ID' },
                 },
@@ -471,7 +473,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — runId and employeeId come from the URL path.',
-                properties: {
+                required: ['runId', 'employeeId'],
+              properties: {
                   runId: { type: 'string', description: 'Payroll run UUID (path)' },
                   employeeId: { type: 'string', description: 'Employee UUID (path)' },
                 },
@@ -608,7 +611,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — `id` is a path parameter; `limit` and `cursor` are query parameters.',
-                properties: {
+                required: ['id'],
+              properties: {
                   id: { type: 'string', description: 'Employee UUID (path)' },
                   limit: { type: 'integer', description: 'Optional page size' },
                   cursor: { type: 'string', description: 'Optional pagination cursor' },
@@ -835,7 +839,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — employerId is a path parameter.',
-                properties: {
+                required: ['employerId'],
+              properties: {
                   employerId: { type: 'string', description: 'Employer UUID (path)' },
                 },
               },
@@ -1074,7 +1079,8 @@ requestBody: {
               schema: {
                 type: 'object',
                 description: 'No body — escrow id is a path parameter.',
-                properties: {
+                required: ['id'],
+              properties: {
                   id: { type: 'string', description: 'Escrow UUID (path)' },
                 },
               },
