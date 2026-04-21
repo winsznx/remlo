@@ -14,11 +14,11 @@ const spec = {
     ownershipProofs: [
       {
         type: 'dns',
-        value: 'remlo.xyz',
+        value: 'www.remlo.xyz',
       },
     ],
   },
-  servers: [{ url: 'https://remlo.xyz' }],
+  servers: [{ url: 'https://www.remlo.xyz' }],
   tags: [
     { name: 'Treasury', description: 'Yield rates, optimization, and treasury management' },
     { name: 'Payroll', description: 'Payroll execution and payslip retrieval' },
@@ -97,6 +97,11 @@ const spec = {
         summary: 'Read cross-chain reputation for any subject (free, no auth)',
         operationId: 'getReputation',
         security: [],
+        'x-payment-info': {
+          price: { mode: 'fixed', currency: 'USD', amount: '0.000000' },
+          protocols: [],
+          authMode: 'none',
+        },
         'x-guidance':
           "Read-only reputation aggregator. Queries SAS attestations on Solana and ERC-8004 Reputation Registry feedback on Tempo for a given subject. No payment required — reputation data is public by design. Accepts either a Solana base58 pubkey (44 chars) or a numeric ERC-8004 Tempo agent ID. Returns unified summary (totalPayments, totalValueMoved, agentFeedbackScore, workerAttestationCount) plus per-chain detail. For write-side reputation, see /api/mpp/* endpoints — every settled payment or escrow automatically writes a reputation artifact.",
         parameters: [
@@ -163,7 +168,7 @@ const spec = {
           },
         ],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {
@@ -386,7 +391,7 @@ requestBody: {
         operationId: 'streamEmployeeBalance',
         tags: ['Employee'],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {
@@ -460,7 +465,7 @@ requestBody: {
         operationId: 'getPayslip',
         tags: ['Payroll'],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {
@@ -597,7 +602,7 @@ requestBody: {
         operationId: 'getEmployeeHistory',
         tags: ['Employee'],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {
@@ -824,7 +829,7 @@ requestBody: {
         operationId: 'getComplianceList',
         tags: ['Compliance'],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {
@@ -1063,7 +1068,7 @@ requestBody: {
         operationId: 'escrowStatus',
         tags: ['Agent'],
 requestBody: {
-          required: false,
+          required: true,
           content: {
             'application/json': {
               schema: {

@@ -8,7 +8,7 @@ import { stripe } from 'mppx/stripe/server'
  * Import `mppxMultiRail` instead of `mppx` in those specific route handlers.
  */
 export const mppxMultiRail = Mppx.create({
-  realm: 'remlo.xyz',
+  realm: 'www.remlo.xyz',
   methods: [
     tempo({
       chainId: 4217, // Tempo mainnet
