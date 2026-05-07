@@ -8,6 +8,8 @@ export type NotificationKind =
   | 'council_decision'
   | 'kyc_update'
   | 'reputation_write_failed'
+  | 'agent_spike_detected'
+  | 'agent_paused'
 
 export type NotificationSeverity = 'info' | 'success' | 'warning' | 'error'
 

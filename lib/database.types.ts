@@ -515,6 +515,13 @@ export interface Database {
           erc8004_agent_id: string | null
           erc8004_owner_address: string | null
           solana_pubkey: string | null
+          velocity_per_minute: number
+          allowed_recipients: string[] | null
+          paused_at: string | null
+          pause_reason: string | null
+          per_tx_cap_original_usd: number | null
+          cap_halved_at: string | null
+          cap_halved_reason: string | null
         }
         Insert: {
           id?: string
@@ -532,6 +539,13 @@ export interface Database {
           erc8004_agent_id?: string | null
           erc8004_owner_address?: string | null
           solana_pubkey?: string | null
+          velocity_per_minute?: number
+          allowed_recipients?: string[] | null
+          paused_at?: string | null
+          pause_reason?: string | null
+          per_tx_cap_original_usd?: number | null
+          cap_halved_at?: string | null
+          cap_halved_reason?: string | null
         }
         Update: {
           id?: string
@@ -549,6 +563,13 @@ export interface Database {
           erc8004_agent_id?: string | null
           erc8004_owner_address?: string | null
           solana_pubkey?: string | null
+          velocity_per_minute?: number
+          allowed_recipients?: string[] | null
+          paused_at?: string | null
+          pause_reason?: string | null
+          per_tx_cap_original_usd?: number | null
+          cap_halved_at?: string | null
+          cap_halved_reason?: string | null
         }
         Relationships: []
       }

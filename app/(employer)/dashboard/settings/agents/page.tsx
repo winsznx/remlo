@@ -2,7 +2,7 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Bot, Plus, Trash2, Shield, Loader2, Search, BadgeCheck, ExternalLink } from 'lucide-react'
+import { Bot, Plus, Trash2, Shield, Loader2, Search, BadgeCheck, ExternalLink, ShieldAlert, Pause, Play, AlertTriangle } from 'lucide-react'
 import { toast } from 'sonner'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { Button } from '@/components/ui/button'
@@ -25,6 +25,13 @@ interface AgentAuthorization {
   solana_pubkey?: string | null
   erc8004_agent_id?: string | null
   erc8004_owner_address?: string | null
+  velocity_per_minute?: number
+  allowed_recipients?: string[] | null
+  paused_at?: string | null
+  pause_reason?: string | null
+  per_tx_cap_original_usd?: number | null
+  cap_halved_at?: string | null
+  cap_halved_reason?: string | null
 }
 
 interface AgentReputation {
@@ -183,6 +190,65 @@ export default function AgentsSettingsPage(): React.ReactElement {
       toast.error(err instanceof Error ? err.message : 'Failed to revoke')
     },
   })
+
+  // Emergency kill switch — gate 1 of the six-gate security model. Pauses
+  // every active authorization in one call. Subsequent /api/mpp/agent/pay
+  // requests for any of these agents return 403 AGENT_PAUSED until the
+  // employer hits the resume button. See docs/protocol/security.
+  const pauseAll = useMutation({
+    mutationFn: async (reason: string | null) => {
+      return fetchJson(`/api/employers/${employerId}/agents/pause-all`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(reason ? { reason } : {}),
+      })
+    },
+    onSuccess: (data: unknown) => {
+      const count =
+        typeof data === 'object' && data !== null && 'paused_count' in data
+          ? (data as { paused_count: number }).paused_count
+          : 0
+      toast.success(
+        count > 0
+          ? `Paused ${count} agent${count === 1 ? '' : 's'}. All payments blocked until resumed.`
+          : 'No agents needed pausing — all already paused.',
+      )
+      void queryClient.invalidateQueries({ queryKey })
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to pause agents')
+    },
+  })
+
+  const resumeAll = useMutation({
+    mutationFn: async () => {
+      return fetchJson(`/api/employers/${employerId}/agents/pause-all`, {
+        method: 'DELETE',
+      })
+    },
+    onSuccess: (data: unknown) => {
+      const count =
+        typeof data === 'object' && data !== null && 'resumed_count' in data
+          ? (data as { resumed_count: number }).resumed_count
+          : 0
+      toast.success(
+        count > 0
+          ? `Resumed ${count} agent${count === 1 ? '' : 's'}.`
+          : 'No paused agents to resume.',
+      )
+      void queryClient.invalidateQueries({ queryKey })
+    },
+    onError: (err: unknown) => {
+      toast.error(err instanceof Error ? err.message : 'Failed to resume agents')
+    },
+  })
+
+  const pausedCount = (authorizations ?? []).filter(
+    (a) => a.active && a.paused_at,
+  ).length
+  const activeUnpausedCount = (authorizations ?? []).filter(
+    (a) => a.active && !a.paused_at,
+  ).length
 
   const isErc8004Valid =
     identityKind === 'erc8004_tempo' && /^\d+$/.test(form.erc8004_agent_id.trim())
@@ -345,10 +411,78 @@ export default function AgentsSettingsPage(): React.ReactElement {
       </div>
 
       <div className="rounded-2xl border border-[var(--border-default)] bg-[var(--bg-surface)] overflow-hidden">
-        <div className="flex items-center gap-2 px-5 py-4 border-b border-[var(--border-default)]">
-          <Shield className="h-4 w-4 text-[var(--text-muted)]" />
-          <h3 className="text-sm font-semibold text-[var(--text-primary)]">Active authorizations</h3>
+        <div className="flex items-center justify-between gap-3 px-5 py-4 border-b border-[var(--border-default)]">
+          <div className="flex items-center gap-2 min-w-0">
+            <Shield className="h-4 w-4 text-[var(--text-muted)] flex-shrink-0" />
+            <h3 className="text-sm font-semibold text-[var(--text-primary)]">Active authorizations</h3>
+            {pausedCount > 0 && (
+              <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-medium bg-[var(--status-warning)]/10 text-[var(--status-warning)]">
+                {pausedCount} paused
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2 flex-shrink-0">
+            {pausedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => resumeAll.mutate()}
+                disabled={resumeAll.isPending}
+              >
+                {resumeAll.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <Play className="h-3.5 w-3.5" />
+                )}
+                Resume all
+              </Button>
+            )}
+            {activeUnpausedCount > 0 && (
+              <Button
+                variant="outline"
+                size="sm"
+                onClick={() => {
+                  if (
+                    !window.confirm(
+                      `Emergency pause ${activeUnpausedCount} agent${activeUnpausedCount === 1 ? '' : 's'}? All payments will be blocked until you resume.`,
+                    )
+                  ) {
+                    return
+                  }
+                  const reason = window.prompt('Optional pause reason (shown in audit log):') ?? null
+                  pauseAll.mutate(reason && reason.trim().length > 0 ? reason.trim() : null)
+                }}
+                disabled={pauseAll.isPending}
+                className="border-[var(--status-error)]/30 text-[var(--status-error)] hover:bg-[var(--status-error)]/5"
+              >
+                {pauseAll.isPending ? (
+                  <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                ) : (
+                  <ShieldAlert className="h-3.5 w-3.5" />
+                )}
+                Emergency pause all
+              </Button>
+            )}
+          </div>
         </div>
+
+        {pausedCount > 0 && (
+          <div className="px-5 py-3 bg-[var(--status-warning)]/5 border-b border-[var(--status-warning)]/20">
+            <div className="flex items-start gap-2">
+              <Pause className="h-4 w-4 text-[var(--status-warning)] flex-shrink-0 mt-0.5" />
+              <div className="text-xs text-[var(--text-primary)]">
+                <p className="font-medium">
+                  {pausedCount} agent{pausedCount === 1 ? ' is' : 's are'} currently paused.
+                </p>
+                <p className="text-[var(--text-muted)] mt-0.5">
+                  Calls to <code className="font-mono">/api/mpp/agent/pay</code> for paused agents return
+                  403 immediately. Hit Resume all when the threat has cleared, or revoke individual agents
+                  permanently.
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
 
         {isLoading ? (
           <div className="p-6 space-y-3 animate-pulse">
@@ -388,6 +522,18 @@ export default function AgentsSettingsPage(): React.ReactElement {
                         >
                           {auth.active ? 'Active' : 'Revoked'}
                         </span>
+                        {auth.paused_at && (
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-medium bg-[var(--status-warning)]/10 text-[var(--status-warning)] inline-flex items-center gap-1">
+                            <Pause className="h-2.5 w-2.5" />
+                            Paused
+                          </span>
+                        )}
+                        {auth.cap_halved_at && (
+                          <span className="text-[10px] uppercase tracking-wider px-1.5 py-0.5 rounded-full font-medium bg-[var(--status-error)]/10 text-[var(--status-error)] inline-flex items-center gap-1">
+                            <AlertTriangle className="h-2.5 w-2.5" />
+                            Cap halved
+                          </span>
+                        )}
                       </div>
                       <div className="flex items-center gap-2 flex-wrap">
                         <span
@@ -417,11 +563,32 @@ export default function AgentsSettingsPage(): React.ReactElement {
                           Owner: {auth.erc8004_owner_address}
                         </p>
                       )}
-                      <div className="flex gap-4 text-xs text-[var(--text-muted)]">
-                        <span>Per-tx: ${Number(auth.per_tx_cap_usd).toFixed(2)}</span>
+                      <div className="flex gap-4 text-xs text-[var(--text-muted)] flex-wrap">
+                        <span>
+                          Per-tx: ${Number(auth.per_tx_cap_usd).toFixed(2)}
+                          {auth.cap_halved_at && auth.per_tx_cap_original_usd && (
+                            <span className="ml-1 line-through opacity-60">
+                              ${Number(auth.per_tx_cap_original_usd).toFixed(2)}
+                            </span>
+                          )}
+                        </span>
                         <span>Per-day: ${Number(auth.per_day_cap_usd).toFixed(2)}</span>
+                        <span>Velocity: {auth.velocity_per_minute ?? 5}/min</span>
+                        {auth.allowed_recipients && auth.allowed_recipients.length > 0 && (
+                          <span>Allowlist: {auth.allowed_recipients.length} address(es)</span>
+                        )}
                         <span>Created {new Date(auth.created_at).toLocaleDateString()}</span>
                       </div>
+                      {auth.paused_at && auth.pause_reason && (
+                        <p className="text-xs text-[var(--status-warning)] mt-1">
+                          Pause reason: {auth.pause_reason}
+                        </p>
+                      )}
+                      {auth.cap_halved_at && auth.cap_halved_reason && (
+                        <p className="text-xs text-[var(--status-error)] mt-1">
+                          {auth.cap_halved_reason}
+                        </p>
+                      )}
                     </div>
                     {auth.active && (
                       <Button

@@ -1,0 +1,134 @@
+---
+title: "Security model"
+description: "Six-gate defence-in-depth for every agent payment on Remlo. How caps, identity, reputation, sanctions, anomaly detection, and emergency pause stack to prevent prompt-injection drains."
+---
+
+Agent payment infrastructure that ignores prompt injection and encoding attacks loses money. The May 2026 Bankrbot incident (3B tokens drained on Base via a single malicious instruction) is one example of a recurring pattern: an autonomous agent reads attacker-supplied text, an obfuscated instruction flips its decision, funds move at machine speed, no human in the loop.
+
+Remlo's response is six independent gates. Every paid call passes through all of them. A compromise of any one gate hits the next five.
+
+## The six gates
+
+| # | Gate | What it does | Where it's enforced |
+|---|------|--------------|---------------------|
+| 1 | **Emergency pause** | Employer-controlled kill switch. One POST sets `paused_at` on every authorization. | `employer_agent_authorizations.paused_at`, checked first in `/api/mpp/agent/pay` |
+| 2 | **Per-transaction cap** | Hard ceiling on a single payment. | `per_tx_cap_usd` on the authorization row |
+| 3 | **Per-day cap** | Rolling 24-hour spend ceiling. | `per_day_cap_usd` + `agent_pay_calls` summed in the last 24h |
+| 4 | **Velocity limit** | Calls per 60-second window. Stops drain-in-30-seconds attacks that per-day caps don't catch. | `velocity_per_minute` (default 5) |
+| 5 | **Recipient allowlist** | Optional pinning to a fixed set of destinations. | `allowed_recipients` on the authorization row |
+| 6 | **Anomaly detection** | Payment >10× the agent's 7-day rolling median triggers automatic cap halving + employer notification. | `agent_pay_calls` median + `cap_halved_at` |
+
+Plus three identity/integrity gates that run alongside the six:
+
+- **Identity proof**: Tier 1 HMAC, Tier 2 ECDSA (ERC-8004), or Tier 2 Ed25519 (SAS Solana). 5-minute timestamp replay window.
+- **Sanctions screening**: TIP-403 on-chain registry check via `/api/mpp/compliance/check`.
+- **On-chain reputation**: ERC-8004 ReputationRegistry + SAS attestations on every settled payment. A compromised agent's reputation degrades; cleared agents are eligible for higher caps.
+
+## Encoding sanitization for LLM-judged paths
+
+When an LLM judges an escrow deliverable, the deliverable text is potentially attacker-controlled. Common attack patterns hide instructions in encodings the model's safety filter doesn't catch in the wrapped form: morse code, base64, ROT13, leetspeak, hidden zero-width unicode, right-to-left override marks.
+
+The [llm-input-sanitizer](https://github.com/remlo-xyz/remlo/blob/main/lib/llm-input-sanitizer.ts) decodes the most common encodings before the deliverable reaches Claude. If a decoded form contains verdict-flipping triggers (`approve`, `reject`, `transfer`, `bypass`, etc.) that the original didn't, the system prompt is augmented with a security note instructing the model to treat embedded instructions as data, not commands. The incident is logged for human review.
+
+Trigger words checked:
+
+- Verdict flips: approve, accept, release, settle, reject, refund, cancel, overturn, override
+- Payment instructions: transfer, send, withdraw, pay, wire, forward
+- Permission and identity: admin, sudo, root, bypass, disregard, ignore
+- Exfil markers: private key, seed phrase, mnemonic, secret
+
+This is gate 5 of the six-gate model applied at the LLM-input layer specifically.
+
+## What an employer configures
+
+When you create an agent authorization at `/dashboard/settings/agents`, the gates above are wired with sensible defaults:
+
+- `per_tx_cap_usd`: required at create time
+- `per_day_cap_usd`: required at create time
+- `velocity_per_minute`: defaults to 5 (raise for high-throughput agents, lower for treasury-touching ones)
+- `allowed_recipients`: defaults to null (no allowlist; cap-only behavior). Set to pin recipients.
+- `paused_at`: null. The kill switch sets this.
+- `per_tx_cap_original_usd`: null. Anomaly detection sets this when it halves the cap.
+
+## Emergency pause API
+
+Pause every agent for an employer in one call:
+
+```bash
+curl -X POST https://www.remlo.xyz/api/employers/{employer_id}/agents/pause-all \
+  -H "Authorization: Bearer $PRIVY_JWT" \
+  -H "Content-Type: application/json" \
+  -d '{"reason": "Suspected key compromise"}'
+```
+
+Response:
+
+```json
+{
+  "success": true,
+  "paused_count": 3,
+  "paused_at": "2026-05-07T14:23:00.000Z",
+  "pause_reason": "Suspected key compromise",
+  "paused_authorizations": [
+    {"id": "...", "label": "treasury-bot"},
+    {"id": "...", "label": "payroll-runner"},
+    {"id": "...", "label": "compliance-checker"}
+  ]
+}
+```
+
+Resume:
+
+```bash
+curl -X DELETE https://www.remlo.xyz/api/employers/{employer_id}/agents/pause-all \
+  -H "Authorization: Bearer $PRIVY_JWT"
+```
+
+Auth: only the human Privy owner of the employer can pause or resume. Agents (HMAC / Tier 2) cannot pause themselves or each other — kill switches must be human-controlled by definition.
+
+## Anomaly detection (gate 6)
+
+After every successful `agent_pay`, the system computes the rolling 7-day median of payment amounts under that authorization. If the new payment is more than 10× the median:
+
+1. `per_tx_cap_usd` is halved. The original is preserved in `per_tx_cap_original_usd` so the employer can restore it.
+2. `cap_halved_at` is set. Idempotent — the cap halves only once per anomaly, not on every subsequent payment until the employer ack's.
+3. A `agent_spike_detected` notification fires to the employer dashboard with `severity: warning`, linking to `/dashboard/settings/agents` for review.
+
+The 10× threshold is intentionally conservative. False positives cost one notification + a temporarily lower cap. False negatives cost a drain.
+
+Agents with fewer than 5 historical payments skip this gate — not enough signal to define a median. They still respect every other gate.
+
+## What we don't do (yet)
+
+These are recommended for production employers but not enforced in our protocol:
+
+- **Squads Protocol v4 multisig** as the underlying treasury — formally verified, secures billions on Solana, with on-protocol spending limits, time-locks, and sub-accounts. Recommended for high-value employer treasuries. Integration is post-hackathon work.
+- **Turnkey policy engine** for scoped agent wallets — production-grade, used by Phantom and others. Defence-in-depth on top of our caps + velocity model.
+- **Hypernative or Range Security** monitoring for real-time threat detection on treasury contracts.
+
+## What we deliberately don't claim
+
+- We don't claim a system is "unhackable". The six-gate model lowers the per-incident risk by a large margin, but no defence is complete. Employers should treat agent authorizations like production credentials: rotate on suspicion, audit on schedule, prefer narrower scopes.
+- We don't run our own LLM. The escrow judge calls Anthropic's API. KV cache compression and other inference-side defences are the model provider's domain.
+- We don't ship hosted agent wallets. Custody stays with the employer (Privy, or for advanced setups Squads / Turnkey). Remlo holds no agent keys.
+
+## Defence comparison
+
+| Concern | Remlo (six-gate) | Pure x402 endpoint | Vault with cap only |
+|---|---|---|---|
+| Per-call cap exceeded | ✓ rejected (gate 2) | ✗ no cap | ✓ rejected |
+| Per-day total exceeded | ✓ rejected (gate 3) | ✗ no tracking | partial |
+| Drain-in-30-seconds | ✓ rejected (gate 4) | ✗ | ✗ |
+| Wrong recipient (typo'd address) | ✓ rejected if allowlist set (gate 5) | ✗ | ✗ |
+| Spend spike from normal pattern | ✓ flagged + halved (gate 6) | ✗ | ✗ |
+| Operator wants to halt all agents instantly | ✓ one POST (gate 1) | ✗ revoke each by hand | partial |
+| Prompt injection in deliverable | ✓ sanitizer + warning to LLM | n/a | n/a |
+| Identity proof for principal-bound calls | ✓ HMAC / ECDSA / Ed25519 | partial | ✗ |
+| On-chain reputation feedback | ✓ ERC-8004 + SAS | ✗ | ✗ |
+
+## See also
+
+- [Authentication](/docs/mpp-api/authentication) — how Tier 1 / Tier 2 identity headers are checked.
+- [Agent registration](/docs/mpp-api/agent-registration) — ERC-8004 and SAS Solana on-chain identity proofs.
+- [Reputation](/docs/protocol/reputation) — how reputation accrues and what slashing looks like.
+- [Council](/docs/protocol/council) — multi-validator consensus for high-value escrow.

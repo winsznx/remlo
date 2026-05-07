@@ -22,8 +22,10 @@ You need:
 - The agent authorized as a signer on the wallet (see [Authorize the Agent](https://docs.crossmint.com/agents/payment-methods/stablecoin-wallets/authorize-agent))
 
 ```bash
-npm i @crossmint/wallets-sdk @x402/core @x402/evm viem
+npm i @crossmint/wallets-sdk @x402/core @x402/evm viem@^2.22
 ```
+
+`viem@^2.22` is the minimum version that exports `tempoModerato` from `viem/chains`. Older versions don't include the chain definition.
 
 For MPP on Tempo, also install:
 
@@ -112,7 +114,7 @@ import {
   MethodNotFoundRpcError,
   type EIP1193RequestFn,
 } from "viem"
-import { tempoDevnet } from "viem/chains"
+import { tempoModerato } from "viem/chains"
 import { Mppx, tempo } from "mppx/client"
 
 const crossmint = createCrossmint({
@@ -154,7 +156,7 @@ const request: EIP1193RequestFn = async ({ method, params }) => {
 
 const walletClient = createWalletClient({
   account: evmWallet.address as `0x${string}`,
-  chain: tempoDevnet,
+  chain: tempoModerato,
   transport: custom({ request }),
 })
 

@@ -42,7 +42,8 @@
               "docs/protocol/escrow",
               "docs/protocol/reputation",
               "docs/protocol/council",
-              "docs/protocol/agents"
+              "docs/protocol/agents",
+              "docs/protocol/security"
             ]
           },
           {

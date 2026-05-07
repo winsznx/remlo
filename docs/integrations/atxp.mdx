@@ -29,7 +29,7 @@ Top up later with `npx atxp fund` (returns deposit addresses + a shareable payme
 
 ## Calling Remlo from an ATXP agent
 
-For Remlo's free read endpoints (directory, profile, reputation), no payment is needed — call them directly with `fetch`. For paid endpoints, wrap your fetch with the x402 adapter:
+The cleanest path is to connect your ATXP client to Remlo's MCP server. Wrap the client's fetch with `@atxp/x402` so x402 payment challenges are handled transparently.
 
 ```typescript
 import { atxpClient, ATXPAccount } from "@atxp/client"
@@ -37,39 +37,41 @@ import { wrapWithX402 } from "@atxp/x402"
 
 const account = new ATXPAccount(process.env.ATXP_CONNECTION!)
 
-const paidFetch = wrapWithX402({ account })
+const client = await atxpClient({
+  mcpServer: "https://www.remlo.xyz/api/mcp",
+  account,
+  fetchFn: wrapWithX402({
+    account,
+    mcpServer: "https://www.remlo.xyz/api/mcp",
+  }),
+})
 
-const res = await paidFetch(
-  "https://www.remlo.xyz/api/mpp/treasury/yield-rates",
-  { method: "GET" },
-)
-
-const body = await res.json()
+const result = await client.callTool({
+  name: "remlo_treasury_yield_rates",
+  arguments: {},
+})
 ```
 
-`wrapWithX402` reads the 402 response, signs a USDC payment proof with the underlying account, and retries the request transparently. Your agent code never touches the protocol layer.
+`wrapWithX402` reads any 402 response, signs a USDC payment proof with the ATXP-issued wallet, and retries transparently. Your agent code never touches the protocol layer. Both required fields (`account` and `mcpServer`) come straight from the ATXP client config.
 
-For paid endpoints that require a principal (Tier 1 HMAC or Tier 2 ECDSA / Ed25519), include those headers on the original request — they pass through the wrapper unchanged:
+For tools that mutate employer state (`remlo_agent_pay`, `remlo_payroll_execute`, etc.), pass the Tier 1 / Tier 2 identity headers in the tool arguments via the underlying transport headers:
 
 ```typescript
-const res = await paidFetch(
-  "https://www.remlo.xyz/api/mpp/agent/pay",
-  {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Agent-Identifier": "erc8004:tempo:42",
-      "X-Agent-Timestamp": String(Date.now()),
-      "X-Agent-Signature": "0x...",
-    },
-    body: JSON.stringify({ /* charge body */ }),
+const result = await client.callTool({
+  name: "remlo_agent_pay",
+  arguments: { employer_id: "...", recipient_wallet: "0x...", amount: "10.0" },
+}, {
+  headers: {
+    "X-Agent-Identifier": "erc8004:tempo:42",
+    "X-Agent-Timestamp": String(Date.now()),
+    "X-Agent-Signature": "0x...",
   },
-)
+})
 ```
 
 ## Bring your own chain account
 
-If you already have a Base or Solana wallet, you can pay Remlo through ATXP without using their hosted account:
+If you already have a Base or Solana wallet you'd rather sign with, swap the account type. The `@atxp/x402` wrapper accepts any account that satisfies the `Account` interface:
 
 ```typescript
 import { atxpClient } from "@atxp/client"
@@ -81,7 +83,11 @@ const account = new BaseAccount(
   process.env.BASE_PRIVATE_KEY!,
 )
 
-const paidFetch = wrapWithX402({ account })
+const client = await atxpClient({
+  mcpServer: "https://www.remlo.xyz/api/mcp",
+  account,
+  fetchFn: wrapWithX402({ account, mcpServer: "https://www.remlo.xyz/api/mcp" }),
+})
 ```
 
 Same `paidFetch` shape, different account type. Solana, Polygon, and Worldchain follow the same pattern with their respective `@atxp/<chain>` packages.
