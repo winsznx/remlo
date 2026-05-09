@@ -29,7 +29,7 @@ import {
   ALL_SPECIALISTS,
   type SpecialistConfig,
 } from '@/lib/agents/specialists'
-import type { Database } from '@/lib/database.types'
+import type { Database, Json } from '@/lib/database.types'
 
 export type TreasuryDecisionRow =
   Database['public']['Tables']['treasury_decisions']['Row']
@@ -77,7 +77,7 @@ export async function proposeTreasuryAction(
   const insert: TreasuryDecisionInsert = {
     employer_id: params.employerId,
     action_type: params.actionType,
-    action_payload: params.actionPayload,
+    action_payload: params.actionPayload as Json,
     rationale: params.rationale,
     status: 'pending_council',
     proposer_user_id: params.proposerUserId ?? null,
@@ -136,9 +136,17 @@ export async function runCouncilValidation(decisionId: string): Promise<void> {
   }
 
   // Run all three specialists in parallel. Each returns an independent verdict.
+  // action_payload comes back from the DB as `Json`; the specialists expect a
+  // dict-shaped payload. Object-typed action payloads are an invariant of how
+  // we insert them (proposeTreasuryAction takes `Record<string, unknown>`),
+  // so this cast is safe.
+  const payloadAsRecord =
+    decision.action_payload && typeof decision.action_payload === 'object' && !Array.isArray(decision.action_payload)
+      ? (decision.action_payload as Record<string, unknown>)
+      : {}
   const results = await Promise.all(
     ALL_SPECIALISTS.map((spec) =>
-      runSpecialist(spec, decision.action_type, decision.action_payload, decision.rationale),
+      runSpecialist(spec, decision.action_type, payloadAsRecord, decision.rationale),
     ),
   )
 
@@ -433,6 +441,9 @@ async function dispatchAction(
         signature: null,
         message: `Payroll run ${payload.payroll_run_id} marked council-approved. The payroll executor will now release the run.`,
       }
+    }
+    default: {
+      throw new Error(`Unsupported action_type: ${decision.action_type}`)
     }
   }
 }

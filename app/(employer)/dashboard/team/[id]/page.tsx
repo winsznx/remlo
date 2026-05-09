@@ -140,11 +140,11 @@ const PAY_FREQUENCIES = [
   { value: 'stream', label: 'Streaming' },
 ]
 
-function formatCurrency(value: number | null | undefined, currency = 'USD') {
+function formatCurrency(value: number | null | undefined, currency: string | null | undefined = 'USD') {
   if (value == null) return '—'
   return new Intl.NumberFormat('en-US', {
     style: 'currency',
-    currency,
+    currency: currency ?? 'USD',
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   }).format(value)
@@ -159,7 +159,8 @@ function formatDate(iso: string | null | undefined) {
   }).format(new Date(iso))
 }
 
-function formatFrequency(freq: string) {
+function formatFrequency(freq: string | null | undefined) {
+  if (!freq) return '—'
   return {
     monthly: 'Monthly',
     biweekly: 'Bi-weekly',

@@ -64,7 +64,7 @@ export async function getValidatorsForEscrow(
   return data.map((row) => ({
     validatorId: row.validator_id,
     validatorAddress: row.validator_address,
-    validatorType: row.validator_type,
+    validatorType: row.validator_type as ValidatorType,
     weight: row.weight ?? 1,
   }))
 }

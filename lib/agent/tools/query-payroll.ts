@@ -71,12 +71,12 @@ export async function queryPayrollSchedule(employerId: string): Promise<PayrollS
         first_name: emp.first_name,
         last_name: emp.last_name,
         salary_amount: emp.salary_amount,
-        salary_currency: emp.salary_currency,
-        pay_frequency: emp.pay_frequency,
+        salary_currency: emp.salary_currency ?? 'USD',
+        pay_frequency: emp.pay_frequency ?? 'monthly',
         wallet_address: emp.wallet_address,
         solana_wallet_address: emp.solana_wallet_address,
-        preferred_chain: emp.preferred_chain,
-        kyc_status: emp.kyc_status,
+        preferred_chain: emp.preferred_chain ?? 'tempo',
+        kyc_status: emp.kyc_status ?? 'pending',
         last_paid_at: lastPaid ?? null,
       })
     }

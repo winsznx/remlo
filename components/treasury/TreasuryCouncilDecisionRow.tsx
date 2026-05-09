@@ -78,7 +78,7 @@ export function TreasuryCouncilDecisionRow({
           <p className="text-xs text-[var(--text-muted)] truncate">{decision.rationale}</p>
         </div>
         <span className="text-xs text-[var(--text-muted)] ml-4 shrink-0">
-          {new Date(decision.created_at).toLocaleString()}
+          {decision.created_at ? new Date(decision.created_at).toLocaleString() : '—'}
         </span>
       </button>
 

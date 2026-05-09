@@ -8,7 +8,7 @@ type RouteContext = { params: Promise<{ id: string }> }
 
 function normalizeCardStatus(employee: {
   bridge_card_id: string | null
-  kyc_status: string
+  kyc_status: string | null
 }) {
   if (!employee.bridge_card_id) return employee.kyc_status === 'approved' ? 'ready' : 'pending'
   return 'active'

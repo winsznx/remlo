@@ -63,11 +63,12 @@ export async function POST(
 
   // Authorize: caller must be a registered validator for this employer OR admin.
   const isAdmin = isPlatformAdminUserId(claims.sub)
-  let validatorConfig: {
+  type ValidatorConfig = {
     validator_id: string
     validator_address: string
     validator_type: 'llm_claude' | 'llm_gpt4' | 'human' | 'oracle'
-  } | null = null
+  }
+  let validatorConfig: ValidatorConfig
 
   if (!isAdmin) {
     const { data } = await supabase
@@ -83,7 +84,11 @@ export async function POST(
         { status: 403 },
       )
     }
-    validatorConfig = data
+    validatorConfig = {
+      validator_id: data.validator_id,
+      validator_address: data.validator_address,
+      validator_type: data.validator_type as ValidatorConfig['validator_type'],
+    }
   } else {
     // Platform admin path — record the admin Privy user id as the validator
     // identity so the vote is traceable. Address uses the user id (no Solana
