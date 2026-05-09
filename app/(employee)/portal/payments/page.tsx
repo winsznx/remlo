@@ -2,7 +2,8 @@
 
 import * as React from 'react'
 import { motion, AnimatePresence } from 'framer-motion'
-import { Search, ChevronDown, Download, ExternalLink } from 'lucide-react'
+import { toast } from 'sonner'
+import { Search, ChevronDown, ExternalLink, FileText, Loader2 } from 'lucide-react'
 import { useEmployee, useEmployeePayments, type PaymentWithRun } from '@/lib/hooks/useEmployee'
 import { TxStatus } from '@/components/wallet/TxStatus'
 import { SolanaTxStatus } from '@/components/wallet/SolanaTxStatus'
@@ -13,6 +14,7 @@ import { cn } from '@/lib/utils'
 import { TEMPO_EXPLORER_URL } from '@/lib/constants'
 import { SOLANA_CLUSTER } from '@/lib/solana-constants'
 import { byteaMemoToHex } from '@/lib/memo'
+import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
@@ -67,12 +69,41 @@ function statusBadge(status: string): React.ReactNode {
 
 function PaymentCard({ payment }: { payment: PaymentWithRun }) {
   const [expanded, setExpanded] = React.useState(false)
+  const [downloadingPayslip, setDownloadingPayslip] = React.useState(false)
+  const authedFetch = usePrivyAuthedFetch()
   const run = Array.isArray(payment.payroll_run) ? payment.payroll_run[0] : payment.payroll_run
   const settlementMs = run?.settlement_time_ms
   const memoHex = byteaMemoToHex(payment.memo_bytes)
   const hasMemo = Boolean(memoHex)
   const isSolana = payment.chain === 'solana' || Boolean(payment.solana_signature)
   const solanaSig = payment.solana_signature
+
+  async function handleDownloadPayslip() {
+    if (downloadingPayslip) return
+    setDownloadingPayslip(true)
+    try {
+      const response = await authedFetch(`/api/portal/payments/${payment.id}/payslip`)
+      if (!response.ok) {
+        const err = (await response.json().catch(() => ({}))) as { error?: string }
+        throw new Error(err.error ?? 'Could not generate payslip')
+      }
+      const blob = await response.blob()
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const fileLabel = new Date(payment.created_at).toISOString().slice(0, 10)
+      a.href = url
+      a.download = `remlo-payslip-${fileLabel}.pdf`
+      document.body.appendChild(a)
+      a.click()
+      a.remove()
+      // Slight delay before revoking to ensure the browser starts the download.
+      setTimeout(() => URL.revokeObjectURL(url), 1500)
+    } catch (err) {
+      toast.error(err instanceof Error ? err.message : 'Could not generate payslip')
+    } finally {
+      setDownloadingPayslip(false)
+    }
+  }
 
   return (
     <div className="rounded-2xl bg-[var(--bg-surface)] border border-[var(--border-default)] overflow-hidden">
@@ -193,27 +224,55 @@ function PaymentCard({ payment }: { payment: PaymentWithRun }) {
                 </div>
               )}
 
-              {isSolana && solanaSig ? (
-                <a
-                  href={`https://explorer.solana.com/tx/${solanaSig}?cluster=${SOLANA_CLUSTER}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
+              {/* Payslip + explorer actions. Payslip download is the primary
+                   action for payday paperwork (taxes, accounting); explorer
+                   link is a verification tool. */}
+              <div className="flex flex-wrap items-center gap-3 pt-1">
+                <button
+                  type="button"
+                  onClick={() => void handleDownloadPayslip()}
+                  disabled={downloadingPayslip || payment.status !== 'confirmed'}
+                  className={cn(
+                    'inline-flex items-center gap-1.5 rounded-lg border border-[var(--border-default)] bg-[var(--bg-base)] px-3 py-1.5 text-xs font-medium text-[var(--text-primary)] transition-colors',
+                    !downloadingPayslip && payment.status === 'confirmed' && 'hover:bg-[var(--bg-subtle)]',
+                    payment.status !== 'confirmed' && 'opacity-50 cursor-not-allowed',
+                  )}
+                  title={
+                    payment.status === 'confirmed'
+                      ? 'Download payslip PDF'
+                      : 'Payslip available once payment settles'
+                  }
                 >
-                  <Download className="h-3.5 w-3.5" />
-                  View on Solana Explorer
-                </a>
-              ) : payment.tx_hash ? (
-                <a
-                  href={`${TEMPO_EXPLORER_URL}/tx/${payment.tx_hash}`}
-                  target="_blank"
-                  rel="noreferrer"
-                  className="inline-flex items-center gap-2 text-xs text-[var(--accent)] hover:underline"
-                >
-                  <Download className="h-3.5 w-3.5" />
-                  View settlement on Tempo Explorer
-                </a>
-              ) : null}
+                  {downloadingPayslip ? (
+                    <Loader2 className="h-3.5 w-3.5 animate-spin" />
+                  ) : (
+                    <FileText className="h-3.5 w-3.5" />
+                  )}
+                  Download payslip
+                </button>
+
+                {isSolana && solanaSig ? (
+                  <a
+                    href={`https://explorer.solana.com/tx/${solanaSig}?cluster=${SOLANA_CLUSTER}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Verify on Solana Explorer
+                  </a>
+                ) : payment.tx_hash ? (
+                  <a
+                    href={`${TEMPO_EXPLORER_URL}/tx/${payment.tx_hash}`}
+                    target="_blank"
+                    rel="noreferrer"
+                    className="inline-flex items-center gap-1.5 text-xs text-[var(--accent)] hover:underline"
+                  >
+                    <ExternalLink className="h-3.5 w-3.5" />
+                    Verify on Tempo Explorer
+                  </a>
+                ) : null}
+              </div>
             </div>
           </motion.div>
         )}

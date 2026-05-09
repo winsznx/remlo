@@ -4,13 +4,13 @@ import * as React from 'react'
 import Link from 'next/link'
 import { Bell, Building2, ChevronRight, CreditCard, Loader2, LogOut, Shield, User, Wallet } from 'lucide-react'
 import { useLinkWithPasskey, usePrivy, useSolanaWallets } from '@privy-io/react-auth'
-import { useQueryClient } from '@tanstack/react-query'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { toast } from 'sonner'
 import { useEmployee, useEmployerForEmployee } from '@/lib/hooks/useEmployee'
 import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
-import { usePrivyAuthedFetch } from '@/lib/hooks/usePrivyAuthedFetch'
+import { usePrivyAuthedFetch, usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import { cn } from '@/lib/utils'
 
 function Toggle({ checked, onChange }: { checked: boolean; onChange: (value: boolean) => void }) {
@@ -65,22 +65,25 @@ function ReadOnlyField({ label, value }: { label: string; value: string }) {
   )
 }
 
-const SETTINGS_STORAGE_KEY = 'remlo-employee-settings'
-
 type NotificationPrefs = {
-  paymentReceived: boolean
-  cardUsed: boolean
-  weeklySummary: boolean
+  payrollEmail: boolean
+  kycEmail: boolean
+  cardActivityEmail: boolean
+  weeklySummaryEmail: boolean
+  employerMessageEmail: boolean
 }
 
 const DEFAULT_PREFS: NotificationPrefs = {
-  paymentReceived: true,
-  cardUsed: true,
-  weeklySummary: false,
+  payrollEmail: true,
+  kycEmail: true,
+  cardActivityEmail: true,
+  weeklySummaryEmail: false,
+  employerMessageEmail: true,
 }
 
 export default function SettingsPage() {
   const authedFetch = usePrivyAuthedFetch()
+  const fetchJson = usePrivyAuthedJson()
   const queryClient = useQueryClient()
   const { user, logout } = usePrivy()
   const { linkWithPasskey } = useLinkWithPasskey()
@@ -88,26 +91,31 @@ export default function SettingsPage() {
   const solanaAddress = solanaWallets[0]?.address ?? null
   const { data: employee, isLoading } = useEmployee()
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
-  const [prefs, setPrefs] = React.useState<NotificationPrefs>(DEFAULT_PREFS)
   const [profile, setProfile] = React.useState({ firstName: '', lastName: '', countryCode: '' })
   const [savingProfile, setSavingProfile] = React.useState(false)
   const [linkingPasskey, setLinkingPasskey] = React.useState(false)
 
-  React.useEffect(() => {
-    const raw = window.localStorage.getItem(SETTINGS_STORAGE_KEY)
-    if (!raw) return
+  const prefsQuery = useQuery<{ preferences: NotificationPrefs }>({
+    queryKey: ['portal-preferences'],
+    queryFn: () => fetchJson('/api/portal/preferences'),
+  })
+  const prefs: NotificationPrefs = prefsQuery.data?.preferences ?? DEFAULT_PREFS
 
+  async function updatePref(key: keyof NotificationPrefs, value: boolean) {
+    queryClient.setQueryData<{ preferences: NotificationPrefs }>(['portal-preferences'], (old) => ({
+      preferences: { ...(old?.preferences ?? DEFAULT_PREFS), [key]: value },
+    }))
     try {
-      const parsed = JSON.parse(raw) as NotificationPrefs
-      setPrefs(parsed)
-    } catch {
-      // Ignore malformed local storage and keep defaults.
+      await authedFetch('/api/portal/preferences', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ [key]: value }),
+      })
+    } catch (err) {
+      void queryClient.invalidateQueries({ queryKey: ['portal-preferences'] })
+      toast.error(err instanceof Error ? err.message : 'Could not save preference.')
     }
-  }, [])
-
-  React.useEffect(() => {
-    window.localStorage.setItem(SETTINGS_STORAGE_KEY, JSON.stringify(prefs))
-  }, [prefs])
+  }
 
   React.useEffect(() => {
     setProfile({
@@ -237,27 +245,41 @@ export default function SettingsPage() {
         </div>
       </Section>
 
-      <Section icon={Bell} title="Notifications">
+      <Section icon={Bell} title="Email notifications">
         <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
           <div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Payment received</p>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Stored on this device for your employee portal.</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Receipt email for each payroll deposit.</p>
           </div>
-          <Toggle checked={prefs.paymentReceived} onChange={(value) => setPrefs((current) => ({ ...current, paymentReceived: value }))} />
+          <Toggle checked={prefs.payrollEmail} onChange={(value) => void updatePref('payrollEmail', value)} />
+        </div>
+        <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Identity (KYC) updates</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">When your verification gets approved or needs another look.</p>
+          </div>
+          <Toggle checked={prefs.kycEmail} onChange={(value) => void updatePref('kycEmail', value)} />
         </div>
         <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
           <div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Card activity</p>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Use this toggle to keep transaction nudges enabled locally.</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Notifications when your Remlo card is used.</p>
           </div>
-          <Toggle checked={prefs.cardUsed} onChange={(value) => setPrefs((current) => ({ ...current, cardUsed: value }))} />
+          <Toggle checked={prefs.cardActivityEmail} onChange={(value) => void updatePref('cardActivityEmail', value)} />
+        </div>
+        <div className="flex items-center justify-between border-b border-[var(--border-default)] px-5 py-3.5">
+          <div>
+            <p className="text-sm font-medium text-[var(--text-primary)]">Messages from your employer</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">Company-wide notes your employer broadcasts to the team.</p>
+          </div>
+          <Toggle checked={prefs.employerMessageEmail} onChange={(value) => void updatePref('employerMessageEmail', value)} />
         </div>
         <div className="flex items-center justify-between px-5 py-3.5">
           <div>
             <p className="text-sm font-medium text-[var(--text-primary)]">Weekly summary</p>
-            <p className="mt-0.5 text-xs text-[var(--text-muted)]">A lightweight preference for this browser session and future visits.</p>
+            <p className="mt-0.5 text-xs text-[var(--text-muted)]">A weekly digest of payroll and card activity.</p>
           </div>
-          <Toggle checked={prefs.weeklySummary} onChange={(value) => setPrefs((current) => ({ ...current, weeklySummary: value }))} />
+          <Toggle checked={prefs.weeklySummaryEmail} onChange={(value) => void updatePref('weeklySummaryEmail', value)} />
         </div>
       </Section>
 

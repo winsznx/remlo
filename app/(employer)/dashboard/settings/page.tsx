@@ -90,9 +90,15 @@ export default function EmployerSettingsPage() {
         title="Settings"
         description="Review workspace identity, treasury linkage, compliance posture, and billing-related account state."
         action={
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button asChild variant="outline">
               <Link href="/dashboard/settings/agents">Authorized agents</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/settings/deposit-addresses">Deposit addresses</Link>
+            </Button>
+            <Button asChild variant="outline">
+              <Link href="/dashboard/settings/data-access">Data access log</Link>
             </Button>
             <Button asChild variant="outline">
               <Link href="/dashboard/settings/billing">Open billing</Link>

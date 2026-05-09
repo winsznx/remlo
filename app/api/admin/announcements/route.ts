@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCallerAdmin } from '@/lib/auth'
+import { recordAdminAction, inspectRequest } from '@/lib/admin-audit'
 import {
   createAnnouncement,
   listAllAnnouncements,
@@ -111,7 +112,26 @@ export async function POST(req: NextRequest) {
     created_by: claims.sub,
   })
   if (!created) {
+    const meta = inspectRequest(req)
+    void recordAdminAction({
+      actorUserId: claims.sub,
+      action: 'announcement.create',
+      result: 'error',
+      ipAddress: meta.ipAddress,
+      userAgent: meta.userAgent,
+      metadata: { title, audience },
+    })
     return NextResponse.json({ error: 'Failed to create announcement' }, { status: 500 })
   }
+  const meta = inspectRequest(req)
+  void recordAdminAction({
+    actorUserId: claims.sub,
+    action: 'announcement.create',
+    resource: `system_announcement:${created.id}`,
+    result: 'success',
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+    metadata: { title, audience, severity },
+  })
   return NextResponse.json({ announcement: created }, { status: 201 })
 }

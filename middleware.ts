@@ -36,6 +36,7 @@ const PUBLIC_PATHS = [
   '/contact',
   '/press',
   '/status',
+  '/support', // Support form must be reachable when a user can't sign in
   '/agents', // Public discovery directory
 ]
 
@@ -48,6 +49,7 @@ const PUBLIC_PREFIXES = [
   '/agents/', // /agents/register and any future agent sub-pages — all public
   '/api/agents/', // public agent discovery + lookup (free reads)
   '/api/waitlist/', // waitlist subscribe/confirm/unsubscribe — pre-auth
+  '/api/support/', // public support ticket submission — must work pre-auth
   '/api/reputation/', // public reputation queries (free, no auth)
   '/api/x402/', // x402 paid endpoints — payment header is the auth
   '/api/webhooks/', // Bridge + Tempo + Resend webhooks — own signature verification
@@ -241,7 +243,19 @@ export async function middleware(request: NextRequest) {
     }
 
     if (pathname.startsWith('/admin')) {
-      // Non-admin trying to reach /admin — redirect to their home.
+      // Non-admin trying to reach /admin — log + redirect.
+      // We use console.warn (not the audit table) here because middleware
+      // runs in the edge runtime where the supabase client isn't loaded.
+      // A separate cron / log scraper can roll these into the audit log.
+      console.warn('[admin-access] denied', {
+        userId: decoded.sub,
+        path: pathname,
+        ip:
+          request.headers.get('x-forwarded-for')?.split(',')[0]?.trim() ??
+          request.headers.get('x-real-ip') ??
+          null,
+        role,
+      })
       const redirect = request.nextUrl.clone()
       redirect.pathname = roleHome(role)
       return NextResponse.redirect(redirect)

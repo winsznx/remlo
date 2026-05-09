@@ -8,8 +8,11 @@ import EmployerWelcomeEmail from '@/emails/EmployerWelcome'
 import PayrollFinalizedEmail from '@/emails/PayrollFinalized'
 import PayrollFailedEmail from '@/emails/PayrollFailed'
 import KycReminderEmail from '@/emails/KycReminder'
+import KycApprovedEmail from '@/emails/KycApproved'
+import KycRejectedEmail from '@/emails/KycRejected'
 import WaitlistConfirmEmail from '@/emails/WaitlistConfirm'
 import PaymentReceivedEmail from '@/emails/PaymentReceived'
+import EmployerMessageEmail from '@/emails/EmployerMessage'
 
 const FROM_DEFAULT = 'Remlo <hello@remlo.xyz>'
 const REPLY_TO_DEFAULT = 'hello@remlo.xyz'
@@ -20,8 +23,11 @@ type TemplateMap = {
   payroll_finalized: React.ComponentProps<typeof PayrollFinalizedEmail>
   payroll_failed: React.ComponentProps<typeof PayrollFailedEmail>
   kyc_reminder: React.ComponentProps<typeof KycReminderEmail>
+  kyc_approved: React.ComponentProps<typeof KycApprovedEmail>
+  kyc_rejected: React.ComponentProps<typeof KycRejectedEmail>
   waitlist_confirm: React.ComponentProps<typeof WaitlistConfirmEmail>
   payment_received: React.ComponentProps<typeof PaymentReceivedEmail>
+  employer_message: React.ComponentProps<typeof EmployerMessageEmail>
 }
 
 export type EmailTemplate = keyof TemplateMap
@@ -34,8 +40,11 @@ const TEMPLATE_COMPONENTS: {
   payroll_finalized: PayrollFinalizedEmail,
   payroll_failed: PayrollFailedEmail,
   kyc_reminder: KycReminderEmail,
+  kyc_approved: KycApprovedEmail,
+  kyc_rejected: KycRejectedEmail,
   waitlist_confirm: WaitlistConfirmEmail,
   payment_received: PaymentReceivedEmail,
+  employer_message: EmployerMessageEmail,
 }
 
 const SUBJECTS: { [K in EmailTemplate]: (props: TemplateMap[K]) => string } = {
@@ -45,9 +54,12 @@ const SUBJECTS: { [K in EmailTemplate]: (props: TemplateMap[K]) => string } = {
     `Payroll broadcast — ${recipientCount} ${recipientCount === 1 ? 'employee' : 'employees'} paid (${companyName})`,
   payroll_failed: ({ companyName }) => `Payroll failed for ${companyName} — action required`,
   kyc_reminder: ({ companyName }) => `${companyName} is waiting on your identity check`,
+  kyc_approved: ({ companyName }) => `You're verified — ${companyName} can pay you now`,
+  kyc_rejected: ({ companyName }) => `Your verification for ${companyName} needs another look`,
   waitlist_confirm: () => 'Confirm your spot on the Remlo waitlist',
   payment_received: ({ companyName, amountUsd }) =>
     `You received ${new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(amountUsd)} from ${companyName}`,
+  employer_message: ({ companyName, title }) => `${companyName}: ${title}`,
 }
 
 export interface SendEmailInput<K extends EmailTemplate = EmailTemplate> {

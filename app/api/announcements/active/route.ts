@@ -20,17 +20,26 @@ export async function GET(req: NextRequest) {
   const claims = await getPrivyClaims(req)
   if (!claims) return NextResponse.json({ items: [] })
 
-  const role = await resolveRole(claims.sub)
-  if (!role) return NextResponse.json({ items: [] })
+  const resolved = await resolveRole(claims.sub)
+  if (!resolved) return NextResponse.json({ items: [] })
 
-  const items = await listActiveAnnouncementsForUser(claims.sub, role)
+  const items = await listActiveAnnouncementsForUser(
+    claims.sub,
+    resolved.role,
+    resolved.employerId,
+  )
   return NextResponse.json({ items })
 }
 
-async function resolveRole(
-  userId: string,
-): Promise<'employer' | 'employee' | 'platform_admin' | null> {
-  if (isPlatformAdminUserId(userId)) return 'platform_admin'
+interface ResolvedRole {
+  role: 'employer' | 'employee' | 'platform_admin'
+  employerId: string | null
+}
+
+async function resolveRole(userId: string): Promise<ResolvedRole | null> {
+  if (isPlatformAdminUserId(userId)) {
+    return { role: 'platform_admin', employerId: null }
+  }
   const supabase = createServerClient()
   const [{ data: employer }, { data: employee }] = await Promise.all([
     supabase
@@ -41,12 +50,12 @@ async function resolveRole(
       .maybeSingle(),
     supabase
       .from('employees')
-      .select('id')
+      .select('id, employer_id')
       .eq('user_id', userId)
       .eq('active', true)
       .maybeSingle(),
   ])
-  if (employer) return 'employer'
-  if (employee) return 'employee'
+  if (employer) return { role: 'employer', employerId: null }
+  if (employee) return { role: 'employee', employerId: employee.employer_id }
   return null
 }

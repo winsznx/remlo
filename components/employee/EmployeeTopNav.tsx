@@ -5,11 +5,13 @@ import Link from 'next/link'
 import { useRouter, usePathname } from 'next/navigation'
 import { usePrivy } from '@privy-io/react-auth'
 import { RemloLogo } from '@/components/brand/RemloLogo'
+import { EmployeeNotificationsBell } from '@/components/employee/EmployeeNotificationsBell'
 
 const NAV_LINKS = [
   { href: '/portal', label: 'Home', exact: true },
   { href: '/portal/payments', label: 'Payments', exact: false },
   { href: '/portal/card', label: 'Card', exact: false },
+  { href: '/portal/activity', label: 'Activity', exact: false },
   { href: '/portal/settings', label: 'Settings', exact: false },
 ]
 
@@ -81,8 +83,10 @@ export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
         </span>
       )}
 
-      {/* Right — user */}
-      <div className="ml-auto relative" ref={menuRef}>
+      {/* Right — bell + user */}
+      <div className="ml-auto flex items-center gap-1">
+        <EmployeeNotificationsBell />
+        <div className="relative" ref={menuRef}>
         <button
           onClick={() => setMenuOpen((v) => !v)}
           className="w-8 h-8 rounded-full bg-[var(--accent-subtle)] flex items-center justify-center text-[var(--accent)] text-xs font-bold hover:opacity-80 transition-opacity"
@@ -97,6 +101,22 @@ export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
                 {user?.email?.address ?? 'Employee'}
               </p>
             </div>
+            <Link
+              href="/support"
+              onClick={() => setMenuOpen(false)}
+              className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--text-secondary)] hover:bg-[var(--bg-subtle)] hover:text-[var(--text-primary)] transition-colors"
+            >
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth={2} className="w-4 h-4">
+                <circle cx="12" cy="12" r="10" />
+                <circle cx="12" cy="12" r="4" />
+                <line x1="4.93" y1="4.93" x2="9.17" y2="9.17" />
+                <line x1="14.83" y1="14.83" x2="19.07" y2="19.07" />
+                <line x1="14.83" y1="9.17" x2="19.07" y2="4.93" />
+                <line x1="14.83" y1="9.17" x2="18.36" y2="5.64" />
+                <line x1="4.93" y1="19.07" x2="9.17" y2="14.83" />
+              </svg>
+              Contact support
+            </Link>
             <button
               onClick={() => { void handleLogout() }}
               className="w-full flex items-center gap-2 px-3 py-2 text-sm text-[var(--status-error)] hover:bg-[var(--bg-subtle)] transition-colors"
@@ -108,6 +128,7 @@ export function EmployeeTopNav({ title }: EmployeeTopNavProps) {
             </button>
           </div>
         )}
+        </div>
       </div>
     </header>
   )

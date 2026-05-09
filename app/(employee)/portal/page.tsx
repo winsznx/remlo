@@ -11,6 +11,7 @@ import { SolanaBadge } from '@/components/wallet/SolanaBadge'
 import { BalanceTicker } from '@/components/treasury/BalanceTicker'
 import { TxStatus } from '@/components/wallet/TxStatus'
 import { ReputationPanel } from '@/components/reputation/ReputationPanel'
+import { DepositAddressCard } from '@/components/employee/DepositAddressCard'
 
 // ─── Helpers ─────────────────────────────────────────────────────────────────
 
@@ -257,6 +258,10 @@ export default function PortalHomePage() {
           })}
         </div>
       </motion.div>
+
+      {/* Per-employee deposit address (TIP-1022). Renders nothing until the
+           employer registers a master. */}
+      <DepositAddressCard />
 
       {/* Wallet address */}
       {employee?.wallet_address && (

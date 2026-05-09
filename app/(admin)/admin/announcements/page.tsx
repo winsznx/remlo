@@ -239,6 +239,17 @@ function isoToLocalInput(iso: string | null): string {
   )
 }
 
+function defaultExpiryInput(): string {
+  // 7 days from now in the user's local timezone, formatted for the
+  // datetime-local input (YYYY-MM-DDTHH:MM, no seconds, no Z).
+  const d = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000)
+  const pad = (n: number) => n.toString().padStart(2, '0')
+  return (
+    `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}` +
+    `T${pad(d.getHours())}:${pad(d.getMinutes())}`
+  )
+}
+
 function ComposeForm(props: ComposeFormProps) {
   const fetchJson = usePrivyAuthedJson()
   const isEdit = props.mode === 'edit'
@@ -247,15 +258,35 @@ function ComposeForm(props: ComposeFormProps) {
     title: initial?.title ?? '',
     body: initial?.body ?? '',
     severity: (initial?.severity ?? 'info') as Severity,
+    // Default audience to 'all' — covers the "send to everyone" case which
+    // is the most common intent, and avoids the trap where the previous
+    // default ('employers') hid messages from employees by mistake.
     audience: (initial?.audience ?? 'all') as Audience,
     link_url: initial?.link_url ?? '',
     link_label: initial?.link_label ?? '',
-    expires_at: isoToLocalInput(initial?.expires_at ?? null),
+    // For new announcements, default expiry to 7 days out. For edits, keep
+    // whatever's already on the row (could be null/never-expires).
+    expires_at: initial
+      ? isoToLocalInput(initial.expires_at ?? null)
+      : defaultExpiryInput(),
   })
   const [submitting, setSubmitting] = React.useState(false)
 
   const canSubmit =
     form.title.trim().length > 0 && form.body.trim().length > 0 && !submitting
+
+  // Warn when the chosen expiry is in the past or sooner than 30 minutes —
+  // common foot-gun, since you composed a message and may not realize the
+  // banner will disappear before anyone sees it.
+  const expiryWarning = React.useMemo<string | null>(() => {
+    if (!form.expires_at) return null
+    const t = new Date(form.expires_at).getTime()
+    if (!Number.isFinite(t)) return null
+    const minutesAhead = (t - Date.now()) / 60_000
+    if (minutesAhead <= 0) return 'Expiry is in the past — the banner will not show.'
+    if (minutesAhead < 30) return `Expires in ~${Math.round(minutesAhead)} min — set further out unless this is intentional.`
+    return null
+  }, [form.expires_at])
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
@@ -380,6 +411,9 @@ function ComposeForm(props: ComposeFormProps) {
           <p className="text-[10px] text-[var(--text-muted)]">
             Leave blank for no auto-expiry. Use this for maintenance windows so the banner clears itself.
           </p>
+          {expiryWarning && (
+            <p className="text-[11px] text-[var(--status-pending)]">{expiryWarning}</p>
+          )}
         </div>
       </div>
       <div className="flex items-center justify-end gap-2">
