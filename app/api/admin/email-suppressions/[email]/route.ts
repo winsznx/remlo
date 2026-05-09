@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCallerAdmin } from '@/lib/auth'
+import { recordAdminAction, inspectRequest } from '@/lib/admin-audit'
 import { removeSuppression } from '@/lib/queries/email-suppressions'
 
 type RouteContext = { params: Promise<{ email: string }> }
@@ -20,6 +21,15 @@ export async function DELETE(req: NextRequest, ctx: RouteContext) {
   const { email } = await ctx.params
   const decoded = decodeURIComponent(email)
   const ok = await removeSuppression(decoded)
+  const meta = inspectRequest(req)
+  void recordAdminAction({
+    actorUserId: claims.sub,
+    action: 'email_suppression.remove',
+    resource: `email_suppression:${decoded}`,
+    result: ok ? 'success' : 'error',
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+  })
   if (!ok) return NextResponse.json({ error: 'Delete failed' }, { status: 500 })
   return NextResponse.json({ removed: decoded })
 }

@@ -3,18 +3,37 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, Building2, ChevronRight, LayoutDashboard, Megaphone, ShieldCheck } from 'lucide-react'
+import { Activity, Building2, ChevronRight, Inbox, LayoutDashboard, Megaphone, ScrollText, ShieldCheck } from 'lucide-react'
 import { usePrivy } from '@privy-io/react-auth'
 import { RemloLogo } from '@/components/brand/RemloLogo'
 import { SystemAnnouncementBanner } from '@/components/system/SystemAnnouncementBanner'
 
-const NAV_ITEMS = [
-  { href: '/admin', label: 'Overview', icon: LayoutDashboard },
+interface NavItem {
+  href: string
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  /**
+   * When true, only the literal pathname (not its descendants) lights up.
+   * The root entry MUST set this — otherwise it's a prefix of every other
+   * item and stays highlighted regardless of where you navigate.
+   */
+  exact?: boolean
+}
+
+const NAV_ITEMS: NavItem[] = [
+  { href: '/admin', label: 'Overview', icon: LayoutDashboard, exact: true },
   { href: '/admin/employers', label: 'Employers', icon: Building2 },
+  { href: '/admin/support', label: 'Support', icon: Inbox },
   { href: '/admin/compliance', label: 'Compliance', icon: ShieldCheck },
   { href: '/admin/monitoring', label: 'Monitoring', icon: Activity },
   { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
+  { href: '/admin/audit-log', label: 'Audit log', icon: ScrollText },
 ]
+
+function isItemActive(pathname: string, item: NavItem): boolean {
+  if (item.exact) return pathname === item.href
+  return pathname === item.href || pathname.startsWith(`${item.href}/`)
+}
 
 export default function AdminLayout({ children }: { children: React.ReactNode }) {
   const pathname = usePathname()
@@ -29,7 +48,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
         </div>
         <nav className="flex-1 space-y-1 p-3">
           {NAV_ITEMS.map((item) => {
-            const active = pathname === item.href || pathname.startsWith(`${item.href}/`)
+            const active = isItemActive(pathname, item)
             const Icon = item.icon
             return (
               <Link
@@ -64,7 +83,7 @@ export default function AdminLayout({ children }: { children: React.ReactNode })
             <span>Admin</span>
             <ChevronRight className="h-4 w-4" />
             <span className="font-medium text-[var(--text-primary)]">
-              {NAV_ITEMS.find((item) => pathname === item.href || pathname.startsWith(`${item.href}/`))?.label ?? 'Overview'}
+              {NAV_ITEMS.find((item) => isItemActive(pathname, item))?.label ?? 'Overview'}
             </span>
           </div>
         </header>

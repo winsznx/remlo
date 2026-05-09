@@ -11,7 +11,14 @@ export interface AdminOverviewResponse {
     payrollRuns: number
     activeSessions: number
     blockedEvents: number
+    activeBanners: number
+    failedPayroll30d: number
+    notifications7d: number
+    emailSent7d: number
+    emailBounced7d: number
+    emailComplained7d: number
   }
+  notificationsByKind: Record<string, number>
   recentAlerts: Array<{
     id: string
     companyName: string

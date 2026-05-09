@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { getCallerAdmin } from '@/lib/auth'
+import { recordAdminAction, inspectRequest } from '@/lib/admin-audit'
 import {
   listSuppressions,
   addSuppression,
@@ -81,8 +82,27 @@ export async function POST(req: NextRequest) {
       : 'manual'
 
   const created = await addSuppression({ email, reason })
+  const meta = inspectRequest(req)
   if (!created) {
+    void recordAdminAction({
+      actorUserId: claims.sub,
+      action: 'email_suppression.add',
+      resource: `email_suppression:${email}`,
+      result: 'error',
+      ipAddress: meta.ipAddress,
+      userAgent: meta.userAgent,
+      metadata: { reason },
+    })
     return NextResponse.json({ error: 'Failed to add suppression' }, { status: 500 })
   }
+  void recordAdminAction({
+    actorUserId: claims.sub,
+    action: 'email_suppression.add',
+    resource: `email_suppression:${email}`,
+    result: 'success',
+    ipAddress: meta.ipAddress,
+    userAgent: meta.userAgent,
+    metadata: { reason },
+  })
   return NextResponse.json({ suppression: created }, { status: 201 })
 }

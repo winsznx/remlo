@@ -4,6 +4,9 @@ import { getCallerAdmin } from '@/lib/auth'
 
 async function getOverview() {
   const supabase = createServerClient()
+  const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000).toISOString()
+  const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString()
+
   const [
     employersResult,
     employeesResult,
@@ -13,6 +16,10 @@ async function getOverview() {
     recentAlertsResult,
     recentSessionsResult,
     employersListResult,
+    notificationsRecentResult,
+    emailEventsRecentResult,
+    activeBannersResult,
+    failedPayrollResult,
   ] = await Promise.all([
     supabase.from('employers').select('id', { count: 'exact', head: true }).eq('active', true),
     supabase.from('employees').select('id', { count: 'exact', head: true }).eq('active', true),
@@ -22,6 +29,28 @@ async function getOverview() {
     supabase.from('compliance_events').select('id, employer_id, employee_id, description, result, created_at').order('created_at', { ascending: false }).limit(8),
     supabase.from('mpp_sessions').select('id, employer_id, agent_wallet, total_spent, status, opened_at').order('opened_at', { ascending: false }).limit(8),
     supabase.from('employers').select('id, company_name'),
+    // Notifications fired in the last 7 days, grouped client-side by kind/severity
+    supabase
+      .from('notifications')
+      .select('kind, severity, created_at')
+      .gte('created_at', sevenDaysAgo),
+    // Email events in the last 7 days, grouped client-side by event_type
+    supabase
+      .from('email_events')
+      .select('event_type, created_at')
+      .gte('created_at', sevenDaysAgo),
+    // Live system_announcements: published, not expired
+    supabase
+      .from('system_announcements')
+      .select('id', { count: 'exact', head: true })
+      .lte('published_at', new Date().toISOString())
+      .or(`expires_at.is.null,expires_at.gt.${new Date().toISOString()}`),
+    // Failed payroll runs in the last 30 days
+    supabase
+      .from('payroll_runs')
+      .select('id', { count: 'exact', head: true })
+      .eq('status', 'failed')
+      .gte('created_at', thirtyDaysAgo),
   ])
 
   const employers = employersListResult.data ?? []
@@ -36,6 +65,22 @@ async function getOverview() {
     [employee.first_name, employee.last_name].filter(Boolean).join(' ') || employee.email,
   ]))
 
+  // Roll up notifications by kind for the dashboard
+  const notificationsByKind: Record<string, number> = {}
+  for (const row of notificationsRecentResult.data ?? []) {
+    notificationsByKind[row.kind] = (notificationsByKind[row.kind] ?? 0) + 1
+  }
+  const totalNotifications7d = (notificationsRecentResult.data ?? []).length
+
+  // Roll up email events by event_type
+  const emailByType: Record<string, number> = {}
+  for (const row of emailEventsRecentResult.data ?? []) {
+    emailByType[row.event_type] = (emailByType[row.event_type] ?? 0) + 1
+  }
+  const sentCount = emailByType['email.sent'] ?? emailByType['sent'] ?? emailByType['delivered'] ?? 0
+  const bouncedCount = emailByType['email.bounced'] ?? emailByType['bounced'] ?? 0
+  const complainedCount = emailByType['email.complained'] ?? emailByType['complained'] ?? 0
+
   return {
     metrics: {
       employers: employersResult.count ?? 0,
@@ -43,7 +88,14 @@ async function getOverview() {
       payrollRuns: payrollResult.count ?? 0,
       activeSessions: sessionsResult.count ?? 0,
       blockedEvents: blockedEventsResult.count ?? 0,
+      activeBanners: activeBannersResult.count ?? 0,
+      failedPayroll30d: failedPayrollResult.count ?? 0,
+      notifications7d: totalNotifications7d,
+      emailSent7d: sentCount,
+      emailBounced7d: bouncedCount,
+      emailComplained7d: complainedCount,
     },
+    notificationsByKind,
     recentAlerts: (recentAlertsResult.data ?? []).map((event) => ({
       id: event.id,
       companyName: event.employer_id ? employerNameMap.get(event.employer_id) ?? 'Unknown employer' : 'Unknown employer',
