@@ -3,7 +3,7 @@
 import * as React from 'react'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
-import { Activity, Building2, ChevronRight, Clock3, Inbox, LayoutDashboard, Megaphone, ScrollText, ShieldCheck } from 'lucide-react'
+import { Activity, Building2, ChevronRight, Clock3, Inbox, LayoutDashboard, Mail, Megaphone, ScrollText, ShieldCheck } from 'lucide-react'
 import { usePrivy } from '@privy-io/react-auth'
 import { RemloLogo } from '@/components/brand/RemloLogo'
 import { SystemAnnouncementBanner } from '@/components/system/SystemAnnouncementBanner'
@@ -27,6 +27,7 @@ const NAV_ITEMS: NavItem[] = [
   { href: '/admin/compliance', label: 'Compliance', icon: ShieldCheck },
   { href: '/admin/monitoring', label: 'Monitoring', icon: Activity },
   { href: '/admin/crons', label: 'Cron jobs', icon: Clock3 },
+  { href: '/admin/waitlist', label: 'Waitlist', icon: Mail },
   { href: '/admin/announcements', label: 'Announcements', icon: Megaphone },
   { href: '/admin/audit-log', label: 'Audit log', icon: ScrollText },
 ]
