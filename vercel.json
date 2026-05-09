@@ -19,6 +19,12 @@
     },
     "app/api/cron/process-reputation-writes/route.ts": {
       "maxDuration": 60
+    },
+    "app/api/cron/autopayroll-tick/route.ts": {
+      "maxDuration": 120
+    },
+    "app/api/cron/index-virtual-inflows/route.ts": {
+      "maxDuration": 60
     }
   },
   "crons": [
@@ -29,6 +35,14 @@
     {
       "path": "/api/cron/process-reputation-writes",
       "schedule": "15 3 * * *"
+    },
+    {
+      "path": "/api/cron/autopayroll-tick",
+      "schedule": "0 * * * *"
+    },
+    {
+      "path": "/api/cron/index-virtual-inflows",
+      "schedule": "*/30 * * * *"
     }
   ]
 }
