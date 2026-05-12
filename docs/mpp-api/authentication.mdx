@@ -3,17 +3,17 @@ title: "Authentication"
 description: "How agents prove payment on Tempo, Base, and Solana."
 ---
 
-Remlo's paid endpoints don't use API keys. They use HTTP 402 Payment Required with two protocols: `mpp` (Tempo) and `x402` (Base, Solana). An agent reads the 402 challenge, picks a chain, signs a payment proof, and retries the same URL with the proof in a header.
+Remlo's paid endpoints don't use API keys. They use HTTP 402 Payment Required with two protocols: MPP (Tempo) and x402 (Base, Solana). An agent reads the 402 challenge, picks a chain, signs a payment proof, and retries the same URL with the proof in a header. MPP and x402 are not wire-compatible, so clients must use the header format for the rail they picked.
 
 ## Two protocols, three chains
 
 | Protocol | Chain | Header on retry |
 |---|---|---|
-| `mpp` | Tempo Moderato (chainId `4217` mainnet, `42431` testnet) | `Authorization: mpp <credential>` |
+| MPP | Tempo Moderato (chainId `4217` mainnet, `42431` testnet) | `Authorization: Payment <credential>` |
 | `x402` | Base mainnet (`eip155:8453`) | `X-PAYMENT: <base64 payload>` |
 | `x402` | Solana mainnet (`solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp`) | `X-PAYMENT: <base64 payload>` |
 
-The same endpoint accepts all three. The server dispatches based on which header the agent sends.
+The same endpoint accepts all three. The server dispatches based on which header the agent sends. Remlo also accepts the legacy `Authorization: mpp <credential>` form for Tempo while older agent wrappers migrate to the canonical MPP `Payment` auth scheme.
 
 ## What 402 looks like
 
@@ -21,10 +21,11 @@ A request without payment headers returns:
 
 ```http
 HTTP/1.1 402 Payment Required
-WWW-Authenticate: mpp realm="www.remlo.xyz", method="tempo",
+WWW-Authenticate: Payment realm="www.remlo.xyz", method="tempo",
                       chainId="4217", currency="0x20C00000...",
                       recipient="0xC9231...", amount="0.01"
 Content-Type: application/json
+Cache-Control: no-store
 
 {
   "x402Version": 2,
@@ -50,15 +51,15 @@ Content-Type: application/json
 }
 ```
 
-The `WWW-Authenticate: mpp ...` header is the Tempo challenge. The JSON body's `accepts` array lists the x402 options (Base, Solana). An agent picks one based on which wallet has balance, signs the proof, and retries.
+The `WWW-Authenticate: Payment ...` header is the Tempo MPP challenge. The JSON body's `accepts` array lists the x402 options (Base, Solana). An agent picks one based on which wallet has balance, signs the proof, and retries.
 
-## Tempo: mpp protocol
+## Tempo: MPP protocol
 
 If the agent's wallet has Tempo USDC.e and they want to pay on Tempo:
 
-1. Read the `WWW-Authenticate: mpp` header. Note `chainId`, `currency`, `recipient`, `amount`.
+1. Read the `WWW-Authenticate: Payment` header. Note `chainId`, `currency`, `recipient`, `amount`.
 2. Construct an mpp credential. The simplest form uses the `mppx/client` SDK or AgentCash, which signs an EIP-3009 `transferWithAuthorization` against the recipient and returns a base64 credential string.
-3. Retry the original URL with `Authorization: mpp <credential>`.
+3. Retry the original URL with `Authorization: Payment <credential>`.
 4. The server verifies via mppx's embedded facilitator, runs the handler, and returns 200 with a `Payment-Receipt` response header.
 
 ```bash
@@ -110,7 +111,7 @@ Charging in another currency for a Tempo state mutation creates a settlement asy
 
 ## What the server checks
 
-For `mpp` (Tempo): the credential signature recovers to the agent's claimed wallet, the EIP-3009 authorization is unused, the amount and recipient match the challenge, and the chainId is `4217` (mainnet) or `42431` (testnet) as configured.
+For MPP (Tempo): the credential signature recovers to the agent's claimed wallet, the EIP-3009 authorization is unused, the amount and recipient match the challenge, and the chainId is `4217` (mainnet) or `42431` (testnet) as configured.
 
 For `x402` (Base / Solana): the X-PAYMENT header is base64 valid JSON matching the v2 schema, `accepted.network` is one of our supported rails, and the CDP facilitator's `verifyPayment` returns `isValid: true`. Verification details (signature recovery, asset address match, amount match) live inside the facilitator and the protocol scheme implementation.
 

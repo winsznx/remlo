@@ -5,6 +5,8 @@ description: "Multi chain agent wallet for paying x402 and mpp endpoints."
 
 AgentCash is the easiest way for an autonomous agent to pay Remlo's MPP and x402 endpoints. It's an agent side wallet, not a server integration. Remlo doesn't depend on AgentCash; AgentCash is one of many ways to pay our endpoints (the others are raw `@x402/core` SDK, Coinbase Agent Kit, and any custom HTTP client that implements the 402 retry loop).
 
+AgentCash signs payment proofs for the HTTP 402 challenge. It does not replace the separate identity proof some Remlo endpoints require. For example, `/api/mpp/agents/register` still needs either an ERC-8004 owner signature or a Solana Ed25519 signature in the JSON body; AgentCash can pay for that POST after your own signer has built the body.
+
 ## Why AgentCash
 
 It handles three things automatically:
@@ -24,7 +26,7 @@ The onboard flow provisions an AgentCash account and prints deposit links for ea
 To verify your setup:
 
 ```bash
-npx -y agentcash@latest list_accounts
+npx -y agentcash@latest accounts
 ```
 
 Outputs a JSON list of every chain, your address, current balance, and a deposit link. Three chains appear: `base`, `tempo`, `solana`.
@@ -70,14 +72,15 @@ The install command registers the MCP server in your client's config and prompts
 
 The protocol is open. Any HTTP client can:
 
-1. Read the 402 response and the `accepts[]` array (or the `WWW-Authenticate: mpp` header for the Tempo rail).
+1. Read the 402 response and the `accepts[]` array (or the `WWW-Authenticate: Payment` header for the Tempo rail).
 2. Sign a payment proof with the wallet of their choice (`viem`, `ethers`, `@solana/web3.js`, `@x402/core`'s built in clients).
-3. Retry the same URL with `Authorization: mpp <credential>` for Tempo or `X-PAYMENT: <base64 payload>` for Base/Solana.
+3. Retry the same URL with `Authorization: Payment <credential>` for Tempo or `X-PAYMENT: <base64 payload>` for Base/Solana.
 
 The [Authentication](/docs/mpp-api/authentication) page describes the wire format for both protocols. The `@x402/core` package on npm provides a TypeScript client that handles encoding and signing if you don't want to roll your own.
 
 ## What AgentCash isn't
 
 - It isn't a dependency for Remlo. We don't ship code that requires AgentCash to run.
-- It isn't an authentication system. Identity comes from Privy JWTs (for endpoints that need a principal) or from the agent's wallet address itself (for endpoints that only need to know who paid).
+- It isn't an authentication system. Identity comes from Privy JWTs (for endpoints that need a principal), ERC-8004/Solana signatures (for agent identity registration), or from the payment wallet itself (for endpoints that only need to know who paid).
+- It isn't a general purpose wallet signer from the CLI. The current CLI exposes 402/MCP payment commands, wallet addresses, balance, bridging, discovery, and origin registration; it does not expose an arbitrary `signMessage` / `personal_sign` / Solana `signMessage` command for Remlo identity proofs.
 - It isn't a Remlo product. AgentCash is built and operated by `agentcash.dev`. We use them because they implement the open x402 / mpp protocols correctly, not because of any contractual relationship.

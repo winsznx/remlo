@@ -18,10 +18,11 @@ GET /api/mpp/treasury/yield-rates HTTP/1.1
 Host: www.remlo.xyz
 
 HTTP/1.1 402 Payment Required
-WWW-Authenticate: mpp realm="www.remlo.xyz", method="tempo", chainId="4217",
+WWW-Authenticate: Payment realm="www.remlo.xyz", method="tempo", chainId="4217",
                       currency="0x20C00000...", recipient="0xC9231...",
                       amount="0.01"
 Content-Type: application/json
+Cache-Control: no-store
 
 {
   "x402Version": 2,
@@ -47,7 +48,7 @@ Content-Type: application/json
 }
 ```
 
-The agent picks Tempo (mpp protocol) by retrying with `Authorization: mpp <credential>`, or Base / Solana (x402 protocol) by retrying with `X-PAYMENT: <base64 payload>`. Server dispatches based on which header is present.
+The agent picks Tempo (MPP protocol) by retrying with `Authorization: Payment <credential>`, or Base / Solana (x402 protocol) by retrying with `X-PAYMENT: <base64 payload>`. Remlo also accepts the legacy `Authorization: mpp <credential>` form for Tempo. Server dispatches based on which header is present.
 
 ## Rails and protocols
 

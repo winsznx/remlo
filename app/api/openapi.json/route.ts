@@ -1,5 +1,70 @@
 import { NextResponse } from 'next/server'
 
+const TEMPO_USDC_E = '0x20C000000000000000000000b9537d11c60E8b50'
+
+const TEMPO_MPP_PROTOCOL = {
+  mpp: {
+    method: 'tempo',
+    intent: 'charge',
+    currency: TEMPO_USDC_E,
+  },
+}
+
+const MULTI_RAIL_PROTOCOLS = [{ x402: {} }, TEMPO_MPP_PROTOCOL]
+const TEMPO_ONLY_PROTOCOLS = [TEMPO_MPP_PROTOCOL]
+const MULTI_RAIL_NETWORKS = [
+  'eip155:4217',
+  'eip155:8453',
+  'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp',
+]
+const TEMPO_ONLY_NETWORKS = ['eip155:4217']
+
+function usdDecimalToAtomic(amount: string): string {
+  const [whole = '0', fraction = ''] = amount.split('.')
+  const atomic = `${whole}${fraction.padEnd(6, '0').slice(0, 6)}`.replace(/^0+(?=\d)/, '')
+  return atomic || '0'
+}
+
+function addMppscanOffers<T>(source: T): T {
+  const cloned = structuredClone(source) as Record<string, unknown>
+  const paths = cloned.paths as Record<string, Record<string, Record<string, unknown>>> | undefined
+  if (!paths) return cloned as T
+
+  for (const [path, methods] of Object.entries(paths)) {
+    for (const operation of Object.values(methods)) {
+      const paymentInfo = operation['x-payment-info'] as
+        | {
+            price?: { amount?: string }
+            protocols?: unknown[]
+            authMode?: string
+            offers?: unknown[]
+          }
+        | undefined
+      if (!paymentInfo || paymentInfo.authMode === 'none' || paymentInfo.authMode === 'identity') {
+        continue
+      }
+      const hasTempoMpp = JSON.stringify(paymentInfo.protocols ?? []).includes('"mpp"')
+      const amount = paymentInfo.price?.amount
+      if (!hasTempoMpp || !amount || amount === '0.000000') continue
+
+      paymentInfo.offers = [
+        {
+          amount: usdDecimalToAtomic(amount),
+          currency: TEMPO_USDC_E,
+          intent:
+            path === '/api/mpp/employee/balance/stream' ||
+            path === '/api/mpp/agent/session/treasury'
+              ? 'session'
+              : 'charge',
+          method: 'tempo',
+        },
+      ]
+    }
+  }
+
+  return cloned as T
+}
+
 const spec = {
   openapi: '3.0.3',
   info: {
@@ -8,7 +73,7 @@ const spec = {
     description:
       'Enterprise payroll infrastructure as MPP-native API endpoints. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402.',
     'x-guidance':
-      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Most read endpoints and agent flows are MULTI-RAIL: agents can pay in USDC on Tempo (eip155:4217 USDC.e at 0x20C000000000000000000000b9537d11c60E8b50, mpp protocol), Base (eip155:8453 USDC at 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, x402 protocol), or Solana (mainnet USDC at EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v, x402 protocol). The 402 response surfaces all three options; AgentCash and other x402 clients pick whichever rail their wallet has balance on. State-mutating endpoints that touch Tempo treasury balances (POST /api/mpp/payroll/execute, POST /api/mpp/bridge/offramp) remain Tempo-only via the mpp protocol — paying for a Tempo state mutation in another currency would create a settlement asymmetry. Multi-rail endpoints: GET /api/mpp/treasury/yield-rates ($0.01), POST /api/mpp/compliance/check ($0.05), POST /api/mpp/memo/decode ($0.01), POST /api/mpp/escrow/post ($0.10), POST /api/mpp/escrow/deliver ($0.02), GET /api/mpp/escrow/{id}/status ($0.01), POST /api/mpp/agent/pay ($0.05). Remlo produces on-chain reputation as a byproduct of payment work: settled Solana payments write SAS attestations, and completed Tempo payroll + escrow participation write ERC-8004 feedback. See GET /api/reputation/{address} (free, no auth) to query reputation for any subject.',
+      'Remlo exposes payroll operations as pay-per-use HTTP 402 endpoints. Most read endpoints and agent flows are MULTI-RAIL: agents can pay in USDC on Tempo (eip155:4217 USDC.e at 0x20C000000000000000000000b9537d11c60E8b50, MPP protocol), Base (eip155:8453 USDC at 0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913, x402 protocol), or Solana (mainnet USDC at EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v, x402 protocol). MPP and x402 are not wire-compatible: Tempo retries use Authorization: Payment, while Base/Solana retries use X-PAYMENT. State-mutating endpoints that touch Tempo treasury balances remain Tempo-only via MPP — paying for a Tempo state mutation in another currency would create a settlement asymmetry. Remlo produces on-chain reputation as a byproduct of payment work: settled Solana payments write SAS attestations, and completed Tempo payroll + escrow participation write ERC-8004 feedback. See GET /api/reputation/{address} (free, no auth) to query reputation for any subject.',
   },
   'x-discovery': {
     ownershipProofs: [
@@ -193,8 +258,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         responses: {
           '200': {
@@ -235,8 +300,8 @@ const spec = {
         tags: ['Payroll'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '1.000000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -292,8 +357,8 @@ const spec = {
         tags: ['Employee'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.500000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -347,8 +412,8 @@ const spec = {
         tags: ['Compliance'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -421,8 +486,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.001000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         parameters: [
           {
@@ -497,8 +562,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         parameters: [
           {
@@ -564,8 +629,8 @@ const spec = {
         tags: ['Agent'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -637,8 +702,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         parameters: [
           {
@@ -705,8 +770,8 @@ const spec = {
         tags: ['Bridge'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.250000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -769,8 +834,8 @@ const spec = {
         tags: ['Treasury'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.100000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -867,8 +932,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.500000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         parameters: [
           {
@@ -943,8 +1008,8 @@ const spec = {
         ],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.100000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         'x-guidance': 'Post an escrow that will be auto-validated by a Claude judge against your rubric_prompt. Approved verdicts release funds to worker_wallet_address via a permissionless Solana instruction; rejected verdicts or expiry refund to the employer. Funds custodied during the escrow period by the remlo_escrow Anchor program at 2CY3JQfkXpyTT8QBiHfKnashxGJ37ctDvqcgi7ggWiAA (Solana devnet). Settled escrows write a SAS reputation attestation (remlo-escrow-settled) to the worker subject; rejected or expired refunds write remlo-escrow-refunded to the requester. Both attestations are written asynchronously by /api/cron/process-reputation-writes. Expiry duration is reputation-scaled: unknown workers (no SAS attestations) receive the full requested duration; trusted workers with 20+ attestations receive a shorter expiry floor. Check the response applied_expiry_hours and worker_reputation_tier fields to see the duration actually used.',
         requestBody: {
@@ -1012,8 +1077,8 @@ const spec = {
         ],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         'x-guidance': 'Submit a deliverable URI. Remlo fetches the content (10s timeout, 100KB max), computes SHA-256, records the hash on-chain, and invokes the Claude judge against the rubric. Settlement or refund broadcasts automatically within ~30s of validator decision. The caller polls /api/mpp/escrow/{id}/status to observe the final state.',
         requestBody: {
@@ -1057,8 +1122,8 @@ const spec = {
         ],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         'x-guidance': 'Build a submit_deliverable instruction via lib/escrow-client.ts::buildSubmitDeliverableInstruction, wrap in a Transaction, sign client-side with the worker keypair, base64-encode the serialized tx, submit here. The uri_hash in the signed instruction must match sha256(deliverable_uri) exactly — the server verifies this before broadcasting. Fee payer on the signed tx MUST be the worker pubkey.',
         requestBody: {
@@ -1111,8 +1176,8 @@ const spec = {
         },
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.010000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         'x-guidance': 'Check escrow state and any on-chain signatures. No X-Agent-Identifier required — this is a public read path for any caller observing the escrow.',
         parameters: [
@@ -1165,8 +1230,8 @@ const spec = {
         ],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.050000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -1230,8 +1295,8 @@ const spec = {
         tags: ['Agent'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.100000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217', 'eip155:8453', 'solana:5eykt4UsFv8P8NJdTREpY1vzqKqZKvdp'],
+          protocols: MULTI_RAIL_PROTOCOLS,
+          'x-networks': MULTI_RAIL_NETWORKS,
         },
         'x-guidance':
           'Precondition: the agent must already own an ERC-8004 token via the Tempo IdentityRegistry (mint at /agents/register or via direct contract call). Sign the canonical message `Remlo Agent Registration v1\\nAgent ID: <id>\\nOwner: <eoa>\\nTimestamp: <ms>` with the EOA that owns the token, then POST with proof + profile metadata. The server verifies via on-chain ownerOf + ECDSA recovery — no key material is sent.',
@@ -1353,8 +1418,8 @@ const spec = {
         tags: ['Agent'],
         'x-payment-info': {
           price: { mode: 'fixed', currency: 'USD', amount: '0.020000' },
-          protocols: [{ x402: {} }, { mpp: { method: 'tempo', intent: 'charge', currency: '0x20C000000000000000000000b9537d11c60E8b50' } }],
-          'x-networks': ['eip155:4217'],
+          protocols: TEMPO_ONLY_PROTOCOLS,
+          'x-networks': TEMPO_ONLY_NETWORKS,
         },
         requestBody: {
           required: true,
@@ -1487,7 +1552,7 @@ const spec = {
 } as const
 
 export async function GET(): Promise<NextResponse> {
-  return NextResponse.json(spec, {
+  return NextResponse.json(addMppscanOffers(spec), {
     headers: {
       'Cache-Control': 'public, max-age=3600',
       'Access-Control-Allow-Origin': '*',

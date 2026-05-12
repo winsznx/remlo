@@ -26,7 +26,7 @@ import { buildRemloMcpServer } from '@/lib/mcp/server'
  *
  * Per-tool payment: enforced inside the underlying `/api/mpp/*` handlers
  * via `multiRailRoute` / `mppRoute`. The MCP shim forwards `X-PAYMENT`
- * and `Authorization: mpp ...` headers from the MCP envelope.
+ * and Tempo MPP `Authorization: Payment ...` headers from the MCP envelope.
  */
 
 export const runtime = 'nodejs'

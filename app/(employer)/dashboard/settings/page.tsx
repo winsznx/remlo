@@ -2,9 +2,9 @@
 
 import * as React from 'react'
 import Link from 'next/link'
-import { usePrivy } from '@privy-io/react-auth'
+import { usePrivy, useSolanaWallets } from '@privy-io/react-auth'
 import { useQueryClient } from '@tanstack/react-query'
-import { Building2, CreditCard, Key, Landmark, ShieldCheck, Wallet } from 'lucide-react'
+import { Building2, CreditCard, Key, Landmark, Loader2, ShieldCheck, Wallet } from 'lucide-react'
 import { toast } from 'sonner'
 import { Button } from '@/components/ui/button'
 import { SectionHeader } from '@/components/ui/SectionHeader'
@@ -14,7 +14,6 @@ import { useEmployer } from '@/lib/hooks/useEmployer'
 import { usePayrollRuns, useTreasury } from '@/lib/hooks/useDashboard'
 import { usePrivyAuthedJson } from '@/lib/hooks/usePrivyAuthedFetch'
 import { getPrimaryPrivyEthereumWallet } from '@/lib/privy-wallet'
-import { useSolanaWallets } from '@privy-io/react-auth'
 import { AddressDisplay } from '@/components/wallet/AddressDisplay'
 
 function InfoCard({ label, value, icon }: { label: string; value: string; icon: React.ReactNode }) {
@@ -37,9 +36,14 @@ export default function EmployerSettingsPage() {
   const { data: treasury } = useTreasury(employer?.id)
   const { data: payrollRuns } = usePayrollRuns(employer?.id, 1, 25)
   const sessionWallet = getPrimaryPrivyEthereumWallet(user)
-  const { wallets: solanaWallets } = useSolanaWallets()
+  const {
+    createWallet: createSolanaWallet,
+    ready: solanaWalletsReady,
+    wallets: solanaWallets,
+  } = useSolanaWallets()
   const solanaAddress = solanaWallets[0]?.address ?? null
   const [isSyncingWallet, setIsSyncingWallet] = React.useState(false)
+  const [creatingSolanaWallet, setCreatingSolanaWallet] = React.useState(false)
 
   const payrollVolume = payrollRuns?.runs.reduce((sum, run) => sum + run.total_amount, 0) ?? 0
 
@@ -81,6 +85,20 @@ export default function EmployerSettingsPage() {
       toast.error(error instanceof Error ? error.message : 'Failed to sync employer wallet.')
     } finally {
       setIsSyncingWallet(false)
+    }
+  }
+
+  async function handleCreateSolanaWallet() {
+    if (creatingSolanaWallet) return
+
+    setCreatingSolanaWallet(true)
+    try {
+      await createSolanaWallet()
+      toast.success('Solana wallet created.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create Solana wallet.')
+    } finally {
+      setCreatingSolanaWallet(false)
     }
   }
 
@@ -169,7 +187,19 @@ export default function EmployerSettingsPage() {
             explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
           />
         ) : (
-          <p className="text-sm text-[var(--text-muted)]">Solana wallet will be created on next login.</p>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-[var(--text-muted)]">
+              Create the embedded Solana wallet used for Solana treasury and agent flows.
+            </p>
+            <Button
+              variant="outline"
+              onClick={() => void handleCreateSolanaWallet()}
+              disabled={!solanaWalletsReady || creatingSolanaWallet}
+            >
+              {creatingSolanaWallet ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+              Create wallet
+            </Button>
+          </div>
         )}
       </div>
 

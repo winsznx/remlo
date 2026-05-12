@@ -68,8 +68,8 @@ sequenceDiagram
     Agent->>Endpoint: GET (no auth)
     Endpoint-->>Agent: 402 + accepts: [Tempo, Base, Solana]
 
-    alt Tempo (mpp protocol)
-        Agent->>Endpoint: GET + Authorization: mpp ...
+    alt Tempo (MPP protocol)
+        Agent->>Endpoint: GET + Authorization: Payment ...
         Endpoint->>mppx: verify
         mppx-->>Endpoint: ok
         Endpoint-->>Agent: 200 + Payment-Receipt
@@ -84,7 +84,7 @@ sequenceDiagram
 
 Server inspects which header the agent supplied:
 
-- `Authorization: mpp ...` routes to mppx Tempo verification (Tempo's embedded facilitator).
+- `Authorization: Payment ...` routes to mppx Tempo verification (Tempo's embedded facilitator). Legacy `Authorization: mpp ...` is accepted for older wrappers.
 - `X-PAYMENT` routes to `@x402/core` with both Exact EVM (Base) and Exact SVM (Solana) schemes registered against the CDP facilitator.
 
 State mutating endpoints that touch Tempo treasury balances (payroll execute, fiat off-ramp) intentionally stay Tempo only. Charging in another currency for a Tempo state mutation creates a settlement asymmetry that doesn't roll back cleanly if the on-chain action reverts.

@@ -161,7 +161,10 @@ function build402(req: Request, requirements: PaymentRequirements, error?: strin
   }
   return new Response(JSON.stringify(body), {
     status: 402,
-    headers: { 'Content-Type': 'application/json' },
+    headers: {
+      'Content-Type': 'application/json',
+      'Cache-Control': 'no-store',
+    },
   })
 }
 

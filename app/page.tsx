@@ -518,7 +518,7 @@ function ForAgentsSection() {
             Pay our APIs in USDC on any chain.
           </h2>
           <p className="mb-12 max-w-2xl text-lg text-white/50">
-            Most paid endpoints accept payment on three chains in parallel. AgentCash, raw <code className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-sm text-accent">@x402/core</code>, Coinbase Agent Kit, or any HTTP client that implements 402 retry logic. One protocol, three rails.
+            Most paid endpoints accept payment on three chains in parallel. AgentCash, raw <code className="rounded bg-white/5 px-1.5 py-0.5 font-mono text-sm text-accent">@x402/core</code>, Coinbase Agent Kit, or any HTTP client that implements 402 retry logic. One API surface, three rails.
           </p>
         </FadeInUp>
 
@@ -544,9 +544,10 @@ function ForAgentsSection() {
             <p className="text-xs font-mono uppercase tracking-widest text-white/40">EXAMPLE 402 RESPONSE</p>
             <pre className="mt-4 overflow-x-auto text-xs leading-relaxed text-white/70">
 {`HTTP/1.1 402 Payment Required
-WWW-Authenticate: mpp realm="www.remlo.xyz", method="tempo",
+WWW-Authenticate: Payment realm="www.remlo.xyz", method="tempo",
                       chainId="4217", currency="0x20C00000...",
                       recipient="0xC9231...", amount="0.01"
+Cache-Control: no-store
 
 {
   "x402Version": 2,

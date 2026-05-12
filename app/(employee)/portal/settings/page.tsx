@@ -87,13 +87,18 @@ export default function SettingsPage() {
   const queryClient = useQueryClient()
   const { user, logout } = usePrivy()
   const { linkWithPasskey } = useLinkWithPasskey()
-  const { wallets: solanaWallets } = useSolanaWallets()
+  const {
+    createWallet: createSolanaWallet,
+    ready: solanaWalletsReady,
+    wallets: solanaWallets,
+  } = useSolanaWallets()
   const solanaAddress = solanaWallets[0]?.address ?? null
   const { data: employee, isLoading } = useEmployee()
   const { data: employer } = useEmployerForEmployee(employee?.employer_id)
   const [profile, setProfile] = React.useState({ firstName: '', lastName: '', countryCode: '' })
   const [savingProfile, setSavingProfile] = React.useState(false)
   const [linkingPasskey, setLinkingPasskey] = React.useState(false)
+  const [creatingSolanaWallet, setCreatingSolanaWallet] = React.useState(false)
 
   const prefsQuery = useQuery<{ preferences: NotificationPrefs }>({
     queryKey: ['portal-preferences'],
@@ -162,6 +167,20 @@ export default function SettingsPage() {
     }
   }
 
+  async function handleCreateSolanaWallet() {
+    if (creatingSolanaWallet) return
+
+    setCreatingSolanaWallet(true)
+    try {
+      await createSolanaWallet()
+      toast.success('Solana wallet created.')
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : 'Unable to create Solana wallet.')
+    } finally {
+      setCreatingSolanaWallet(false)
+    }
+  }
+
   if (isLoading) {
     return (
       <div className="mx-auto max-w-[640px] space-y-4 px-4 pb-24 pt-6">
@@ -224,7 +243,19 @@ export default function SettingsPage() {
               explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
             />
           ) : (
-            <p className="text-sm text-[var(--text-muted)]">Solana wallet will be created on next login.</p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+              <p className="text-sm text-[var(--text-muted)]">
+                Create your embedded Solana wallet for salary streams and reputation.
+              </p>
+              <Button
+                variant="outline"
+                onClick={() => void handleCreateSolanaWallet()}
+                disabled={!solanaWalletsReady || creatingSolanaWallet}
+              >
+                {creatingSolanaWallet ? <Loader2 className="h-4 w-4 animate-spin" /> : null}
+                Create wallet
+              </Button>
+            </div>
           )}
         </div>
       </Section>

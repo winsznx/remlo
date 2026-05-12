@@ -30,6 +30,7 @@ const FOOTER_COLS = [
       { label: 'Blog', href: '/blog' },
       { label: 'Careers', href: '/careers' },
       { label: 'Contact', href: '/contact' },
+      { label: 'Community', href: 'https://t.me/remlo_xyz', external: true },
       { label: 'Press', href: '/press' },
       { label: 'Status', href: '/status' },
     ],

@@ -56,7 +56,7 @@ Each tool's `_meta.remlo` field carries the live price, accepted rails, and prot
 Tools that mutate employer state (`remlo_agent_pay`, `remlo_payroll_execute`, etc.) require **two separate proofs**:
 
 1. **Transport-level OAuth bearer** — proves which MCP client is calling. Issued by the OAuth flow described below; passed as `Authorization: Bearer <jwt>` to `/api/mcp`.
-2. **Per-tool payment + identity** — exactly as for the REST front door. The tool call envelope must carry `X-PAYMENT` (Base/Solana x402) or `Authorization: mpp ...` (Tempo MPP) for the payment, plus the Tier 1 / Tier 2 identity headers (`X-Agent-Identifier`, `X-Agent-Timestamp`, `X-Agent-Signature`) where the underlying handler requires them. See [Authentication](/docs/mpp-api/authentication) for header formats.
+2. **Per-tool payment + identity** — exactly as for the REST front door. The tool call envelope must carry `X-PAYMENT` (Base/Solana x402) or `Authorization: Payment ...` (Tempo MPP; legacy `mpp ...` accepted) for the payment, plus the Tier 1 / Tier 2 identity headers (`X-Agent-Identifier`, `X-Agent-Timestamp`, `X-Agent-Signature`) where the underlying handler requires them. See [Authentication](/docs/mpp-api/authentication) for header formats.
 
 Read tools (`remlo_agents_directory`, etc.) require only the transport bearer. Free.
 

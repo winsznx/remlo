@@ -20,11 +20,11 @@ const APP_URL = (process.env.NEXT_PUBLIC_APP_URL ?? 'https://www.remlo.xyz').rep
 export const metadata: Metadata = {
   title: 'Join the Remlo waitlist',
   description:
-    'Be first when Remlo opens to production payroll. Tempo + Solana settlement, agent rails, ERC-8004 reputation, Bridge fiat off-ramp.',
+    'Get early access to Remlo: payroll APIs for AI agents across Tempo MPP and Solana/Base x402, with escrow, reputation, and treasury workflows over HTTP 402.',
   openGraph: {
     title: 'Join the Remlo waitlist',
     description:
-      'Be first when Remlo opens to production payroll. One confirmation email, nothing else.',
+      'Get early access to payroll APIs for AI agents across Tempo MPP and Solana/Base x402.',
     url: `${APP_URL}/waitlist`,
     siteName: 'Remlo',
     type: 'website',
@@ -33,14 +33,14 @@ export const metadata: Metadata = {
         url: `${APP_URL}/opengraph-image`,
         width: 1200,
         height: 630,
-        alt: 'Join the Remlo waitlist',
+        alt: 'Join the Remlo waitlist for payroll APIs across Tempo MPP and Solana x402',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
     title: 'Join the Remlo waitlist',
-    description: 'Be first when Remlo opens to production payroll.',
+    description: 'Get early access to payroll APIs for AI agents across Tempo MPP and Solana/Base x402.',
     images: [`${APP_URL}/twitter-image`],
   },
   alternates: {

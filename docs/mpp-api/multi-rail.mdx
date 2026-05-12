@@ -3,7 +3,7 @@ title: "Multi-Rail Payments"
 description: "How agents pay our endpoints in USDC on Tempo, Base, or Solana."
 ---
 
-Most paid endpoints accept payment on three chains in parallel. The 402 challenge surfaces every option in one response. AgentCash, raw `@x402/core`, Coinbase Agent Kit, and any custom HTTP client read the same body and pick whichever rail their wallet has balance on.
+Most paid endpoints accept payment on three chains in parallel. The 402 challenge surfaces every available rail in one response: Tempo through MPP headers, and Base / Solana through the x402 response body. MPP and x402 are not wire compatible, so the value of Remlo's payment layer is that agents see one API surface while clients and wallets handle the protocol-specific credential format.
 
 This page walks the full payment flow with code samples for the three most common client implementations.
 
@@ -13,10 +13,11 @@ A request to a multi-rail endpoint without payment headers returns:
 
 ```http
 HTTP/1.1 402 Payment Required
-WWW-Authenticate: mpp realm="www.remlo.xyz", method="tempo", chainId="4217",
+WWW-Authenticate: Payment realm="www.remlo.xyz", method="tempo", chainId="4217",
                       currency="0x20C00000...", recipient="0xC9231...",
                       amount="0.01"
 Content-Type: application/json
+Cache-Control: no-store
 
 {
   "x402Version": 2,
@@ -48,6 +49,8 @@ Content-Type: application/json
 
 ## How clients pick a rail
 
+Clients should treat the Tempo MPP option and the Base / Solana x402 options as separate payment methods. A wallet that only understands x402 can use `accepts[]`. A wallet that understands MPP can use the `WWW-Authenticate` challenge. Payment-aware wrappers such as AgentCash or Sponge can choose across both.
+
 Order of selection (when no override is provided):
 
 1. Check which chains the wallet has balance on.
@@ -56,9 +59,9 @@ Order of selection (when no override is provided):
 
 Most clients also expose a manual override (`paymentNetwork: 'solana'` etc.) so the agent operator can force a chain regardless of balance.
 
-## Paying on Tempo (mpp protocol)
+## Paying on Tempo (MPP protocol)
 
-The Tempo rail uses the mpp protocol, signaled by the `WWW-Authenticate: mpp` header. To pay:
+The Tempo rail uses MPP, signaled by the `WWW-Authenticate: Payment` header. To pay:
 
 ```ts
 import { Mppx, tempo } from 'mppx/client'
@@ -74,11 +77,12 @@ const client = Mppx.create({
 
 const credential = await client.tempo.charge.pay(walletAccount, '0.01')
 const response = await fetch(url, {
-  headers: { Authorization: `mpp ${credential}` },
+  headers: { Authorization: `Payment ${credential}` },
 })
 ```
 
 `mppx/client` handles the EIP-3009 `transferWithAuthorization` signature internally. The `credential` it returns is a base64-encoded signed authorization that Remlo verifies via mppx's embedded facilitator (no external service in the loop).
+Remlo also accepts `Authorization: mpp ${credential}` for older agent wrappers, but new clients should use the `Payment` auth scheme.
 
 If the wallet provided isn't a `viem` Account, `mppx/client` exposes lower-level helpers that take a sign function instead.
 
@@ -146,8 +150,9 @@ When the retry comes in, Remlo dispatches based on which header the agent suppli
 ```ts
 // lib/x402-multi-rail.ts (simplified)
 async (req: Request) => {
-  if (req.headers.get('Authorization')?.startsWith('mpp ')) {
-    // Tempo via mppx (mpp protocol)
+  const auth = req.headers.get('Authorization')?.toLowerCase()
+  if (auth?.startsWith('payment ') || auth?.startsWith('mpp ')) {
+    // Tempo via mppx (MPP protocol)
     return mppxTempoCharge(req)
   }
   if (req.headers.get('X-PAYMENT')) {

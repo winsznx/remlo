@@ -17,13 +17,13 @@ const ibmPlexMono = IBM_Plex_Mono({
 
 export const metadata: Metadata = {
   metadataBase: new URL(process.env.NEXT_PUBLIC_APP_URL ?? 'https://remlo.xyz'),
-  title: 'Payroll for the onchain era | Remlo',
+  title: 'Payroll APIs for AI agents | Remlo',
   description:
-    'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
+    'One Remlo API surface for Tempo MPP and Solana/Base x402. AI agents pay per call to trigger compliant payroll actions, escrow, reputation, and treasury workflows over HTTP 402.',
   openGraph: {
-    title: 'Payroll for the onchain era | Remlo',
+    title: 'Payroll APIs for AI agents | Remlo',
     description:
-      'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
+      'One Remlo API surface for Tempo MPP and Solana/Base x402. AI agents pay per call to trigger compliant payroll actions, escrow, reputation, and treasury workflows over HTTP 402.',
     url: '/',
     siteName: 'Remlo',
     type: 'website',
@@ -32,15 +32,15 @@ export const metadata: Metadata = {
         url: '/opengraph-image',
         width: 1200,
         height: 630,
-        alt: 'Remlo — AI payroll infrastructure on Tempo with MPP, Bridge, and embedded wallets',
+        alt: 'Remlo — payroll APIs for AI agents across Tempo MPP and Solana x402',
       },
     ],
   },
   twitter: {
     card: 'summary_large_image',
-    title: 'Payroll for the onchain era | Remlo',
+    title: 'Payroll APIs for AI agents | Remlo',
     description:
-      'Enterprise payroll infrastructure as MPP-native API endpoints on Tempo L1. AI agents trigger compliant batch payments, compliance screening, yield queries, and salary streaming via HTTP 402. Pay anyone, anywhere, settle in 0.4s.',
+      'One Remlo API surface for Tempo MPP and Solana/Base x402. AI agents pay per call to trigger compliant payroll actions, escrow, reputation, and treasury workflows over HTTP 402.',
     images: ['/twitter-image'],
   },
 }

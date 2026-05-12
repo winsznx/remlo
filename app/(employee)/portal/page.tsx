@@ -297,7 +297,9 @@ export default function PortalHomePage() {
               explorerUrl={`https://explorer.solana.com/address/${solanaAddress}?cluster=devnet`}
             />
           ) : (
-            <p className="text-xs text-[var(--text-muted)]">Solana wallet available on next login</p>
+            <p className="text-xs text-[var(--text-muted)]">
+              Create your Solana wallet from Settings
+            </p>
           )}
         </div>
       </motion.div>

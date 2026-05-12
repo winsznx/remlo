@@ -28,7 +28,7 @@ export function buildRemloMcpServer(): McpServer {
         '',
         'This MCP server exposes Remlo\'s OpenAPI surface as tools. Read tools (`remlo_agents_directory`, `remlo_agents_profile`, `remlo_reputation_get`, `remlo_openapi_spec`) are free. All other tools are paid via x402 (Base/Solana) or MPP (Tempo) — the price is in `_meta.remlo.price`.',
         '',
-        'For paid tools, the client should attach an `X-PAYMENT` header (Base/Solana) or `Authorization: mpp ...` header (Tempo) at the HTTP transport layer when calling. If absent, the tool returns a structured 402 challenge in `isError: true` content the client can read to negotiate payment.',
+        'For paid tools, the client should attach an `X-PAYMENT` header (Base/Solana) or `Authorization: Payment ...` header (Tempo MPP) at the HTTP transport layer when calling. If absent, the tool returns a structured 402 challenge in `isError: true` content the client can read to negotiate payment.',
         '',
         'Tools that mutate employer state (`remlo_agent_pay`, `remlo_payroll_execute`, etc.) additionally require Tier 1 (HMAC) or Tier 2 (ERC-8004 / SAS Solana) identity headers — see `remlo_openapi_spec` and the Authentication doc at https://www.remlo.xyz/docs/mpp-api/authentication.',
       ].join('\n'),

@@ -25,7 +25,7 @@ import { invokeRoute, toToolResult, type RouteHandler } from './shim'
  *
  * Each tool is a thin shim over an existing `/api/mpp/*` route. The MCP
  * client passes through `X-PAYMENT` (Base/Solana x402) or
- * `Authorization: mpp ...` (Tempo MPP) headers in the tool call envelope;
+ * `Authorization: Payment ...` (Tempo MPP) headers in the tool call envelope;
  * `lib/mcp/shim.ts` forwards them to the route handler so the existing
  * `multiRailRoute` / `mppRoute` payment wrappers see them.
  *

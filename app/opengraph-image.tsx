@@ -2,7 +2,7 @@ import { ImageResponse } from 'next/og'
 
 export const runtime = 'edge'
 
-export const alt = 'Remlo — Payroll for the AI era'
+export const alt = 'Remlo — payroll APIs for AI agents across Tempo MPP and Solana x402'
 export const size = { width: 1200, height: 630 }
 export const contentType = 'image/png'
 
@@ -52,38 +52,48 @@ export default function OpenGraphImage() {
             style={{
               display: 'flex',
               fontSize: 13,
-              letterSpacing: '0.22em',
+              letterSpacing: 0,
               textTransform: 'uppercase',
               color: '#34D399',
               fontWeight: 500,
             }}
           >
-            Tempo × MPP
+            Tempo MPP + Solana x402
           </div>
           <div
             style={{
               display: 'flex',
               flexDirection: 'column',
-              fontSize: 82,
+              fontSize: 74,
               fontWeight: 800,
               lineHeight: 1.0,
-              letterSpacing: '-0.05em',
+              letterSpacing: 0,
               color: '#F8FAFC',
             }}
           >
-            <span style={{ display: 'flex' }}>Payroll for</span>
-            <span style={{ display: 'flex' }}>
-              the&nbsp;
-              <span style={{ color: '#34D399' }}>AI era.</span>
-            </span>
+            <span style={{ display: 'flex' }}>Payroll APIs</span>
+            <span style={{ display: 'flex' }}>for AI agents.</span>
+          </div>
+          <div
+            style={{
+              display: 'flex',
+              fontSize: 24,
+              lineHeight: 1.35,
+              color: '#94A3B8',
+              letterSpacing: 0,
+              marginTop: 4,
+              maxWidth: 600,
+            }}
+          >
+            Paid payroll, escrow, reputation, and treasury workflows over HTTP 402.
           </div>
           <div
             style={{
               display: 'flex',
               fontSize: 20,
               color: '#475569',
-              letterSpacing: '-0.01em',
-              marginTop: 4,
+              letterSpacing: 0,
+              marginTop: 6,
             }}
           >
             remlo.xyz

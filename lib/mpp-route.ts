@@ -38,8 +38,8 @@ import { multiRailCharge, type MultiRailChargeOptions } from '@/lib/x402-multi-r
 export interface RouteContext<P> {
   /**
    * The Request after the payment wrapper has already processed it.
-   * For multi-rail, `X-PAYMENT` (Base/Solana) or `Authorization: mpp ...`
-   * (Tempo) was verified before this handler ran.
+   * For multi-rail, `X-PAYMENT` (Base/Solana) or `Authorization: Payment ...`
+   * / legacy `mpp ...` (Tempo) was verified before this handler ran.
    */
   req: Request
   /** Resolved Next.js dynamic route params, or `{}` if the route is static. */

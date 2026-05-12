@@ -170,7 +170,8 @@ export const POST = multiRailRoute({
 
     // ── Detect rail used to pay (for analytics) ───────────────────────────
     const registeredVia: 'tempo' | 'base' | 'solana' = (() => {
-      if (req.headers.get('authorization')?.toLowerCase().startsWith('mpp ')) {
+      const authorization = req.headers.get('authorization')?.trim().toLowerCase()
+      if (authorization?.startsWith('payment ') || authorization?.startsWith('mpp ')) {
         return 'tempo'
       }
       const xPayment = req.headers.get('x-payment')

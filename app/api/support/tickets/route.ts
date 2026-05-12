@@ -112,7 +112,7 @@ export async function POST(req: NextRequest) {
   if (error) {
     console.error('[support-tickets] insert failed', error.message)
     return NextResponse.json(
-      { error: 'Could not file your ticket. Try emailing help@remlo.xyz directly.' },
+      { error: 'Could not file your ticket. Try emailing support@remlo.xyz directly.' },
       { status: 500 },
     )
   }

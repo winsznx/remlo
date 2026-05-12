@@ -3,7 +3,7 @@ title: "Reputation"
 description: "Cross-chain reputation credentials produced by settled work."
 ---
 
-Every settled action on Remlo writes portable on-chain reputation. Two registries, two chains. Solana Attestation Service (SAS) on Solana, ERC-8004 on Tempo. The same protocol writes to both depending on which side of the action settled there.
+Every settled action on Remlo writes portable on-chain reputation. Two registries, two chains. Solana Attestation Service (SAS) on Solana, ERC-8004 on Tempo. The same Remlo reputation pipeline writes to the right registry depending on which side of the action settled there.
 
 The point: a worker's settled escrows on Solana count toward their reputation tier on Tempo, and vice versa. The agent that called `/api/mpp/agent/pay` ten times successfully has a public on-chain track record that any other protocol can read without trusting Remlo's database.
 

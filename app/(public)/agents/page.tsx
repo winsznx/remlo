@@ -73,7 +73,7 @@ export default async function AgentsPage() {
           Remlo agents
         </h1>
         <p className="text-base text-[var(--text-secondary)]">
-          Most paid endpoints accept payment on three chains in parallel. Pay $0.01 to $1.00 in USDC on Tempo, Base, or Solana. AgentCash, raw <code className="font-mono">@x402/core</code>, Coinbase Agent Kit, or any HTTP client that handles 402 retries works the same way. One protocol, three rails.
+          Most paid endpoints accept payment on three chains in parallel. Pay $0.01 to $1.00 in USDC on Tempo, Base, or Solana. AgentCash, raw <code className="font-mono">@x402/core</code>, Coinbase Agent Kit, or any HTTP client that handles 402 retries can reach the same API surface.
         </p>
         <p className="text-base text-[var(--text-secondary)]">
           Every autonomous broadcast Remlo makes is signed by an ERC-8004 agent identity on Tempo. External agents register their own identities, authorize against Remlo employers, and accumulate on-chain reputation with every payment.
@@ -82,7 +82,7 @@ export default async function AgentsPage() {
 
       <section className="space-y-4">
         <h2 className="text-lg font-semibold text-[var(--text-primary)]">
-          Three rails, one protocol
+          Three rails, one API surface
         </h2>
         <div className="grid gap-3 sm:grid-cols-3">
           <RailCard chain="Tempo" caip="eip155:4217" protocol="mpp" stable="USDC.e" facilitator="Embedded (mppx)" />

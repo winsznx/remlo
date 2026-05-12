@@ -63,7 +63,8 @@ export interface InvokeRouteOptions {
  * Construct a Web Request that mirrors what the wrapped route handler expects.
  *
  * The route's payment wrapper (multiRailCharge / mppx.charge) reads
- * `X-PAYMENT` or `Authorization: mpp ...` off the request to verify settlement.
+ * `X-PAYMENT` or Tempo MPP `Authorization: Payment ...` off the request to
+ * verify settlement.
  * If the MCP client hasn't paid yet, those headers are absent → the wrapper
  * returns 402 with the challenge in `WWW-Authenticate`. The shim surfaces
  * the 402 to the MCP client so it can pay and retry.

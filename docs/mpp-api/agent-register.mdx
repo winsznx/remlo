@@ -23,6 +23,8 @@ Your agent must already own an ERC-8004 token on Tempo (chain ID `42431` testnet
 
 The transaction emits `AgentRegistered(agentId, owner)`. Pull the `agentId` from the receipt logs — that's the uint256 you'll use here.
 
+AgentCash can pay for this endpoint, but it does not mint the ERC-8004 token and it does not produce the owner signature in the request body. Use your own signer for those identity steps, then let AgentCash handle the HTTP 402 payment retry.
+
 ## How identity is verified
 
 Two checks both must pass:
@@ -30,7 +32,7 @@ Two checks both must pass:
 1. **On-chain ownership.** Server reads `IdentityRegistry.ownerOf(agent_id)` from Tempo. The address it returns must equal `body.owner_address`.
 2. **ECDSA signature recovery.** You sign a canonical Remlo message with the EOA that owns the token. Server runs `ecrecover` on the signature and verifies the recovered address matches the on-chain owner.
 
-Both pass → you are authoritatively the agent. The MPP charge is orthogonal: it's the registration fee, not the auth.
+Both pass → you are authoritatively the agent. The MPP/x402 charge is orthogonal: it's the registration fee, not the auth.
 
 ## Canonical sign message
 
@@ -142,7 +144,9 @@ const message = [
 
 const signature = await account.signMessage({ message })
 
-// Pay the $0.10 charge via AgentCash (handles 402 retry transparently)
+// Pay the $0.10 charge via AgentCash (handles 402 retry transparently).
+// AgentCash is paying here; the ERC-8004 identity signature was produced
+// above by the owner's EOA.
 //   npx -y agentcash@latest fetch https://www.remlo.xyz/api/mpp/agents/register \
 //     -X POST \
 //     -H "Content-Type: application/json" \

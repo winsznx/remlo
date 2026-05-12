@@ -222,10 +222,10 @@ export default function SupportPage() {
       <p className="mt-6 text-[11px] text-[var(--text-muted)] flex items-center gap-1.5">
         Prefer email? Write to{' '}
         <a
-          href="mailto:help@remlo.xyz"
+          href="mailto:support@remlo.xyz"
           className="text-[var(--accent)] hover:underline inline-flex items-center gap-1"
         >
-          help@remlo.xyz
+          support@remlo.xyz
           <ExternalLink className="h-3 w-3" />
         </a>
       </p>

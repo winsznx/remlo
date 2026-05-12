@@ -22,7 +22,7 @@ You can also schedule recurring payroll, run agent-driven payroll plans, and rou
 Remlo's MPP and x402 endpoints accept payment in USDC on Tempo, Base, or Solana. Use AgentCash for the easiest setup.
 
 1. Install AgentCash. `npx -y agentcash@latest onboard` provisions a wallet on every supported chain.
-2. Fund the chain you want to pay from. The deposit link printed by `agentcash list_accounts` opens the right faucet or on-ramp.
+2. Fund the chain you want to pay from. The deposit link printed by `agentcash accounts` opens the right faucet or on-ramp.
 3. Discover Remlo's endpoints: `npx -y agentcash@latest discover https://www.remlo.xyz`.
 4. Call any endpoint: `npx -y agentcash@latest fetch https://www.remlo.xyz/api/mpp/treasury/yield-rates`. AgentCash handles the 402 challenge, signs the payment proof, and retries automatically.
 

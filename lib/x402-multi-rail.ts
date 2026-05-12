@@ -21,7 +21,7 @@ import {
  *
  * One 402 response surfaces all three rails: agents (AgentCash, @x402/core
  * SDK, Coinbase Agent Kit, custom code) read `accepts[]` for x402 networks
- * and the `WWW-Authenticate: mpp ...` header for Tempo. Wallet picks rail by
+ * and the `WWW-Authenticate` MPP challenge for Tempo. Wallet picks rail by
  * balance, signs the payload, retries with credentials. Server inspects the
  * incoming auth method and routes to the right verifier.
  *
@@ -81,6 +81,28 @@ function buildTempoMppx() {
 function getTempoMppx() {
   if (!tempoMppxInstance) tempoMppxInstance = buildTempoMppx()
   return tempoMppxInstance
+}
+
+function isTempoMppAuthorization(authHeader: string | null): boolean {
+  if (!authHeader) return false
+  const normalized = authHeader.trim().toLowerCase()
+  return normalized.startsWith('payment ') || normalized.startsWith('mpp ')
+}
+
+function withPaymentCachePolicy(response: Response): Response {
+  const headers = new Headers(response.headers)
+
+  if (response.status === 402) {
+    headers.set('Cache-Control', 'no-store')
+  } else if (headers.has('Payment-Receipt')) {
+    headers.set('Cache-Control', headers.get('Cache-Control') ?? 'private, no-store')
+  }
+
+  return new Response(response.body, {
+    status: response.status,
+    statusText: response.statusText,
+    headers,
+  })
 }
 
 export interface MultiRailChargeOptions {
@@ -206,7 +228,10 @@ async function buildUnifiedChallenge({ request, options, error }: BuildChallenge
     }
   }
 
-  const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    'Cache-Control': 'no-store',
+  }
   if (rails.has('tempo')) {
     const tempoHeader = await generateTempoChallengeHeader(request, options)
     if (tempoHeader) headers['WWW-Authenticate'] = tempoHeader
@@ -256,7 +281,7 @@ function matchCdpRail(
  * Wrap a Next.js route handler with multi-rail x402 / mpp payment enforcement.
  *
  * Detection precedence:
- *   1. `Authorization: mpp ...` header → Tempo (mppx).
+ *   1. `Authorization: Payment ...` or legacy `mpp ...` header → Tempo (mppx).
  *   2. `X-PAYMENT` header → x402 (Base or Solana, dispatched by `accepted.network`).
  *   3. Neither → return 402 with all enabled rails listed.
  *
@@ -271,7 +296,7 @@ export function multiRailCharge(options: MultiRailChargeOptions) {
       const enabledRails = new Set(options.rails ?? ['tempo', 'base', 'solana'])
 
       const authHeader = req.headers.get('Authorization')
-      const isMppAuth = authHeader?.toLowerCase().startsWith('mpp ') === true
+      const isMppAuth = isTempoMppAuthorization(authHeader)
 
       // Tempo via mppx (mpp protocol). The Next.js mppx variant takes the handler
       // closure and returns a Next-compatible wrapped handler that emits a Tempo-only
@@ -280,7 +305,7 @@ export function multiRailCharge(options: MultiRailChargeOptions) {
       if (isMppAuth && enabledRails.has('tempo')) {
         try {
           const wrapped = getTempoMppx().tempo.charge({ amount: options.amount })(handler)
-          return await wrapped(req)
+          return withPaymentCachePolicy(await wrapped(req))
         } catch (err) {
           console.error('[multi-rail] mppx Tempo charge threw', err)
           return await buildUnifiedChallenge({

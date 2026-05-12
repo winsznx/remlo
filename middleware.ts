@@ -39,6 +39,7 @@ const PUBLIC_PATHS = [
   '/support', // Support form must be reachable when a user can't sign in
   '/agents', // Public discovery directory
   '/waitlist', // Launch waitlist page must be reachable before auth
+  '/traction', // Public devnet metrics leaderboard
 ]
 
 const PUBLIC_PREFIXES = [

@@ -70,10 +70,11 @@ Most paid endpoints accept payment on three chains in parallel. The 402 challeng
 
 ```
 HTTP/1.1 402 Payment Required
-WWW-Authenticate: mpp realm="www.remlo.xyz", method="tempo", chainId="4217",
+WWW-Authenticate: Payment realm="www.remlo.xyz", method="tempo", chainId="4217",
                       currency="0x20C00000...", recipient="0xC9231...",
                       amount="0.01"
 Content-Type: application/json
+Cache-Control: no-store
 
 {
   "x402Version": 2,
@@ -96,7 +97,7 @@ Content-Type: application/json
 }
 ```
 
-Server inspects `Authorization: mpp ...` (Tempo) or `X-PAYMENT` (Base / Solana) on retry, dispatches to the right verifier, runs the handler, settles fire and forget after the response goes out.
+Server inspects `Authorization: Payment ...` (Tempo MPP, with legacy `mpp ...` accepted) or `X-PAYMENT` (Base / Solana x402) on retry, dispatches to the right verifier, runs the handler, settles fire and forget after the response goes out.
 
 State mutating endpoints that touch Tempo treasury balances (payroll execute, fiat off ramp) stay Tempo only. Charging in another currency for a Tempo state mutation creates a settlement asymmetry that doesn't roll back cleanly if the on-chain action reverts.
 
