@@ -16,9 +16,12 @@ import { buildRemloMcpServer } from '@/lib/mcp/server'
  * Transport modes:
  *
  *   POST /api/mcp     — JSON-RPC request from client. May return JSON or SSE.
- *   GET  /api/mcp     — SSE stream for server-initiated notifications.
- *                       Stateless mode: open a one-shot stream that closes
- *                       when the server has nothing more to send.
+ *   GET  /api/mcp     — 405. We run stateless (no sessions, no server-initiated
+ *                       notifications), so we do not offer a server->client SSE
+ *                       stream. Returning 405 is the spec-compliant signal for
+ *                       "no SSE stream at this endpoint" and stops clients from
+ *                       reconnect-looping an empty one-shot stream (which would
+ *                       otherwise burn a Fluid invocation per reconnect).
  *   DELETE /api/mcp   — Stateful mode only (we don't use this). 405.
  *
  * Auth: see `lib/mcp/auth.ts`. Bearer required in production
@@ -61,8 +64,14 @@ export async function POST(req: NextRequest): Promise<Response> {
   return handleMcp(req)
 }
 
-export async function GET(req: NextRequest): Promise<Response> {
-  return handleMcp(req)
+export async function GET(): Promise<Response> {
+  return Response.json(
+    {
+      error: 'Server-initiated SSE stream is not offered on this endpoint',
+      code: 'SSE_STREAM_DISABLED',
+    },
+    { status: 405, headers: { allow: 'POST, DELETE, OPTIONS' } },
+  )
 }
 
 export async function DELETE(): Promise<Response> {
